@@ -14,3 +14,8 @@ NODE_VERSION = "18"
 from = "/api/*"
 to = "/.netlify/functions/:splat"
 status = 200
+
+[[redirects]]
+from = "/player/:id"
+to = "/.netlify/functions/metadata/:id"
+status = 200
