@@ -250,7 +250,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
       // Use local path in development, deployed path in production
       const manifestPath = import.meta.env.DEV
         ? '/layers/manifest.json'  // Vite dev server serves from public/
-        : '/.netlify/functions/get-manifest' // Or your deployed manifest endpoint
+        : '/.netlify/functions/manifest' // Or your deployed manifest endpoint
 
       console.log(`Loading manifest from: ${manifestPath}`)
 
@@ -766,7 +766,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
               onClick={handleStartCreation}
               disabled={!generatedImage || manifestError !== null || imageLoading}
               variant="outline"
-              className="w-full border-success text-success hover:bg-success font-mono text-sm h-10"
+              className="w-full border-success bg-success  text-success hover:bg-success font-mono text-sm h-10"
               size="lg"
             >
               <Coins className="w-4 h-4 mr-2" />

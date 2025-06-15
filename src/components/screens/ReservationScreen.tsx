@@ -331,24 +331,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
           <div className="text-center">
             <div className="text-primary font-bold text-lg mb-2">EARTH_2089_RESERVATION</div>
             <div className="text-muted-foreground text-sm mb-4">
-              Secure early access to exclusive EARTH NFTs
-            </div>
-          </div>
-
-          {/* Benefits Card */}
-          <div className="border border-primary/20 rounded p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-success" />
-                <span className="font-bold text-primary">EARLY ACCESS BENEFITS</span>
-              </div>
-              <span className="text-xs text-success">WHITELIST</span>
-            </div>
-            <div className="text-xs text-muted-foreground mb-3">
-              • Priority minting access to EARTH NFTs<br />
-              • Exclusive character traits and abilities<br />
-              • Beta game access on Devnet<br />
-              • Future airdrop eligibility
+              Secure first access to EARTH Minting
             </div>
           </div>
 
