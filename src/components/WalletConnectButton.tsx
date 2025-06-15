@@ -1,4 +1,4 @@
-// src/components/wallet-connect-button.tsx - Terminal Style
+// src/components/WalletConnectButton.tsx
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Copy, LogOut, Wallet, ChevronDown, Activity, AlertTriangle, Hash, Link } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { WalletSelectModal } from './wallet-select-modal';
+import { WalletSelectModal } from './WalletSelectModal';
 
 interface WalletConnectButtonProps {
   className?: string;

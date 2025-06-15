@@ -1,3 +1,4 @@
+// netlify/functions/create-collection.js - Fixed version
 import { Metaplex, keypairIdentity } from "@metaplex-foundation/js"
 import { Connection, Keypair } from "@solana/web3.js"
 
@@ -27,8 +28,8 @@ export const handler = async (event, context) => {
     const connection = new Connection("https://api.devnet.solana.com", "confirmed")
 
     const serverKeypair = Keypair.fromSecretKey(
-      new Uint8Array(JSON.parse(process.env.SERVER_KEYPAIR_SECRET
-      )
+      new Uint8Array(JSON.parse(process.env.SERVER_KEYPAIR_SECRET))
+    )
 
     const metaplex = Metaplex.make(connection).use(keypairIdentity(serverKeypair))
 

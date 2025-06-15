@@ -26,9 +26,9 @@ const EconomyView: React.FC = () => {
   const fetchEconomyData = async () => {
     try {
       const [economyResponse, rustMarketResponse, gameEconomyResponse] = await Promise.all([
-        fetch('/.netlify/functions/get-economy-overview'),
-        fetch('/.netlify/functions/rust-market'),
-        fetch('/.netlify/functions/game-economy')
+        fetch('/api/get-economy-overview'),
+        fetch('/api/rust-market'),
+        fetch('/api/game-economy')
       ]);
 
       let newEconomyData: EconomyData = {

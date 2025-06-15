@@ -1,4 +1,3 @@
-// src/types/supabase.ts
 export type Json =
   | string
   | number
@@ -391,6 +390,7 @@ export type Database = {
           player_count: number
           status: string | null
           svg_path_id: string | null
+          territory: string | null
           theme: string | null
           updated_at: string
           welcome_message: string | null
@@ -421,6 +421,7 @@ export type Database = {
           player_count?: number
           status?: string | null
           svg_path_id?: string | null
+          territory?: string | null
           theme?: string | null
           updated_at: string
           welcome_message?: string | null
@@ -451,6 +452,7 @@ export type Database = {
           player_count?: number
           status?: string | null
           svg_path_id?: string | null
+          territory?: string | null
           theme?: string | null
           updated_at?: string
           welcome_message?: string | null
@@ -617,6 +619,36 @@ export type Database = {
           }
         ]
       }
+      reservations: {
+        Row: {
+          amount_sol: number
+          created_at: string
+          id: string
+          status: string
+          transaction_signature: string
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          amount_sol: number
+          created_at?: string
+          id?: string
+          status: string
+          transaction_signature: string
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          amount_sol?: number
+          created_at?: string
+          id?: string
+          status?: string
+          transaction_signature?: string
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           character_id: string
@@ -690,12 +722,34 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      reservation_stats: {
+        Row: {
+          avg_reservation_amount: number | null
+          confirmed_reservations: number | null
+          failed_reservations: number | null
+          first_reservation_date: string | null
+          latest_reservation_date: string | null
+          pending_reservations: number | null
+          total_confirmed_sol: number | null
+          total_reservations: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       expire_old_payments: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_user_reservation_status: {
+        Args: { wallet_addr: string }
+        Returns: {
+          has_reservation: boolean
+          reservation_count: number
+          total_amount: number
+          latest_transaction: string
+          latest_status: string
+        }[]
       }
     }
     Enums: {
@@ -719,7 +773,52 @@ export type Database = {
         | 'ACCESSORY'
         | 'OUTERWEAR'
         | 'FACE_ACCESSORY'
-      LocationType: 'REGION' | 'CITY' | 'BUILDING' | 'ROOM'
+      LocationType:
+        | 'REGION'
+        | 'CITY'
+        | 'BUILDING'
+        | 'ROOM'
+        | 'REALM'
+        | 'CONTINENT'
+        | 'COUNTRY'
+        | 'PROVINCE'
+        | 'ISLAND'
+        | 'ARCHIPELAGO'
+        | 'DISTRICT'
+        | 'NEIGHBORHOOD'
+        | 'CAMPUS'
+        | 'COMPLEX'
+        | 'WING'
+        | 'FLOOR'
+        | 'SUITE'
+        | 'ZONE'
+        | 'CUBICLE'
+        | 'WORKSTATION'
+        | 'SEAT'
+        | 'PLOT'
+        | 'LOT'
+        | 'FACILITY'
+        | 'VENUE'
+        | 'CAVE_ENTRANCE'
+        | 'TUNNEL_JUNCTION'
+        | 'CHAMBER'
+        | 'ALCOVE'
+        | 'CREVICE'
+        | 'SHAFT'
+        | 'PIT'
+        | 'CHASM'
+        | 'GORGE'
+        | 'RAVINE'
+        | 'VALLEY'
+        | 'PEAK'
+        | 'SUMMIT'
+        | 'RIDGE'
+        | 'SLOPE'
+        | 'PLATEAU'
+        | 'PLAIN'
+        | 'BASIN'
+        | 'CRATER'
+        | 'CALDERA'
       Rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY'
       TransactionType:
         | 'MINT'
@@ -868,7 +967,53 @@ export const Constants = {
         'OUTERWEAR',
         'FACE_ACCESSORY',
       ],
-      LocationType: ['REGION', 'CITY', 'BUILDING', 'ROOM'],
+      LocationType: [
+        'REGION',
+        'CITY',
+        'BUILDING',
+        'ROOM',
+        'REALM',
+        'CONTINENT',
+        'COUNTRY',
+        'PROVINCE',
+        'ISLAND',
+        'ARCHIPELAGO',
+        'DISTRICT',
+        'NEIGHBORHOOD',
+        'CAMPUS',
+        'COMPLEX',
+        'WING',
+        'FLOOR',
+        'SUITE',
+        'ZONE',
+        'CUBICLE',
+        'WORKSTATION',
+        'SEAT',
+        'PLOT',
+        'LOT',
+        'FACILITY',
+        'VENUE',
+        'CAVE_ENTRANCE',
+        'TUNNEL_JUNCTION',
+        'CHAMBER',
+        'ALCOVE',
+        'CREVICE',
+        'SHAFT',
+        'PIT',
+        'CHASM',
+        'GORGE',
+        'RAVINE',
+        'VALLEY',
+        'PEAK',
+        'SUMMIT',
+        'RIDGE',
+        'SLOPE',
+        'PLATEAU',
+        'PLAIN',
+        'BASIN',
+        'CRATER',
+        'CALDERA',
+      ],
       Rarity: ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY'],
       TransactionType: [
         'MINT',

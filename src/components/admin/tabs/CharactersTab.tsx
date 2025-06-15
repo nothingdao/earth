@@ -7,16 +7,16 @@ import { Plus, Eye, Edit, Trash2 } from 'lucide-react'
 import { SearchBar } from '../SearchBar'
 import { LoadingSpinner } from '../LoadingSpinner'
 import { ErrorAlert } from '../ErrorAlert'
-import type { AdminCharacter } from '@/types'  // Use your existing types
+import type { Character } from '@/types'
 
 interface CharactersTabProps {
-  characters: AdminCharacter[]
+  characters: Character[]
   searchTerm: string
   onSearchChange: (term: string) => void
   loading: boolean
   error: string | null
   isProcessing: boolean
-  onEditCharacter: (character: AdminCharacter) => void
+  onEditCharacter: (character: Character) => void
   onBanCharacter: (characterId: string, characterName: string) => void
 }
 
@@ -31,9 +31,15 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
   onBanCharacter
 }) => {
   const filteredCharacters = characters.filter(char =>
-    char.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    char.locationName?.toLowerCase().includes(searchTerm.toLowerCase())
+    char.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const getStatusColor = (status: string | null) => {
+    if (!status) return 'secondary'
+    if (status === 'ACTIVE') return 'default'
+    if (status === 'PENDING_MINT') return 'secondary'
+    return 'destructive'
+  }
 
   return (
     <div className="space-y-3">
@@ -76,18 +82,18 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                             {character.name.toUpperCase()}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {character.locationName}
+                            {character.character_type} • ID: {character.current_location_id.slice(0, 8)}...
                           </div>
                         </div>
                         <Badge
-                          variant={character.status === 'ACTIVE' ? 'default' : 'secondary'}
+                          variant={getStatusColor(character.status)}
                           className="text-xs"
                         >
-                          {character.status}
+                          {character.status || 'UNKNOWN'}
                         </Badge>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="grid grid-cols-4 gap-2 text-xs">
                         <div>
                           <span className="text-muted-foreground">LVL:</span>
                           <span className="text-primary font-bold ml-1">{character.level}</span>
@@ -97,7 +103,7 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                           <div className="flex items-center gap-1">
                             <div className="w-6 h-1 bg-muted rounded overflow-hidden">
                               <div
-                                className="h-full bg-error"
+                                className="h-full bg-red-500"
                                 style={{ width: `${character.health}%` }}
                               />
                             </div>
@@ -116,11 +122,20 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                             <span className="text-xs">{character.energy}</span>
                           </div>
                         </div>
+                        <div>
+                          <span className="text-muted-foreground">XP:</span>
+                          <span className="text-green-400 ml-1">{character.experience || 0}</span>
+                        </div>
                       </div>
 
                       <div className="mt-1 text-xs">
-                        <span className="text-muted-foreground">SHARD: </span>
+                        <span className="text-muted-foreground">SHARDS: </span>
                         <span className="text-yellow-500 font-bold">{character.coins}</span>
+                        {character.wallet_address && (
+                          <span className="text-muted-foreground ml-2">
+                            • {character.wallet_address.slice(0, 4)}...{character.wallet_address.slice(-4)}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -131,6 +146,7 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                         onClick={() => onEditCharacter(character)}
                         disabled={isProcessing}
                         className="h-5 w-5 p-0"
+                        title="View Details"
                       >
                         <Eye className="h-3 w-3" />
                       </Button>
@@ -140,6 +156,7 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                         onClick={() => onEditCharacter(character)}
                         disabled={isProcessing}
                         className="h-5 w-5 p-0"
+                        title="Edit Character"
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -149,6 +166,7 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                         onClick={() => onBanCharacter(character.id, character.name)}
                         disabled={isProcessing}
                         className="h-5 w-5 p-0"
+                        title="Ban Character"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>

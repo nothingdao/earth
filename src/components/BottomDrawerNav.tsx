@@ -6,8 +6,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTrigger } from '@/components
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ModeToggle } from './mode-toggle'
-import { WalletConnectButton } from './wallet-connect-button'
+import { ThemeModeToggle } from '@/components/ThemeModeToggle'
+import { WalletConnectButton } from '@/components/WalletConnectButton'
 import {
   Map,
   TrendingUp,
@@ -16,7 +16,7 @@ import {
   Shield,
   User,
   ChevronRight,
-  Home,
+
   Wallet,
   Users,
   Copy,
@@ -179,7 +179,7 @@ export function BottomDrawerNav({
               <Signal className="w-3 h-3 mr-1" />
               OFFLINE
             </Badge>
-            <ModeToggle />
+            <ThemeModeToggle />
             <WalletConnectButton />
           </div>
         </div>
@@ -242,7 +242,7 @@ export function BottomDrawerNav({
 
             {/* Top Right: Theme Toggle and Wallet */}
             <div className="flex items-center gap-2">
-              <ModeToggle />
+              <ThemeModeToggle />
               <WalletConnectButton />
             </div>
           </div>
@@ -348,7 +348,7 @@ export function BottomDrawerNav({
                     <div className="flex items-center gap-2">
                       <Activity className="w-3 h-3 animate-pulse text-success" />
                       <span className="text-success text-xs font-mono">ACTIVE</span>
-                      <ModeToggle />
+                      <ThemeModeToggle />
                     </div>
                   </div>
                 </DrawerHeader>

@@ -1,15 +1,45 @@
-// hooks/useAdminData.ts - Custom hook for admin actions
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// hooks/useAdminData.ts - Cleaned up custom hook for admin actions
 import { useState, useEffect } from 'react'
 import supabase from '../utils/supabase'
-import type {
-  AdminStats,
-  AdminCharacter,
-  AdminLocation,
-  AdminItem,
-  AdminActivity,
-  AdminMarketListing,
-} from '@/types'
+import type { Character, Location, Item, MarketListing } from '@/types'
+
+// Only define Admin-specific types that don't exist in the base schema
+export interface AdminStats {
+  totalCharacters: number
+  totalLocations: number
+  totalItems: number
+  totalResources: number
+  activeCharacters: number
+  onlineNow: number
+  avgPlayerLevel: number
+}
+
+export interface AdminActivity {
+  id: string
+  type: 'character' | 'location' | 'item' | 'market'
+  action: string
+  target: string
+  timestamp: string
+  characterName?: string
+  locationName?: string
+}
+
+// Enhanced types with UI fields (not database fields)
+export interface EnhancedCharacterForAdmin extends Character {
+  locationName: string
+  created_at: string // formatted for display
+}
+
+export interface EnhancedMarketListingForAdmin extends MarketListing {
+  locationName: string
+  itemName: string
+  sellerName: string | null
+  created_at: string // formatted for display
+  updated_at: string // formatted for display
+  isAvailable: boolean
+  lastUpdated: string
+}
 
 export function useAdminStats() {
   const [stats, setStats] = useState<AdminStats | null>(null)
@@ -36,7 +66,7 @@ export function useAdminStats() {
 
       const characters = charactersResult.data || []
       const activeCharacters = characters.filter((c) => c.status === 'ACTIVE')
-      const onlineCharacters = characters.filter((c) => c.energy > 50) // Rough estimate
+      const onlineCharacters = characters.filter((c) => c.energy > 50)
 
       const avgLevel =
         characters.length > 0
@@ -56,7 +86,7 @@ export function useAdminStats() {
         onlineNow: onlineCharacters.length,
         avgPlayerLevel: avgLevel,
       })
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching admin stats:', err)
       setError(err.message)
     } finally {
@@ -72,7 +102,7 @@ export function useAdminStats() {
 }
 
 export function useAdminCharacters() {
-  const [characters, setCharacters] = useState<AdminCharacter[]>([])
+  const [characters, setCharacters] = useState<EnhancedCharacterForAdmin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,16 +115,7 @@ export function useAdminCharacters() {
         .from('characters')
         .select(
           `
-          id,
-          name,
-          gender,
-          current_location_id,
-          level,
-          health,
-          energy,
-          coins,
-          status,
-          created_at,
+          *,
           location:locations(name)
         `
         )
@@ -102,22 +123,16 @@ export function useAdminCharacters() {
 
       if (error) throw error
 
-      const formattedCharacters = (data || []).map((char) => ({
-        id: char.id,
-        name: char.name,
-        gender: char.gender,
-        current_location_id: char.current_location_id,
-        locationName: char.location?.name || 'Unknown',
-        level: char.level,
-        health: char.health,
-        energy: char.energy,
-        coins: char.coins,
-        status: char.status,
-        created_at: new Date(char.created_at).toLocaleDateString(),
-      }))
+      const formattedCharacters: EnhancedCharacterForAdmin[] = (data || []).map(
+        (char) => ({
+          ...char, // Spread all Character properties
+          locationName: (char.location as any)?.name || 'Unknown',
+          created_at: new Date(char.created_at).toLocaleDateString(),
+        })
+      )
 
       setCharacters(formattedCharacters)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching characters:', err)
       setError(err.message)
     } finally {
@@ -143,7 +158,6 @@ export function useAdminCharacters() {
 
       if (error) throw error
 
-      // Refresh characters list
       await fetchCharacters()
       return true
     } catch (err) {
@@ -187,7 +201,7 @@ export function useAdminCharacters() {
 }
 
 export function useAdminLocations() {
-  const [locations, setLocations] = useState<AdminLocation[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -204,7 +218,7 @@ export function useAdminLocations() {
       if (error) throw error
 
       setLocations(data || [])
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching locations:', err)
       setError(err.message)
     } finally {
@@ -214,7 +228,7 @@ export function useAdminLocations() {
 
   const updateLocation = async (
     location_id: string,
-    updates: Partial<AdminLocation>
+    updates: Partial<Location>
   ) => {
     try {
       const { error } = await supabase
@@ -246,7 +260,7 @@ export function useAdminLocations() {
 }
 
 export function useAdminItems() {
-  const [items, setItems] = useState<AdminItem[]>([])
+  const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -263,7 +277,7 @@ export function useAdminItems() {
       if (error) throw error
 
       setItems(data || [])
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching items:', err)
       setError(err.message)
     } finally {
@@ -271,7 +285,9 @@ export function useAdminItems() {
     }
   }
 
-  const createItem = async (itemData: Omit<AdminItem, 'id'>) => {
+  const createItem = async (
+    itemData: Omit<Item, 'id' | 'created_at' | 'updated_at'>
+  ) => {
     try {
       const { error } = await supabase.from('items').insert(itemData)
 
@@ -285,7 +301,7 @@ export function useAdminItems() {
     }
   }
 
-  const updateItem = async (item_id: string, updates: Partial<AdminItem>) => {
+  const updateItem = async (item_id: string, updates: Partial<Item>) => {
     try {
       const { error } = await supabase
         .from('items')
@@ -304,7 +320,6 @@ export function useAdminItems() {
 
   const deleteItem = async (item_id: string) => {
     try {
-      // Check if item is used in location resources
       const { data: resources } = await supabase
         .from('location_resources')
         .select('id')
@@ -353,8 +368,6 @@ export function useAdminActivity() {
       setLoading(true)
       setError(null)
 
-      // For now, create mock recent activity based on character data
-      // You could create an actual activity_log table later
       const { data: recentCharacters } = await supabase
         .from('characters')
         .select(
@@ -364,19 +377,21 @@ export function useAdminActivity() {
         .limit(10)
 
       const mockActivity: AdminActivity[] = (recentCharacters || []).map(
-        (char, index) => ({
+        (char) => ({
           id: char.id + '_activity',
           type: 'character' as const,
           action: 'Character created',
-          target: `${char.name} in ${char.location?.name || 'Unknown'}`,
+          target: `${char.name} in ${
+            (char.location as any)?.name || 'Unknown'
+          }`,
           timestamp: new Date(char.created_at).toLocaleString(),
           characterName: char.name,
-          locationName: char.location?.name,
+          locationName: (char.location as any)?.name,
         })
       )
 
       setActivity(mockActivity)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching activity:', err)
       setError(err.message)
     } finally {
@@ -392,7 +407,9 @@ export function useAdminActivity() {
 }
 
 export function useAdminMarket() {
-  const [marketListings, setMarketListings] = useState<AdminMarketListing[]>([])
+  const [marketListings, setMarketListings] = useState<
+    EnhancedMarketListingForAdmin[]
+  >([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -405,15 +422,7 @@ export function useAdminMarket() {
         .from('market_listings')
         .select(
           `
-          id,
-          location_id,
-          item_id,
-          seller_id,
-          quantity,
-          price,
-          is_system_item,
-          created_at,
-          updated_at,
+          *,
           location:locations(name),
           item:items(name),
           seller:characters(name)
@@ -423,17 +432,13 @@ export function useAdminMarket() {
 
       if (error) throw error
 
-      const formattedListings = (data || []).map((listing) => ({
-        id: listing.id,
-        location_id: listing.location_id,
-        locationName: listing.location?.name || 'Unknown Location',
-        item_id: listing.item_id,
-        itemName: listing.item?.name || 'Unknown Item',
-        seller_id: listing.seller_id,
-        sellerName: listing.seller?.name || null,
-        quantity: listing.quantity,
-        price: listing.price,
-        is_system_item: listing.is_system_item,
+      const formattedListings: EnhancedMarketListingForAdmin[] = (
+        data || []
+      ).map((listing) => ({
+        ...listing, // Spread all MarketListing properties
+        locationName: (listing.location as any)?.name || 'Unknown Location',
+        itemName: (listing.item as any)?.name || 'Unknown Item',
+        sellerName: (listing.seller as any)?.name || null,
         created_at: new Date(listing.created_at).toLocaleDateString(),
         updated_at: new Date(listing.updated_at).toLocaleDateString(),
         isAvailable: listing.quantity > 0,
@@ -441,7 +446,7 @@ export function useAdminMarket() {
       }))
 
       setMarketListings(formattedListings)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching market listings:', err)
       setError(err.message)
     } finally {
@@ -538,7 +543,7 @@ export function useAdminMarket() {
     loading,
     error,
     refetch: fetchMarketListings,
-    refetchMarketListings: fetchMarketListings, // Alias for consistency
+    refetchMarketListings: fetchMarketListings,
     updateMarketListing,
     deleteMarketListing,
     getMarketStats,

@@ -1,20 +1,23 @@
 // src/components/LocationPreview.tsx
 // import { EarthSVG } from './map/EarthSVG'
-import type { DatabaseLocation } from '@/types'
+import React from 'react'
+import type { Location } from '@/types'
 
 interface LocationPreviewProps {
-  location: DatabaseLocation
-  locations?: DatabaseLocation[]
+  location: Location
+  locations?: Location[]
   size?: number
   className?: string
   animated?: boolean
+  onSelect?: (location: Location) => void
 }
 
 export function LocationPreview({
   location,
   size = 120,
   className = '',
-  animated = true
+  animated = true,
+  onSelect
 }: LocationPreviewProps) {
 
   // Get viewBox for this location

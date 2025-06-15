@@ -1,5 +1,5 @@
-// src/contexts/NetworkContext.tsx - Manual switching + mismatch detection
-import React, { createContext, useContext, useEffect, useState } from 'react'
+// src/contexts/NetworkContext.tsx - Fixed version
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Connection } from '@solana/web3.js'
@@ -26,29 +26,28 @@ export const useNetwork = () => {
 
 interface NetworkProviderProps {
   children: React.ReactNode
-  network: WalletAdapterNetwork
-  setNetwork: (network: WalletAdapterNetwork) => void
 }
 
 export const NetworkProvider: React.FC<NetworkProviderProps> = ({
-  children,
-  network,
-  setNetwork
+  children
 }) => {
+  // Internal state management for network
+  const [network, setNetwork] = useState<WalletAdapterNetwork>(WalletAdapterNetwork.Devnet)
+
   const isDevnet = network === WalletAdapterNetwork.Devnet
   const isMainnet = network === WalletAdapterNetwork.Mainnet
 
-  const getExplorerUrl = (address: string) => {
+  const getExplorerUrl = useCallback((address: string) => {
     const cluster = isDevnet ? '?cluster=devnet' : ''
     return `https://explorer.solana.com/address/${address}${cluster}`
-  }
+  }, [isDevnet])
 
-  const getRpcUrl = () => {
+  const getRpcUrl = useCallback(() => {
     if (isMainnet) {
       return import.meta.env.VITE_MAINNET_RPC_URL || 'https://api.mainnet-beta.solana.com'
     }
     return import.meta.env.VITE_DEVNET_RPC_URL || 'https://api.devnet.solana.com'
-  }
+  }, [isMainnet])
 
   const { publicKey, connected } = useWallet()
   const [networkMismatch, setNetworkMismatch] = useState(false)
@@ -56,14 +55,21 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
   useEffect(() => {
     const checkGenesisHash = async () => {
       try {
-        const expectedHashes = {
+        // Fixed: Only include networks that exist in the type
+        const expectedHashes: Record<WalletAdapterNetwork.Mainnet | WalletAdapterNetwork.Devnet, string> = {
           [WalletAdapterNetwork.Mainnet]: '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
           [WalletAdapterNetwork.Devnet]: '4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z',
         }
 
+        // Only check for networks we support
+        if (network !== WalletAdapterNetwork.Mainnet && network !== WalletAdapterNetwork.Devnet) {
+          setNetworkMismatch(false)
+          return
+        }
+
         const connection = new Connection(getRpcUrl())
         const actualHash = await connection.getGenesisHash()
-        const expectedHash = expectedHashes[network]
+        const expectedHash = expectedHashes[network as WalletAdapterNetwork.Mainnet | WalletAdapterNetwork.Devnet]
         setNetworkMismatch(actualHash !== expectedHash)
       } catch (err) {
         console.warn('⚠️ NetworkContext: Failed to detect network mismatch:', err)
@@ -76,7 +82,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     } else {
       setNetworkMismatch(false)
     }
-  }, [network, publicKey?.toBase58(), connected])
+  }, [network, publicKey, connected, getRpcUrl]) // Fixed: Added missing dependencies
 
   const value: NetworkContextType = {
     network,
@@ -87,8 +93,6 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     getRpcUrl,
     networkMismatch,
   }
-
-  // console.log('🔍 NetworkContext:', value)
 
   return (
     <NetworkContext.Provider value={value}>

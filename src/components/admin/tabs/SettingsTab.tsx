@@ -5,8 +5,16 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Settings, Database, RefreshCw, AlertTriangle, Activity } from 'lucide-react'
 
+interface AdminStats {
+  onlineNow?: number
+  totalCharacters?: number
+  totalLocations?: number
+  totalItems?: number
+  [key: string]: unknown
+}
+
 interface SettingsTabProps {
-  stats: any
+  stats: AdminStats | null
   isProcessing: boolean
   onRefreshData: () => void
   onValidateWorld: () => void
@@ -89,6 +97,18 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             <span className="text-muted-foreground">ACTIVE_SESSIONS:</span>
             <span className="text-primary">{stats?.onlineNow || 0}</span>
           </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">TOTAL_CHARACTERS:</span>
+            <span className="text-primary">{stats?.totalCharacters || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">TOTAL_LOCATIONS:</span>
+            <span className="text-primary">{stats?.totalLocations || 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">TOTAL_ITEMS:</span>
+            <span className="text-primary">{stats?.totalItems || 0}</span>
+          </div>
         </div>
       </div>
 
@@ -111,8 +131,40 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             <span className="text-xs font-mono text-muted-foreground">MARKET_FEE_PERCENT</span>
             <Input className="w-12 h-6 text-xs font-mono" defaultValue="5" type="number" />
           </div>
-          <Button size="sm" className="w-full text-xs font-mono h-6">
-            SAVE_CONFIGURATION
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-mono text-muted-foreground">WORLD_DIFFICULTY</span>
+            <Input className="w-12 h-6 text-xs font-mono" defaultValue="1" type="number" />
+          </div>
+          <Button size="sm" className="w-full text-xs font-mono h-6" disabled={isProcessing}>
+            {isProcessing ? 'SAVING...' : 'SAVE_CONFIGURATION'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="bg-destructive/10 border border-destructive/20 rounded p-2">
+        <div className="flex items-center gap-2 mb-2 border-b border-destructive/20 pb-2">
+          <AlertTriangle className="w-3 h-3 text-destructive" />
+          <span className="text-destructive font-bold text-xs font-mono">DANGER_ZONE</span>
+        </div>
+        <div className="space-y-1">
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={isProcessing}
+            className="w-full justify-start text-xs font-mono h-6"
+          >
+            <Database className="h-3 w-3 mr-1" />
+            BACKUP_DATABASE
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={isProcessing}
+            className="w-full justify-start text-xs font-mono h-6"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            RESET_ALL_DATA
           </Button>
         </div>
       </div>

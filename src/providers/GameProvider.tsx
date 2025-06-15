@@ -5,7 +5,7 @@ import { useNetwork } from '@/contexts/NetworkContext'
 import { usePlayerCharacter, useCharacterActions } from '@/hooks/usePlayerCharacter'
 import { useGameData } from '@/hooks/useGameData'
 import { toast } from '@/components/ui/use-toast'
-import type { GameView, DatabaseLocation, Character } from '@/types'
+import type { GameView, Location, Character } from '@/types'
 
 type AppState =
   | 'wallet-required'
@@ -24,8 +24,8 @@ interface GameState {
   hasCharacter: boolean
   gameData: any
   loadingItems: Set<string>
-  travelingTo?: DatabaseLocation
-  selectedLocation?: DatabaseLocation | undefined
+  travelingTo?: Location
+  selectedLocation?: Location | undefined
   hasCheckedCharacter: boolean
   hasLoadedGameData: boolean
   isTravelingOnMap: boolean
@@ -38,9 +38,9 @@ type GameAction =
   | { type: 'SET_ERROR'; error: string }
   | { type: 'CLEAR_ERROR' }
   | { type: 'SET_LOADING_ITEM'; item_id: string; loading: boolean }
-  | { type: 'START_TRAVEL'; destination: DatabaseLocation }
+  | { type: 'START_TRAVEL'; destination: Location }
   | { type: 'END_TRAVEL' }
-  | { type: 'SET_SELECTED_LOCATION'; location: DatabaseLocation | undefined }
+  | { type: 'SET_SELECTED_LOCATION'; location: Location | undefined }
   | { type: 'SET_PLAYER_DATA'; character: Character; hasCharacter: boolean; loading: boolean }
   | { type: 'PLAYER_CHECK_COMPLETE'; hasCharacter: boolean }
   | { type: 'GAME_DATA_LOADED' }
@@ -154,7 +154,7 @@ interface GameContextType {
   dispatch: React.Dispatch<GameAction>
   actions: {
     navigate: (view: GameView) => void
-    setSelectedLocation: (location: DatabaseLocation | undefined) => void
+    setSelectedLocation: (location: Location | undefined) => void
     refetchCharacter: () => Promise<void>
     checkForCharacter: () => Promise<void>
     enterGame: () => Promise<void>
@@ -174,7 +174,7 @@ const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const wallet = useWallet()
-  const { isMainnet, isDevnet } = useNetwork()
+  const { isMainnet } = useNetwork()
 
   // Load character data on devnet only, but don't completely block the hooks
   const {
@@ -254,7 +254,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_VIEW', view })
     }, [isMainnet]),
 
-    setSelectedLocation: useCallback((location: DatabaseLocation | undefined) => {
+    setSelectedLocation: useCallback((location: Location | undefined) => {
       if (isMainnet) {
         console.log('🟢 MAINNET: Location selection blocked')
         return
@@ -333,7 +333,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       try {
         dispatch({ type: 'SET_MAP_TRAVELING', isTraveling: true, destination: location_id })
 
-        const response = await fetch('/.netlify/functions/travel-action', {
+        const response = await fetch('/api/travel-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

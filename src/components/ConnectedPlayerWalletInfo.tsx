@@ -152,7 +152,7 @@ export const BurnCharacter: React.FC<BurnCharacterProps> = ({ character, onChara
       console.log('NFT burned successfully:', signature)
 
       // 2. Now tell the backend to clean up the database
-      const cleanupResponse = await fetch('/.netlify/functions/nuke-character', {
+      const cleanupResponse = await fetch('/api/nuke-character', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

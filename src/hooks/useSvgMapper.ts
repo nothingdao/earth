@@ -9,7 +9,7 @@ import {
   deleteLocation,
 } from '../lib/admin/adminTools'
 
-export interface DatabaseLocation {
+export interface Location {
   id: string
   name: string
   description: string
@@ -32,7 +32,7 @@ export interface DatabaseLocation {
 }
 
 export function useSvgMapper() {
-  const [locations, setLocations] = useState<DatabaseLocation[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -77,7 +77,7 @@ export function useSvgMapper() {
   )
 
   const updateLocationData = useCallback(
-    async (location_id: string, updates: Partial<DatabaseLocation>) => {
+    async (location_id: string, updates: Partial<Location>) => {
       try {
         setError(null)
         const updatedLocation = await updateLocation(location_id, updates)

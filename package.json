@@ -12,7 +12,7 @@
     "functions:build": "netlify build",
     "npc:start": "npx tsx npc-engine.js",
     "npc:dev": "NODE_ENV=development npx tsx ./npc-engine/npc-engine.js",
-    "types": "supabase gen types typescript --project-id sudufmmkfuawomvlrkha > ../src/types/supabase.ts"
+    "types": "supabase gen types typescript --project-id sudufmmkfuawomvlrkha > ./src/types/supabase.ts"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.6",

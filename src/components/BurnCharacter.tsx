@@ -185,7 +185,7 @@ export const BurnCharacter: React.FC<BurnCharacterProps> = ({ character, onChara
       // Database cleanup
       // Replace your database cleanup section with this debug version:
       console.log('🗑️ Cleaning up database...')
-      const cleanupResponse = await fetch('/.netlify/functions/nuke-character', {
+      const cleanupResponse = await fetch('/api/nuke-character', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

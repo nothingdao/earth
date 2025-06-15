@@ -1,13 +1,14 @@
 // components/views/WorldMapView.tsx - FIXED VERSION
+import React from 'react'
 import Earth from '../map/Earth'
-import type { DatabaseLocation, Character } from '@/types'
+import type { Location, Character } from '@/types'
 import { useEffect } from 'react'
 
 interface WorldMapViewProps {
-  locations?: DatabaseLocation[]
+  locations?: Location[]
   character?: Character | null
   onTravel?: (location_id: string) => void
-  onLocationUpdate?: (locationId: string, updates: Partial<DatabaseLocation>) => void // Add this
+  onLocationUpdate?: (locationId: string, updates: Partial<Location>) => void // Add this
   isTravelingOnMap?: boolean
   mapTravelDestination?: string | null
 }

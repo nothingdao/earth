@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { isAdmin } from '@/config/admins'
+import type { Location } from '@/types'
 
 import {
   X,
@@ -21,26 +22,6 @@ import {
   Check
 } from 'lucide-react'
 
-interface DatabaseLocation {
-  id: string
-  name: string
-  description: string
-  biome?: string
-  territory?: string
-  difficulty: number
-  min_level?: number
-  has_market: boolean
-  has_mining: boolean
-  has_travel: boolean
-  has_chat: boolean
-  player_count: number
-  entry_cost?: number
-  location_type: string
-  is_private?: boolean
-  parent_location_id?: string | null
-
-}
-
 interface Character {
   id: string
   level: number
@@ -49,13 +30,13 @@ interface Character {
 }
 
 interface ZoneAnalysisModalProps {
-  location: DatabaseLocation
+  location: Location
   character?: Character
   walletAddress?: string
-  locations: DatabaseLocation[]
+  locations: Location[]
   onClose: () => void
   onTravel?: (locationId: string) => void
-  onSave?: (locationId: string, updates: Partial<DatabaseLocation>) => Promise<void>
+  onSave?: (locationId: string, updates: Partial<Location>) => Promise<void>
   getBiomeColor: (biome?: string) => string
   getTerritoryColor: (territory?: string) => string
 }
@@ -72,7 +53,7 @@ export default function ZoneAnalysisModal({
   getTerritoryColor
 }: ZoneAnalysisModalProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [editedLocation, setEditedLocation] = useState<Partial<DatabaseLocation>>({})
+  const [editedLocation, setEditedLocation] = useState<Partial<Location>>({})
   const [isSaving, setIsSaving] = useState(false)
 
   const isUserAdmin = walletAddress ? isAdmin(walletAddress) : false

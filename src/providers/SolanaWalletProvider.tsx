@@ -1,4 +1,4 @@
-// Updated src/components/wallet-provider.tsx
+// Updated src/components/SolanaWalletProvider.tsx
 "use client";
 
 import React, { useMemo } from 'react';

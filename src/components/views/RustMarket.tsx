@@ -111,7 +111,7 @@ const RustMarket: React.FC = () => {
 
   const fetchMarketData = async () => {
     try {
-      const response = await fetch('/.netlify/functions/rust-market');
+      const response = await fetch('/api/rust-market');
       const data = await response.json();
 
       if (data.success) {

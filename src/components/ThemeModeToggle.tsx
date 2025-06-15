@@ -1,9 +1,10 @@
+// src/components/ThemeModeToggle.tsx
 import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/providers/ThemeProvider"
 import { flushSync } from "react-dom"
 
-export function ModeToggle() {
+export function ThemeModeToggle() {
   const { theme, setTheme } = useTheme()
 
   const toggleTheme = () => {

@@ -16,40 +16,14 @@ import {
   MapPin
 } from 'lucide-react'
 import ZoneAnalysisModal from './ZoneAnalysisModal'
-import { useAdminLocations } from '@/hooks/useAdminData'
 
-import type { Tables } from '@/types'
-type Character = Tables<'characters'>
-
-interface DatabaseLocation {
-  id: string
-  name: string
-  description: string
-  biome?: string
-  territory?: string
-  difficulty: number
-  min_level?: number
-  has_market: boolean
-  has_mining: boolean
-  has_travel: boolean
-  has_chat: boolean
-  svg_path_id?: string | null
-  theme?: string
-  is_explored?: boolean
-  player_count: number
-  entry_cost?: number
-  location_type: string
-  parent_location_id?: string | null
-  created_at: string
-  updated_at: string
-  is_private?: boolean
-}
+import type { Location, Character } from '@/types'
 
 interface EarthProps {
-  locations: DatabaseLocation[]
+  locations: Location[]
   character?: Character
   onTravel?: (location_id: string) => void
-  onLocationUpdate?: (locationId: string, updates: Partial<DatabaseLocation>) => void
+  onLocationUpdate?: (locationId: string, updates: Partial<Location>) => void
   isTravelingOnMap?: boolean
   mapTravelDestination?: string | null
 }
@@ -85,8 +59,6 @@ export default function Earth({
 
   const [visualLocationId, setVisualLocationId] = useState<string | null>(null)
 
-  const { updateLocation } = useAdminLocations()
-
   useEffect(() => {
     console.log('🎯 VISUAL LOCATION DEBUG:', {
       characterLocationId: character?.current_location_id,
@@ -111,23 +83,20 @@ export default function Earth({
     }
   }, [character?.current_location_id, isTravelingOnMap])
 
-  // Location coordinates mapping
   const getLocationCoords = (pathId: string): { x: number, y: number } | null => {
-    const coordinates: Record<string, { x: number, y: number }> = {
-      'drowning-mirror-lake': { x: 575, y: 655 },
-      'fungi-networks': { x: 500, y: 800 },
-      'the-centerlands': { x: 400, y: 700 },
-      'frostpine-reaches': { x: 520, y: 200 },
-      'underland': { x: 200, y: 1000 },
-      'underland-island': { x: 315, y: 1175 },
-      'solana-beach': { x: 345, y: 790 },
+    const path = document.getElementById(pathId) as SVGPathElement | null
+    if (!path) return null
+
+    const bbox = path.getBBox()
+    return {
+      x: bbox.x + bbox.width / 2,
+      y: bbox.y + bbox.height / 2
     }
-    return coordinates[pathId] || null
   }
 
   // Create lookup map for quick location finding
   const locationMap = useCallback(() => {
-    const map = new Map<string, DatabaseLocation>()
+    const map = new Map<string, Location>()
     locations.forEach(loc => {
       if (loc.svg_path_id) {
         map.set(loc.svg_path_id, loc)
@@ -138,7 +107,8 @@ export default function Earth({
 
   const locationLookup = locationMap()
 
-  const getLocation = useCallback((pathId: string) => {
+  const getLocation = useCallback((pathId: string | undefined) => {
+    if (!pathId) return null
     return locationLookup.get(pathId)
   }, [locationLookup])
 
@@ -256,48 +226,25 @@ export default function Earth({
   }, [loadTransformFromURL])
 
   // Touch helper functions
-  const getTouchDistance = (touches: TouchList) => {
-    if (touches.length < 2) return null
-    const dx = touches[0].clientX - touches[1].clientX
-    const dy = touches[0].clientY - touches[1].clientY
+  const getTouchDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return 0
+    const dx = touches[1].clientX - touches[0].clientX
+    const dy = touches[1].clientY - touches[0].clientY
     return Math.sqrt(dx * dx + dy * dy)
   }
 
-  const getTouchCenter = (touches: TouchList) => {
-    if (touches.length === 1) {
-      return { x: touches[0].clientX, y: touches[0].clientY }
+  const getTouchCenter = (touches: React.TouchList) => {
+    if (touches.length < 2) return { x: 0, y: 0 }
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2
     }
-    if (touches.length >= 2) {
-      return {
-        x: (touches[0].clientX + touches[1].clientX) / 2,
-        y: (touches[0].clientY + touches[1].clientY) / 2
-      }
-    }
-    return { x: 0, y: 0 }
   }
 
   // FIXED: Touch event handlers with proper event handling
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    // Don't prevent default to allow scrolling when not interacting with map
-    console.log('Touch start:', e.touches.length, 'touches')
-
-    if (e.touches.length === 1) {
-      // Single touch - prepare for panning
-      setIsMultiTouch(false)
-      const touch = e.touches[0]
-      setDragStart({
-        x: touch.clientX,
-        y: touch.clientY,
-        translateX: transform.translateX,
-        translateY: transform.translateY
-      })
-      setIsDragging(false) // Don't start dragging immediately
-    } else if (e.touches.length === 2) {
-      // Multi-touch - start pinch zoom
-      e.preventDefault() // Prevent default only for multi-touch
+    if (e.touches.length === 2) {
       setIsMultiTouch(true)
-      setIsDragging(false)
-
       const distance = getTouchDistance(e.touches)
       const center = getTouchCenter(e.touches)
 
@@ -308,8 +255,6 @@ export default function Earth({
   }, [transform])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    console.log('Touch move:', e.touches.length, 'touches, isDragging:', isDragging, 'isMultiTouch:', isMultiTouch)
-
     if (e.touches.length === 1 && !isMultiTouch) {
       // Single touch panning - only start dragging after significant movement
       const touch = e.touches[0]
@@ -342,7 +287,7 @@ export default function Earth({
       const currentDistance = getTouchDistance(e.touches)
       const currentCenter = getTouchCenter(e.touches)
 
-      if (currentDistance && currentDistance > 0) {
+      if (currentDistance > 0) {
         const scaleRatio = currentDistance / lastTouchDistance
         const newScale = Math.max(0.5, Math.min(5, touchStartTransform.scale * scaleRatio))
 
@@ -365,8 +310,6 @@ export default function Earth({
   }, [isDragging, isMultiTouch, dragStart, lastTouchDistance, touchStartTransform, touchCenter, constrainTranslation, transform.scale])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    console.log('Touch end:', e.touches.length, 'remaining touches')
-
     if (e.touches.length === 0) {
       // All touches ended
       setIsDragging(false)
@@ -481,7 +424,6 @@ export default function Earth({
     const isSelected = pathId === selectedPath
     const isHovered = pathId === hoveredPath
 
-    const isPlayerHere = !isTravelingOnMap && location && visualLocationId === location.id
     const isTravelingToHere = location && mapTravelDestination === location.id
     const isTravelingFromHere = location && visualLocationId === location.id && isTravelingOnMap
 
@@ -497,50 +439,39 @@ export default function Earth({
 
     // Base biome styling
     if (location) {
-      fill = getBiomeColor(location.biome)
-      stroke = style.getPropertyValue('--map-border-base').trim()
-      opacity = '0.9'
-      strokeWidth = '0.5'
-    }
-
-    // Travel state styling (highest priority)
-    if (isTravelingOnMap && (isTravelingFromHere || isTravelingToHere)) {
-      opacity = '1'
-      strokeWidth = '2'
-      stroke = style.getPropertyValue('--map-text-contrast').trim()
-
-      if (isTravelingFromHere) {
-        fill = style.getPropertyValue('--map-travel-origin').trim()
-        filter = 'drop-shadow(0 0 8px var(--map-travel-origin))'
-      }
-
-      if (isTravelingToHere) {
-        fill = style.getPropertyValue('--map-travel-destination').trim()
-        filter = 'drop-shadow(0 0 8px var(--map-travel-destination))'
-      }
-    }
-    // Selection state styling
-    else if (isSelected) {
-      fill = location ? getBiomeColor(location.biome, 'selected') : style.getPropertyValue('--map-selection-primary').trim()
-      stroke = style.getPropertyValue('--map-border-selected').trim()
-      strokeWidth = '2'
-      opacity = '1'
-      filter = 'drop-shadow(0 0 4px var(--map-selection-primary))'
-    }
-    // Player location styling (when not traveling)
-    else if (isPlayerHere && !isTravelingOnMap) {
-      fill = location ? getBiomeColor(location.biome, 'active') : style.getPropertyValue('--map-player-location').trim()
-      stroke = style.getPropertyValue('--map-player-location').trim()
-      strokeWidth = '1.5'
-      opacity = '1'
-      filter = 'drop-shadow(0 0 6px var(--map-player-location))'
-    }
-    // Hover state styling
-    else if (isHovered) {
-      fill = location ? getBiomeColor(location.biome, 'hover') : style.getPropertyValue('--map-default-hover').trim()
-      stroke = style.getPropertyValue('--map-border-hover').trim()
+      fill = getBiomeColor(location.biome || undefined)
+      stroke = getBiomeColor(location.biome || undefined, 'border')
       strokeWidth = '1'
       opacity = '1'
+    }
+
+    // Selected state
+    if (isSelected) {
+      stroke = style.getPropertyValue('--map-selected').trim()
+      strokeWidth = '2'
+      filter = 'drop-shadow(0 0 2px var(--map-selected))'
+    }
+
+    // Hover state
+    if (isHovered) {
+      stroke = style.getPropertyValue('--map-hover').trim()
+      strokeWidth = '2'
+      filter = 'drop-shadow(0 0 2px var(--map-hover))'
+    }
+
+    // Travel states
+    if (isTravelingToHere) {
+      fill = style.getPropertyValue('--map-travel-destination').trim()
+      stroke = style.getPropertyValue('--map-travel-destination-border').trim()
+      strokeWidth = '2'
+      filter = 'drop-shadow(0 0 2px var(--map-travel-destination))'
+    }
+
+    if (isTravelingFromHere) {
+      fill = style.getPropertyValue('--map-travel-origin').trim()
+      stroke = style.getPropertyValue('--map-travel-origin-border').trim()
+      strokeWidth = '2'
+      filter = 'drop-shadow(0 0 2px var(--map-travel-origin))'
     }
 
     return {
@@ -551,7 +482,7 @@ export default function Earth({
       filter,
       cursor: 'pointer'
     }
-  }, [getLocation, selectedPath, hoveredPath, visualLocationId, getBiomeColor, isTravelingOnMap, mapTravelDestination])
+  }, [selectedPath, hoveredPath, visualLocationId, mapTravelDestination, isTravelingOnMap, getBiomeColor])
 
   // Handle path clicks
   const handlePathClick = useCallback((pathId: string) => {
@@ -562,17 +493,9 @@ export default function Earth({
   const selectedLocation = selectedPath ? getLocation(selectedPath) : null
 
   // Add this function in Earth.tsx
-  const handleLocationSave = async (locationId: string, updates: Partial<DatabaseLocation>) => {
-    try {
-      await updateLocation(locationId, updates)
-      console.log('✅ Successfully saved location updates:', locationId, updates)
-
-      // Update the locations in the parent state
-      onLocationUpdate?.(locationId, updates)
-    } catch (error) {
-      console.error('❌ Failed to save location:', error)
-      throw error
-    }
+  const handleLocationSave = async (locationId: string, updates: Partial<Location>) => {
+    if (!onLocationUpdate) return
+    onLocationUpdate(locationId, updates)
   }
 
   return (
@@ -731,7 +654,6 @@ export default function Earth({
           {baseSVGData.paths.map((path) => {
             const style = getPathStyle(path.id)
             const location = getLocation(path.id)
-            const isPlayerHere = location && visualLocationId === location.id
             const isTravelingFromHere = location && visualLocationId === location.id && isTravelingOnMap
             const isTravelingToHere = location && mapTravelDestination === location.id
 
@@ -863,9 +785,9 @@ export default function Earth({
                     variant="outline"
                     className="text-xs font-mono px-1 py-0 border-current"
                     style={{
-                      backgroundColor: getBiomeColor(location.biome) + '20',
-                      borderColor: getBiomeColor(location.biome),
-                      color: getBiomeColor(location.biome)
+                      backgroundColor: getBiomeColor(location.biome || undefined) + '20',
+                      borderColor: getBiomeColor(location.biome || undefined),
+                      color: getBiomeColor(location.biome || undefined)
                     }}
                   >
                     {location.biome?.toUpperCase()}
@@ -901,7 +823,6 @@ export default function Earth({
           onClose={() => setSelectedPath(null)}
           onTravel={onTravel}
           onSave={handleLocationSave}
-          onLocationUpdate={onLocationUpdate}
           getBiomeColor={getBiomeColor}
           getTerritoryColor={getTerritoryColor}
         />

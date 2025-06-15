@@ -73,7 +73,7 @@ const RustSwap: React.FC<RustSwapProps> = ({ isOpen, onClose, currentRate }) => 
 
         console.log('Transaction signature:', signature);
         // Send to backend with signature
-        const response = await fetch('/.netlify/functions/rust-swap', {
+        const response = await fetch('/api/rust-swap', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -93,7 +93,7 @@ const RustSwap: React.FC<RustSwapProps> = ({ isOpen, onClose, currentRate }) => 
 
       } else {
         // RUST to SOL swap
-        const response = await fetch('/.netlify/functions/rust-swap', {
+        const response = await fetch('/api/rust-swap', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

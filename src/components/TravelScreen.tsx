@@ -1,11 +1,13 @@
 // src/components/TravelScreen.tsx
 import React, { useEffect, useState } from 'react'
 import { MapPin, Loader2 } from 'lucide-react'
-import type { DatabaseLocation } from '@/types'
+import type { Location } from '@/types'
 
 interface TravelScreenProps {
-  destination: DatabaseLocation
-  locations: DatabaseLocation[]
+  destination: Location
+  locations: Location[]
+  onTravel: () => void
+  onCancel: () => void
 }
 
 export const TravelScreen: React.FC<TravelScreenProps> = ({

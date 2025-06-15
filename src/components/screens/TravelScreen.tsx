@@ -1,9 +1,12 @@
 // src/components/screens/TravelScreen.tsx - Migrated from your existing TravelScreen
+import React from 'react'
 import { Database, Activity, MapPin, Loader2 } from 'lucide-react'
-import type { DatabaseLocation } from '@/types'
+import type { Location } from '@/types'
 
 interface TravelScreenProps {
-  destination: DatabaseLocation
+  destination: Location
+  onTravel: () => void
+  onCancel: () => void
 }
 
 export function TravelScreen({ destination }: TravelScreenProps) {

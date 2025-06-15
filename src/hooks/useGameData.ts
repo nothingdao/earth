@@ -4,7 +4,7 @@ import supabase from '../utils/supabase'
 import type {
   Character,
   GameView,
-  DatabaseLocation,
+  Location,
   MarketItem,
   ChatMessage,
   Player,
@@ -14,7 +14,7 @@ import type {
 const API_BASE = '/.netlify/functions'
 
 interface UseGameDataReturn {
-  locations: DatabaseLocation[]
+  locations: Location[]
   marketItems: MarketItem[]
   chatMessages: ChatMessage[]
   playersAtLocation: Player[]
@@ -33,9 +33,9 @@ interface UseGameDataReturn {
 export function useGameData(
   character: Character | null,
   currentView: GameView,
-  selectedLocation: DatabaseLocation | null
+  selectedLocation: Location | null
 ): UseGameDataReturn {
-  const [locations, setLocations] = useState<DatabaseLocation[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
   const [marketItems, setMarketItems] = useState<MarketItem[]>([])
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [playersAtLocation, setPlayersAtLocation] = useState<Player[]>([])

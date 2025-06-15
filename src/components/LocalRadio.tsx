@@ -96,7 +96,7 @@ export const LocalRadio: React.FC<LocalRadioProps> = ({
       try {
         setError(null)
         setIsPlaying(false)
-        const response = await fetch(`/.netlify/functions/get-local-radio?location_id=${location_id}`)
+        const response = await fetch(`/api/get-local-radio?location_id=${location_id}`)
         if (response.ok) {
           const data = await response.json()
           if (data.station && data.station.playlist) {

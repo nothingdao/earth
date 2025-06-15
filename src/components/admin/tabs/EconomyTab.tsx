@@ -8,7 +8,7 @@ import { StatCard } from '../StatCard'
 import { SearchBar } from '../SearchBar'
 import { LoadingSpinner } from '../LoadingSpinner'
 import { ErrorAlert } from '../ErrorAlert'
-import type { AdminMarketListing } from '@/types'  // Use your existing types
+import type { MarketListing, Item, Character, Location } from '@/types'
 
 interface MarketStats {
   totalListings: number
@@ -19,7 +19,7 @@ interface MarketStats {
 }
 
 interface EconomyTabProps {
-  marketListings: AdminMarketListing[]
+  marketListings: MarketListing[]
   marketStats: MarketStats
   searchTerm: string
   onSearchChange: (term: string) => void
@@ -27,8 +27,11 @@ interface EconomyTabProps {
   error: string | null
   isProcessing: boolean
   onCreateListing: () => void
-  onEditListing: (listing: AdminMarketListing) => void
+  onEditListing: (listing: MarketListing) => void
   onDeleteListing: (listingId: string, itemName: string) => void
+  items?: Item[]
+  characters?: Character[]
+  locations?: Location[]
 }
 
 export const EconomyTab: React.FC<EconomyTabProps> = ({
@@ -41,14 +44,39 @@ export const EconomyTab: React.FC<EconomyTabProps> = ({
   isProcessing,
   onCreateListing,
   onEditListing,
-  onDeleteListing
+  onDeleteListing,
+  items = [],
+  characters = [],
+  locations = []
 }) => {
-  const filteredListings = marketListings.filter(listing =>
-    !searchTerm ||
-    listing.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    listing.locationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    listing.sellerName?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Helper functions to get related data
+  const getItemName = (itemId: string) => {
+    const item = items.find(i => i.id === itemId)
+    return item?.name || `Item-${itemId.slice(0, 8)}`
+  }
+
+  const getLocationName = (locationId: string) => {
+    const location = locations.find(l => l.id === locationId)
+    return location?.name || `Location-${locationId.slice(0, 8)}`
+  }
+
+  const getSellerName = (sellerId: string | null) => {
+    if (!sellerId) return 'SYSTEM'
+    const seller = characters.find(c => c.id === sellerId)
+    return seller?.name || `User-${sellerId.slice(0, 8)}`
+  }
+
+  const filteredListings = marketListings.filter(listing => {
+    if (!searchTerm) return true
+    const itemName = getItemName(listing.item_id).toLowerCase()
+    const locationName = getLocationName(listing.location_id).toLowerCase()
+    const sellerName = getSellerName(listing.seller_id).toLowerCase()
+    const search = searchTerm.toLowerCase()
+
+    return itemName.includes(search) ||
+      locationName.includes(search) ||
+      sellerName.includes(search)
+  })
 
   return (
     <div className="space-y-3">
@@ -116,69 +144,90 @@ export const EconomyTab: React.FC<EconomyTabProps> = ({
             <LoadingSpinner message="LOADING_MARKET_DATA..." />
           ) : (
             <div className="space-y-2">
-              {filteredListings.map((listing) => (
-                <div key={listing.id} className="bg-muted/20 border border-primary/10 rounded p-2 font-mono">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="text-primary font-bold text-xs">
-                          {listing.itemName.toUpperCase()}
+              {filteredListings.map((listing) => {
+                const itemName = getItemName(listing.item_id)
+                const locationName = getLocationName(listing.location_id)
+                const sellerName = getSellerName(listing.seller_id)
+
+                return (
+                  <div key={listing.id} className="bg-muted/20 border border-primary/10 rounded p-2 font-mono">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="text-primary font-bold text-xs">
+                            {itemName.toUpperCase()}
+                          </div>
+                          <Badge variant={listing.is_system_item ? 'secondary' : 'default'} className="text-xs">
+                            {listing.is_system_item ? 'SYS' : 'PLR'}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {listing.quantity > 0 ? 'AVAIL' : 'SOLD_OUT'}
+                          </Badge>
                         </div>
-                        <Badge variant={listing.is_system_item ? 'secondary' : 'default'} className="text-xs">
-                          {listing.is_system_item ? 'SYS' : 'PLR'}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {listing.quantity > 0 ? 'AVAIL' : 'SOLD_OUT'}
-                        </Badge>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-1">
+                          <div>
+                            <span className="text-muted-foreground">LOC:</span>
+                            <span className="text-primary ml-1">{locationName}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">SELLER:</span>
+                            <span className="text-primary ml-1">{sellerName}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">PRICE:</span>
+                            <span className="text-yellow-500 font-bold ml-1">{listing.price}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">QTY:</span>
+                            <span className="text-primary ml-1">{listing.quantity}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-muted-foreground">
+                          <span>TOTAL: </span>
+                          <span className="text-yellow-500 font-bold">
+                            {listing.price * listing.quantity} SHARDS
+                          </span>
+                          <span className="ml-2">
+                            • {new Date(listing.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-xs mb-1">
-                        <div>
-                          <span className="text-muted-foreground">LOC:</span>
-                          <span className="text-primary ml-1">{listing.locationName}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">SELLER:</span>
-                          <span className="text-primary ml-1">{listing.sellerName || 'SYSTEM'}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">PRICE:</span>
-                          <span className="text-yellow-500 font-bold ml-1">{listing.price}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">QTY:</span>
-                          <span className="text-primary ml-1">{listing.quantity}</span>
-                        </div>
+                      <div className="flex gap-1 ml-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => onEditListing(listing)}
+                          disabled={isProcessing}
+                          className="h-5 w-5 p-0"
+                          title="Edit Listing"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => onDeleteListing(listing.id, itemName)}
+                          disabled={isProcessing}
+                          className="h-5 w-5 p-0"
+                          title="Delete Listing"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
-                    </div>
-
-                    <div className="flex gap-1 ml-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => onEditListing(listing)}
-                        disabled={isProcessing}
-                        className="h-5 w-5 p-0"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => onDeleteListing(listing.id, listing.itemName)}
-                        disabled={isProcessing}
-                        className="h-5 w-5 p-0"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
 
               {filteredListings.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground font-mono text-xs">
-                  NO_MARKET_LISTINGS_FOUND
+                  {searchTerm
+                    ? `NO_LISTINGS_FOUND_MATCHING "${searchTerm.toUpperCase()}"`
+                    : 'NO_MARKET_LISTINGS_FOUND'
+                  }
                 </div>
               )}
             </div>

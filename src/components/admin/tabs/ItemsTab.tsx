@@ -7,17 +7,17 @@ import { Plus, Edit, Trash2 } from 'lucide-react'
 import { SearchBar } from '../SearchBar'
 import { LoadingSpinner } from '../LoadingSpinner'
 import { ErrorAlert } from '../ErrorAlert'
-import type { AdminItem } from '@/types'  // Use your existing types
+import type { Item } from '@/types'  // Use your existing types
 
 interface ItemsTabProps {
-  items: AdminItem[]
+  items: Item[]
   searchTerm: string
   onSearchChange: (term: string) => void
   loading: boolean
   error: string | null
   isProcessing: boolean
   onCreateItem: () => void
-  onEditItem: (item: AdminItem) => void
+  onEditItem: (item: Item) => void
   onDeleteItem: (itemId: string, itemName: string) => void
 }
 

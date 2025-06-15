@@ -58,6 +58,7 @@ export type EquipmentSlot = 'head' | 'body' | 'accessory' | 'tool'
 export interface EquipmentSlotInfo {
   name: string
   slot: EquipmentSlot
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: any // Lucide icon component
   equipped?: {
     id: string
@@ -186,6 +187,3 @@ export interface MapRegion {
 // =============================================================================
 // BACKWARD COMPATIBILITY ALIASES (Remove these gradually)
 // =============================================================================
-
-// @deprecated Use Location from Supabase types instead
-export type DatabaseLocation = Location

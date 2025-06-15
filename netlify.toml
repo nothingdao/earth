@@ -9,3 +9,8 @@ external_node_modules = ["@supabase/supabase-js"]
 
 [build.environment]
 NODE_VERSION = "18"
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/:splat"
+status = 200

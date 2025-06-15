@@ -1,3 +1,4 @@
+// src/components/WalletSelectModal.tsx
 "use client";
 
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -11,9 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Wallet, Database, Activity, Signal, Terminal, Zap } from 'lucide-react';
+import { ExternalLink, Wallet, Database, Signal, Terminal, Zap } from 'lucide-react';
 import { WalletReadyState } from '@solana/wallet-adapter-base';
-import { toast } from '@/components/ui/use-toast';
 
 interface WalletSelectModalProps {
   open: boolean;

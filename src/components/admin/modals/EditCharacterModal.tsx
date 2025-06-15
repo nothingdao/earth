@@ -1,16 +1,16 @@
 // src/components/admin/modals/EditCharacterModal.tsx
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { AdminCharacter } from '../types'
+import type { Character } from '@/types'
 
 interface EditCharacterModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  character: AdminCharacter | null
-  onSave: (characterId: string, updates: Partial<AdminCharacter>) => Promise<void>
+  character: Character | null
+  onSave: (characterId: string, updates: Partial<Character>) => Promise<void>
   isProcessing: boolean
 }
 
@@ -22,15 +22,32 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
   isProcessing
 }) => {
   const [formData, setFormData] = useState({
-    level: character?.level || 1,
-    coins: character?.coins || 0,
-    health: character?.health || 100,
-    energy: character?.energy || 100
+    level: 1,
+    coins: 0,
+    health: 100,
+    energy: 100
   })
+
+  // Update form data whenever character changes or modal opens
+  useEffect(() => {
+    if (character) {
+      setFormData({
+        level: character.level || 1,
+        coins: character.coins || 0,
+        health: character.health || 100,
+        energy: character.energy || 100
+      })
+    }
+  }, [character, open]) // Include 'open' to reset form when modal opens
 
   const handleSave = async () => {
     if (!character) return
     await onSave(character.id, formData)
+  }
+
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    const numValue = parseInt(value) || 0
+    setFormData(prev => ({ ...prev, [field]: numValue }))
   }
 
   if (!character) return null
@@ -59,8 +76,9 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
               <Input
                 type="number"
                 value={formData.level}
-                onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) })}
+                onChange={(e) => handleInputChange('level', e.target.value)}
                 className="font-mono text-xs"
+                min="1"
               />
             </div>
             <div>
@@ -68,8 +86,9 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
               <Input
                 type="number"
                 value={formData.coins}
-                onChange={(e) => setFormData({ ...formData, coins: parseInt(e.target.value) })}
+                onChange={(e) => handleInputChange('coins', e.target.value)}
                 className="font-mono text-xs"
+                min="0"
               />
             </div>
           </div>
@@ -81,7 +100,7 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
                 min="0"
                 max="100"
                 value={formData.health}
-                onChange={(e) => setFormData({ ...formData, health: parseInt(e.target.value) })}
+                onChange={(e) => handleInputChange('health', e.target.value)}
                 className="font-mono text-xs"
               />
             </div>
@@ -92,7 +111,7 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
                 min="0"
                 max="100"
                 value={formData.energy}
-                onChange={(e) => setFormData({ ...formData, energy: parseInt(e.target.value) })}
+                onChange={(e) => handleInputChange('energy', e.target.value)}
                 className="font-mono text-xs"
               />
             </div>
@@ -104,13 +123,14 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
               onClick={handleSave}
               disabled={isProcessing}
             >
-              SAVE_CHANGES
+              {isProcessing ? 'SAVING...' : 'SAVE_CHANGES'}
             </Button>
             <Button
               size="sm"
               variant="outline"
               className="flex-1 font-mono text-xs"
               onClick={() => onOpenChange(false)}
+              disabled={isProcessing}
             >
               CANCEL
             </Button>

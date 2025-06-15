@@ -1,6 +1,6 @@
 // src/components/screens/WalletScreen.tsx - Migrated from your wallet-disconnected state
 import { Terminal, WifiOff, Zap } from 'lucide-react'
-import { WalletConnectButton } from '../wallet-connect-button'
+import { WalletConnectButton } from '../WalletConnectButton'
 
 export function WalletScreen() {
   return (

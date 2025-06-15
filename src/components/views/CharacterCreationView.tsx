@@ -493,7 +493,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
         paymentSignature
       })
 
-      const response = await fetch('/.netlify/functions/mint-player-nft', {
+      const response = await fetch('/api/mint-player-nft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

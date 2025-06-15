@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { useChatParticipantCount } from '@/hooks/useChatPresence'
 import { ActivityMonitor } from '@/components/ActivityMonitor'
-import type { Character, Player, DatabaseLocation } from '@/types'
+import type { Character, Player, Location } from '@/types'
 import { LocalRadio } from '../LocalRadio'
 
 // Types for the new data we'll be fetching
@@ -72,7 +72,7 @@ export const MainView: React.FC<MainViewProps> = ({
   const [loadingMarket, setLoadingMarket] = useState(true)
 
   // Get the full location data (assuming it's available in character.currentLocation)
-  const location = character.currentLocation as DatabaseLocation
+  const location = character.currentLocation as Location
 
   // Load location resources
   useEffect(() => {
@@ -85,7 +85,7 @@ export const MainView: React.FC<MainViewProps> = ({
 
       try {
         setLoadingResources(true)
-        const response = await fetch(`/.netlify/functions/get-location-resources?location_id=${location_id}`)
+        const response = await fetch(`/api/get-location-resources?location_id=${location_id}`)
         if (response.ok) {
           const data = await response.json()
           setLocationResources(data.resources || [])
@@ -112,7 +112,7 @@ export const MainView: React.FC<MainViewProps> = ({
 
       try {
         setLoadingMarket(true)
-        const response = await fetch(`/.netlify/functions/get-market-preview?location_id=${location_id}`)
+        const response = await fetch(`/api/get-market-preview?location_id=${location_id}`)
         if (response.ok) {
           const data = await response.json()
           setMarketPreview(data.preview)

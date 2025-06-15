@@ -266,64 +266,82 @@ export function ActivityMonitor({ className = "", maxHeight = "h-96" }: Activity
               size="sm"
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="sm:hidden"
+              className="sm:hidden hover:bg-action/10 hover:border-action/20 focus:bg-action/10 focus:border-action/20"
             >
               <Filter className="w-4 h-4" />
             </Button>
 
-            {/* Auto-refresh toggle */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
-              title={isAutoRefreshing ? 'Disable auto-refresh' : 'Enable auto-refresh'}
-            >
-              {isAutoRefreshing ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4" />}
-            </Button>
+            {/* Control buttons group */}
+            <div className="flex items-center border rounded-md overflow-hidden">
+              {/* Auto-refresh toggle */}
+              <Button
+                size="sm"
+                variant={isAutoRefreshing ? "default" : "ghost"}
+                onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
+                title={isAutoRefreshing ? 'Disable auto-refresh' : 'Enable auto-refresh'}
+                className={`rounded-none border-0 ${isAutoRefreshing
+                  ? 'bg-action text-action-foreground hover:bg-action/90'
+                  : 'hover:bg-action/10 focus:bg-action/10'
+                  }`}
+              >
+                {isAutoRefreshing ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4" />}
+              </Button>
 
-            {/* Manual refresh */}
-            <Button
-              size="sm"
-              onClick={fetchTransactions}
-              disabled={isLoading}
-              title="Refresh activity"
-            >
-              <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
+              {/* Manual refresh */}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={fetchTransactions}
+                disabled={isLoading}
+                title="Refresh activity"
+                className="rounded-none border-0 border-l hover:bg-action/10 focus:bg-action/10 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Filter Controls - Mobile collapsible, Desktop always visible */}
-        <div className={`space-y-2 ${showFilters ? 'block' : 'hidden sm:block'}`}>
+        <div className={`space-y-3 ${showFilters ? 'block' : 'hidden sm:block'}`}>
           {/* Character Type Filters */}
           <div className="flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <div className="flex gap-1 flex-wrap">
+            <div className="flex border rounded-md overflow-hidden">
               <Button
                 size="sm"
-                variant={filterMode === 'ALL' ? 'default' : 'outline'}
+                variant={filterMode === 'ALL' ? 'default' : 'ghost'}
                 onClick={() => setFilterMode('ALL')}
-                className="text-xs h-7"
+                className={`text-xs h-7 rounded-none border-0 ${filterMode === 'ALL'
+                  ? 'bg-action text-action-foreground'
+                  : 'hover:bg-action/10 focus:bg-action/10'
+                  }`}
               >
-                All <span className="hidden sm:inline">({stats.total})</span>
+                All <span className="hidden sm:inline ml-1">({stats.total})</span>
               </Button>
               <Button
                 size="sm"
-                variant={filterMode === 'NPCS_ONLY' ? 'default' : 'outline'}
+                variant={filterMode === 'NPCS_ONLY' ? 'default' : 'ghost'}
                 onClick={() => setFilterMode('NPCS_ONLY')}
-                className="text-xs h-7"
+                className={`text-xs h-7 rounded-none border-0 border-l ${filterMode === 'NPCS_ONLY'
+                  ? 'bg-action text-action-foreground'
+                  : 'hover:bg-action/10 focus:bg-action/10'
+                  }`}
               >
-                <Bot className="w-3 h-3 sm:mr-1" />
-                <span className="hidden sm:inline">NPCs ({stats.npcs})</span>
+                <Bot className="w-3 h-3" />
+                <span className="hidden sm:inline ml-1">NPCs ({stats.npcs})</span>
               </Button>
               <Button
                 size="sm"
-                variant={filterMode === 'PLAYERS_ONLY' ? 'default' : 'outline'}
+                variant={filterMode === 'PLAYERS_ONLY' ? 'default' : 'ghost'}
                 onClick={() => setFilterMode('PLAYERS_ONLY')}
-                className="text-xs h-7"
+                className={`text-xs h-7 rounded-none border-0 border-l ${filterMode === 'PLAYERS_ONLY'
+                  ? 'bg-action text-action-foreground'
+                  : 'hover:bg-action/10 focus:bg-action/10'
+                  }`}
               >
-                <User className="w-3 h-3 sm:mr-1" />
-                <span className="hidden sm:inline">Players ({stats.players})</span>
+                <User className="w-3 h-3" />
+                <span className="hidden sm:inline ml-1">Players ({stats.players})</span>
               </Button>
             </div>
           </div>
@@ -331,27 +349,41 @@ export function ActivityMonitor({ className = "", maxHeight = "h-96" }: Activity
           {/* Transaction Type Filters */}
           <div className="flex items-start gap-2">
             <Activity className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <div className="flex gap-1 flex-wrap">
-              <Button
-                size="sm"
-                variant={typeFilter === 'ALL' ? 'default' : 'outline'}
-                onClick={() => setTypeFilter('ALL')}
-                className="text-xs h-7"
-              >
-                All Types
-              </Button>
-              {['EXCHANGE', 'MINE', 'TRAVEL', 'BUY', 'SELL'].map((type) => (
+            <div className="flex flex-wrap gap-1">
+              {/* First button group - All Types */}
+              <div className="border rounded-md overflow-hidden">
                 <Button
-                  key={type}
                   size="sm"
-                  variant={typeFilter === type ? 'default' : 'outline'}
-                  onClick={() => setTypeFilter(type as TransactionType)}
-                  className="text-xs h-7"
+                  variant={typeFilter === 'ALL' ? 'default' : 'ghost'}
+                  onClick={() => setTypeFilter('ALL')}
+                  className={`text-xs h-7 rounded-none border-0 ${typeFilter === 'ALL'
+                    ? 'bg-action text-action-foreground'
+                    : 'hover:bg-action/10 focus:bg-action/10'
+                    }`}
                 >
-                  {getTransactionIcon(type as TransactionType)}
-                  <span className="hidden sm:inline sm:ml-1 capitalize">{type.toLowerCase()}</span>
+                  All Types
                 </Button>
-              ))}
+              </div>
+
+              {/* Second button group - Activity Types */}
+              <div className="border rounded-md overflow-hidden">
+                {['EXCHANGE', 'MINE', 'TRAVEL', 'BUY', 'SELL'].map((type, index) => (
+                  <Button
+                    key={type}
+                    size="sm"
+                    variant={typeFilter === type ? 'default' : 'ghost'}
+                    onClick={() => setTypeFilter(type as TransactionType)}
+                    className={`text-xs h-7 rounded-none border-0 ${index > 0 ? 'border-l' : ''
+                      } ${typeFilter === type
+                        ? 'bg-action text-action-foreground'
+                        : 'hover:bg-action/10 focus:bg-action/10'
+                      }`}
+                  >
+                    {getTransactionIcon(type as TransactionType)}
+                    <span className="hidden sm:inline sm:ml-1 capitalize">{type.toLowerCase()}</span>
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -422,7 +454,7 @@ export function ActivityMonitor({ className = "", maxHeight = "h-96" }: Activity
                     )}
 
                     {/* Level Badge */}
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-primary-foreground shadow-sm">
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-action text-action-foreground flex items-center justify-center text-[9px] font-bold shadow-sm">
                       {transaction.character.level || 1}
                     </div>
                   </div>
