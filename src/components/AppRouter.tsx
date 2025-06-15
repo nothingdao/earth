@@ -15,7 +15,7 @@ import { TopControls } from './TopControls'
 export function AppRouter() {
   const { state, actions } = useGame()
   const { connected, publicKey } = useWallet()
-  const { isMainnet, isDevnet, setNetwork } = useNetwork()
+  const { isDevnet, setNetwork } = useNetwork()
 
   console.log('Wallet Connected:', connected)
   console.log('Wallet PublicKey:', publicKey?.toBase58())
@@ -71,7 +71,9 @@ function WalletConnectScreen() {
         <div className="flex items-center justify-between mb-4 border-b pb-3 border-border">
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-primary" />
-            <span className="text-primary font-bold text-sm">EARTH_2029 v2.089</span>
+            <span className="text-primary font-bold text-md">EARTH_2089 v2.089</span>
+
+
           </div>
           <div className="flex items-center gap-2">
             <Activity className="w-3 h-3 text-success animate-pulse" />
@@ -82,7 +84,7 @@ function WalletConnectScreen() {
         {/* Welcome Message */}
         <div className="bg-background border rounded p-4 mb-4">
           <div className="text-center">
-            <div className="text-primary font-bold text-lg mb-2">WELCOME_TO_EARTH</div>
+            <div className="text-primary font-bold text-xl mb-2">WELCOME_TO_EARTH</div>
             <div className="text-muted-foreground text-xs">
               Connect your wallet. Use Mainnet for the NFT reservation system and use Devnet for game testing. Thanks!
             </div>
