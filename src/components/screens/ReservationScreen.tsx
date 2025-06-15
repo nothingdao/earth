@@ -270,8 +270,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
                 onClick={() => {
                   onBackToNetworkSelect?.() // ✅ This will close the reservation screen
                 }}
-                className="w-full font-mono text-sm h-10"
-                variant="outline"
+                className="w-full font-mono text-sm h-8 mt-2 bg-action hover:bg-action/50 text-action-foreground"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 RETURN_TO_REGISTRY

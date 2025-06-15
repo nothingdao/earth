@@ -1,4 +1,4 @@
-// src/components/screens/CharacterCreationScreen.tsx - Updated with back button
+// src/components/screens/CharacterCreationScreen.tsx - Updated with better styling
 import { User, Activity, ArrowLeft } from 'lucide-react'
 import { CharacterCreationView } from '../views'
 import { useGame } from '@/providers/GameProvider'
@@ -30,29 +30,26 @@ export function CharacterCreationScreen({ onBack }: CharacterCreationScreenProps
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 mt-12">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 mt-6">
       <TopControls />
 
       <div className="w-full max-w-2xl mx-auto bg-background border border-primary/30 rounded-lg p-4 font-mono">
         {/* Terminal Header */}
-
-        <div className="flex items-center justify-between mb-3 border-b border-primary/20 pb-2">
+        <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-3">
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4" />
-            <span className="text-primary font-bold text-sm">PLAYER_CREATION v2.089</span>
+            <User className="w-4 h-4 text-success" />
+            <span className="text-success font-bold text-sm">PLAYER_CREATION v2.089</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Activity className="w-3 h-3 animate-pulse" />
-              <span className="text-primary text-xs">READY</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Activity className="w-3 h-3 text-success animate-pulse" />
+            <span className="text-success text-xs">READY</span>
           </div>
         </div>
 
         {/* Welcome Message */}
-        <div className="bg-muted/30 border border-primary/20 rounded p-3 mb-3">
+        <div className="bg-muted/20 border border-success/20 rounded p-3 mb-4">
           <div className="text-center">
-            <div className="text-primary font-bold text-lg mb-1">WELCOME_TO_EARTH</div>
+            <div className="text-success font-bold text-lg mb-1">WELCOME_TO_EARTH</div>
             <div className="text-muted-foreground text-sm">
               INITIALIZE_PROFILE_TO_BEGIN
             </div>
@@ -65,16 +62,18 @@ export function CharacterCreationScreen({ onBack }: CharacterCreationScreenProps
         />
 
         {onBack && (
-          <Button
-            onClick={onBack}
-            className="w-full font-mono text-sm h-10"
-            variant="outline"
-            size="lg"
-            title="Back to character selection"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            RETURN_TO_REGISTRY
-          </Button>
+          <div className="mt-4 pt-3 border-t border-primary/20">
+            <Button
+              onClick={onBack}
+              className="w-full font-mono text-sm h-9 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border-primary/30"
+              variant="outline"
+              size="sm"
+              title="Back to character selection"
+            >
+              <ArrowLeft className="w-3 h-3 mr-2" />
+              RETURN_TO_REGISTRY
+            </Button>
+          </div>
         )}
 
         {/* Footer */}

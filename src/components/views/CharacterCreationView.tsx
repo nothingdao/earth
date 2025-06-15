@@ -1,4 +1,4 @@
-// src/components/views/CharacterCreationView.tsx - MOBILE-FIRST, NO LAYOUT SHIFTS
+// src/components/views/CharacterCreationView.tsx - Updated with better button styling
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -586,7 +586,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
   }, [loadLayersManifest])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Simple Payment Modal */}
       {showPayment && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
@@ -603,12 +603,12 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
 
       {/* Manifest Error State */}
       {manifestError && (
-        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3 sm:p-4">
-          <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
-            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="font-medium text-sm sm:text-base">Asset Loading Error</span>
+        <div className="bg-muted/20 border border-error/30 rounded p-3">
+          <div className="flex items-center gap-2 text-error">
+            <AlertCircle className="w-4 h-4" />
+            <span className="font-mono text-sm">ASSET_LOADING_ERROR</span>
           </div>
-          <p className="text-xs sm:text-sm text-red-700 dark:text-red-300 mt-1">
+          <p className="text-xs text-muted-foreground mt-1 font-mono">
             {manifestError}
           </p>
           <Button
@@ -619,45 +619,45 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
               setManifestError(null)
               loadLayersManifest()
             }}
-            className="mt-2 h-7 sm:h-8 text-xs sm:text-sm"
+            className="mt-2 h-7 text-xs font-mono"
           >
-            Retry Loading Assets
+            RETRY_ASSETS
           </Button>
         </div>
       )}
 
       {/* Character Creation In Progress */}
       {creatingCharacter && (
-        <div className="bg-card border rounded-lg p-4 sm:p-6">
-          <div className="text-center space-y-3 sm:space-y-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-4 bg-muted rounded-full flex items-center justify-center">
-              <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin" />
+        <div className="bg-muted/20 border border-success/30 rounded p-4">
+          <div className="text-center space-y-3">
+            <div className="w-12 h-12 mx-auto mb-3 bg-muted/30 rounded border flex items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-success" />
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold">
-              Creating Your Character
+            <h3 className="text-success font-mono font-bold">
+              CREATING_CHARACTER
             </h3>
-            <p className="text-muted-foreground text-xs sm:text-sm">
-              Payment confirmed! Your NFT character is being minted...
+            <p className="text-muted-foreground text-xs font-mono">
+              PAYMENT_CONFIRMED | MINTING_NFT...
             </p>
 
             {generatedImage && (
-              <div className="flex justify-center mt-2 sm:mt-4">
+              <div className="flex justify-center mt-3">
                 <img
                   src={generatedImage}
                   alt={`Your ${currentGender.toLowerCase()} character`}
-                  className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-lg border-2 border-border"
+                  className="w-24 h-24 sm:w-32 sm:h-32 rounded border-2 border-success/30"
                 />
               </div>
             )}
 
-            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Payment verified</span>
+            <div className="space-y-1 text-xs font-mono">
+              <div className="flex items-center justify-center gap-2 text-success">
+                <CheckCircle className="w-3 h-3" />
+                <span>PAYMENT_VERIFIED</span>
               </div>
-              <div className="flex items-center justify-center gap-2">
-                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                <span>Minting NFT...</span>
+              <div className="flex items-center justify-center gap-2 text-warning">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>MINTING_NFT...</span>
               </div>
             </div>
           </div>
@@ -666,116 +666,144 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
 
       {/* Main Character Creation */}
       {walletInfo.connected && !character && !showPayment && !creatingCharacter && (
-        <div className="space-y-3 sm:space-y-6">
-          {/* Gender Filter Row - Tighter mobile spacing */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-1 sm:gap-2">
+        <div className="space-y-4">
+          {/* Gender Filter Row - Compact button group */}
+          <div className="bg-muted/20 border border-primary/20 rounded p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-primary font-mono text-sm font-bold">CHAR_TYPE</div>
+
+              {/* Button Group */}
+              <div className="flex border border-primary/30 rounded overflow-hidden">
+                <Button
+                  variant={genderFilter === 'ALL' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleGenderFilterChange('ALL')}
+                  disabled={imageLoading}
+                  className={`h-7 px-3 text-xs font-mono rounded-none border-0 ${genderFilter === 'ALL'
+                    ? 'bg-success text-black'
+                    : 'hover:bg-muted/50 text-muted-foreground'
+                    }`}
+                >
+                  <Shuffle className="w-3 h-3 mr-1" />
+                  ALL
+                </Button>
+                <div className="w-px bg-primary/30" />
+                <Button
+                  variant={genderFilter === 'MALE' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleGenderFilterChange('MALE')}
+                  disabled={imageLoading}
+                  className={`h-7 px-3 text-xs font-mono rounded-none border-0 ${genderFilter === 'MALE'
+                    ? 'bg-success text-black'
+                    : 'hover:bg-muted/50 text-muted-foreground'
+                    }`}
+                >
+                  <User className="w-3 h-3 mr-1" />
+                  MALE
+                </Button>
+                <div className="w-px bg-primary/30" />
+                <Button
+                  variant={genderFilter === 'FEMALE' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleGenderFilterChange('FEMALE')}
+                  disabled={imageLoading}
+                  className={`h-7 px-3 text-xs font-mono rounded-none border-0 ${genderFilter === 'FEMALE'
+                    ? 'bg-success text-black'
+                    : 'hover:bg-muted/50 text-muted-foreground'
+                    }`}
+                >
+                  <Users className="w-3 h-3 mr-1" />
+                  FEMALE
+                </Button>
+              </div>
+
+              {/* Refresh Button */}
               <Button
-                variant={genderFilter === 'ALL' ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
-                onClick={() => handleGenderFilterChange('ALL')}
-                disabled={imageLoading}
-                className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                onClick={generateCharacterImage}
+                disabled={imageLoading || manifestError !== null}
+                className="h-7 w-7 p-0 border-success/50 text-success hover:bg-success/10"
               >
-                <Shuffle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                All
-              </Button>
-              <Button
-                variant={genderFilter === 'MALE' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleGenderFilterChange('MALE')}
-                disabled={imageLoading}
-                className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
-              >
-                <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                Male
-              </Button>
-              <Button
-                variant={genderFilter === 'FEMALE' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleGenderFilterChange('FEMALE')}
-                disabled={imageLoading}
-                className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
-              >
-                <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                Female
+                {imageLoading ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3" />
+                )}
               </Button>
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={generateCharacterImage}
-              disabled={imageLoading || manifestError !== null}
-              className="shrink-0 h-7 sm:h-8 w-7 sm:w-8 p-0"
-            >
-              {imageLoading ? (
-                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
-              )}
-            </Button>
           </div>
 
-          {/* Character Display - FIXED HEIGHT, MOBILE OPTIMIZED */}
-          <div className="bg-card border rounded-lg p-3 sm:p-6">
-            <div className="text-center space-y-2 sm:space-y-4">
-
-              {/* FIXED HEIGHT CONTAINER - MOBILE OPTIMIZED */}
+          {/* Character Display */}
+          <div className="bg-muted/20 border border-primary/20 rounded p-4">
+            <div className="text-center space-y-3">
+              {/* Character Preview */}
               <div className="flex justify-center">
-                <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-lg border-2 bg-muted/20 flex items-center justify-center relative overflow-hidden">
+                <div className="w-48 h-48 sm:w-64 sm:h-64 rounded border-2 border-primary/30 bg-muted/10 flex items-center justify-center relative overflow-hidden">
                   {generatedImage ? (
                     <img
                       src={generatedImage}
                       alt={`Generated ${currentGender.toLowerCase()} character`}
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-cover rounded"
                     />
                   ) : imageLoading ? (
-                    <div className="flex flex-col items-center gap-2 sm:gap-3">
-                      <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-primary" />
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-success" />
                       <div className="text-center">
-                        <p className="font-medium text-sm sm:text-base">Generating...</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Creating character</p>
+                        <p className="font-mono text-sm text-success">GENERATING...</p>
+                        <p className="text-xs text-muted-foreground font-mono">CREATING_CHARACTER</p>
                       </div>
                     </div>
                   ) : manifestError ? (
                     <div className="flex flex-col items-center gap-2 text-error">
-                      <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8" />
-                      <span className="text-xs sm:text-sm">Assets not loaded</span>
+                      <AlertCircle className="w-6 h-6" />
+                      <span className="text-xs font-mono">ASSETS_NOT_LOADED</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2">
-                      <ImageIcon className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground" />
-                      <span className="text-xs sm:text-sm text-muted-foreground">No character yet</span>
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground font-mono">NO_CHARACTER_YET</span>
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Character Info */}
+              {generatedImage && (
+                <div className="text-center">
+                  <div className="text-success font-mono text-sm font-bold">
+                    {currentGender}_CHARACTER_READY
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono">
+                    LAYERS_LOADED | READY_FOR_MINT
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Create Character Section - Tighter mobile spacing */}
-          <div className="bg-card border rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
+          {/* Create Character Section */}
+          <div className="bg-muted/20 border border-primary/20 rounded p-4 space-y-3">
             <div className="text-center">
-              <div className="text-sm sm:text-lg font-bold mb-0.5 sm:mb-1">2 SOL (devnet)</div>
+              <div className="text-warning font-mono text-lg font-bold mb-1">2_SOL</div>
+              <div className="text-xs text-muted-foreground font-mono">(DEVNET_TESTING)</div>
             </div>
 
             <Button
               onClick={handleStartCreation}
               disabled={!generatedImage || manifestError !== null || imageLoading}
-              variant="outline"
-              className="w-full border-success bg-success  text-success hover:bg-success font-mono text-sm h-10"
+              className="w-full bg-success hover:bg-success/90 text-black font-mono text-sm h-9"
               size="lg"
             >
               <Coins className="w-4 h-4 mr-2" />
               MAKE_PAYMENT
             </Button>
 
-            {/* Status Message - FIXED HEIGHT, smaller on mobile */}
-            <div className="h-4 sm:h-5 flex items-center justify-center">
+            {/* Status Message */}
+            <div className="h-4 flex items-center justify-center">
               {manifestError && (
-                <p className="text-xs sm:text-sm text-error text-center">
-                  Cannot create character until assets are loaded
+                <p className="text-xs text-error text-center font-mono">
+                  CANNOT_CREATE_UNTIL_ASSETS_LOADED
                 </p>
               )}
             </div>
@@ -783,12 +811,12 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
         </div>
       )}
 
-      {/* Wallet not connected state - Tighter mobile spacing */}
+      {/* Wallet not connected state */}
       {!walletInfo.connected && (
-        <div className="bg-card border rounded-lg p-4 sm:p-6 text-center space-y-2 sm:space-y-4">
-          <h3 className="text-base sm:text-lg font-semibold">Connect Wallet</h3>
-          <p className="text-muted-foreground text-sm">
-            Connect your Solana wallet to create a character
+        <div className="bg-muted/20 border border-primary/20 rounded p-4 text-center space-y-3">
+          <h3 className="text-primary font-mono font-bold">CONNECT_WALLET</h3>
+          <p className="text-muted-foreground text-sm font-mono">
+            SOLANA_WALLET_REQUIRED_FOR_CHARACTER_CREATION
           </p>
         </div>
       )}

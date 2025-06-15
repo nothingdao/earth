@@ -129,9 +129,10 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
                     <div>ENERGY: {character.energy}/100</div>
                     <div>COINS: {character.coins}</div>
                   </div>
+
                   <Button
                     onClick={onEnterGame}
-                    className="w-full font-mono text-sm h-8 mt-2"
+                    className="w-full font-mono text-sm h-8 mt-2 bg-action hover:bg-action/50 text-action-foreground"
                     size="sm"
                   >
                     <Zap className="w-3 h-3 mr-2" />
@@ -146,9 +147,7 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
                   </div>
                   <Button
                     onClick={() => setShowCharacterCreation(true)}
-                    variant="outline"
-                    className="w-full font-mono text-sm h-8"
-                    size="sm"
+                    className="w-full font-mono text-sm h-8 mt-2 bg-action hover:bg-action/50 text-action-foreground"
                   >
                     <User className="w-3 h-3 mr-2" />
                     CREATE_PLAYER
@@ -180,8 +179,7 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
                   </div>
                   <Button
                     onClick={() => setShowReservation(true)}
-                    variant="outline"
-                    className="w-full font-mono text-sm h-8 mt-2 border-success text-success"
+                    className="w-full font-mono text-sm h-8 mt-2 bg-action hover:bg-action/50 text-action-foreground"
                     size="sm"
                   >
                     <Database className="w-3 h-3 mr-2" />

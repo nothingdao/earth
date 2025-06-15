@@ -49,6 +49,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --color-action: var(--action);
+  --color-action-foreground: var(--action-foreground);
 }
 
 :root {
@@ -90,6 +92,10 @@
   --success: oklch(0.6 0.15 140);
   --warning: oklch(0.65 0.2 65);
   --error: oklch(0.6 0.2 15);
+  
+  /* buttons */
+  --action: oklch(0.22 0.008 65);
+  --action-foreground: oklch(0.98 0.008 85);
 }
 
 .dark {
@@ -141,6 +147,10 @@
   --map-default: #9ca3af;
   --map-border: #6b7280;
   --map-grid: #10b981;
+
+  /* buttons */
+  --action: oklch(0.65 0.07 170);
+  --action-foreground: oklch(0.05 0.02 258);
 }
 
 @layer base {
