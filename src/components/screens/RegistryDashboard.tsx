@@ -12,7 +12,6 @@ import {
   Users,
   Coins
 } from 'lucide-react'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { useNetwork } from '@/contexts/NetworkContext'
 import { usePlayerCharacter } from '@/hooks/usePlayerCharacter'
 import { useReservationStatus } from '@/hooks/useReservationStatus'
@@ -25,8 +24,7 @@ interface RegistryDashboardProps {
 }
 
 export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
-  const wallet = useWallet()
-  const { isMainnet, isDevnet } = useNetwork()
+  const { isDevnet } = useNetwork()
 
   // Check character status (devnet only)
   const {
@@ -39,7 +37,9 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
   const {
     reservation,
     loading: reservationLoading,
-    hasReservation
+    hasReservation,
+    refetchReservation // ✅ Correct - matches the hook's return
+
   } = useReservationStatus(true)
 
   // Local navigation state
@@ -58,7 +58,10 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
   if (showReservation) {
     return (
       <ReservationScreen
-        onReservationComplete={() => setShowReservation(false)}
+        onReservationComplete={() => {
+          setShowReservation(false)
+          refetchReservation()
+        }}
         onBackToNetworkSelect={() => setShowReservation(false)}
       />
     )

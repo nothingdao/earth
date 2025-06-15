@@ -13,38 +13,26 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Database, Activity, AlertCircle, ArrowLeft } from 'lucide-react';
 import { saveReservationToSupabase, getReservationFromSupabase, updateReservationStatus } from '@/lib/supabase-reservations';
 import { TopControls } from '../TopControls';
-import { Connection, clusterApiUrl } from '@solana/web3.js';
-
 
 interface ReservationScreenProps {
   onReservationComplete?: () => void;
   onBackToNetworkSelect?: () => void;
+  reservationPrice?: number;
 }
 
-export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect }: ReservationScreenProps) {
-  const { connection: walletConnection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
-
-  // Restore original network context after testing
-  // const { isMainnet, getExplorerUrl } = useNetwork();
-
-  // Force Devnet for testing purposes
-  const FORCE_DEVNET = import.meta.env.VITE_FORCE_DEVNET === 'true';
-  const { isMainnet: originalIsMainnet, getExplorerUrl } = useNetwork();
-  const isMainnet = FORCE_DEVNET ? false : originalIsMainnet;
-
-  // Override connection when forcing devnet
-  const connection = FORCE_DEVNET
-    ? new Connection(clusterApiUrl('devnet'), 'confirmed')
-    : walletConnection;
-
-  // Log network info  
-  console.log('Network:', isMainnet ? 'Mainnet' : 'Devnet');
+export function ReservationScreen({
+  onReservationComplete,
+  onBackToNetworkSelect,
+  reservationPrice = 2 // 2 SOL
+}: ReservationScreenProps) {
+  const wallet = useWallet();
+  const { publicKey, sendTransaction } = wallet;
+  const { connection } = useConnection();
+  const { getExplorerUrl } = useNetwork();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [txSignature, setTxSignature] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reservationPrice] = useState(1); // 0.05 SOL - adjust as needed
 
   // Get treasury wallet from environment variables
   const TREASURY_WALLET = import.meta.env.VITE_TREASURY_WALLET_ADDRESS;
@@ -74,7 +62,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
 
   const validateEnvironment = () => {
     if (!TREASURY_WALLET) {
-      throw new Error('Treasury wallet address not configured. Please set NEXT_PUBLIC_TREASURY_WALLET_ADDRESS or VITE_TREASURY_WALLET_ADDRESS in your environment variables.');
+      throw new Error('Treasury wallet address not configured. Please set VITE_TREASURY_WALLET_ADDRESS in your environment variables.');
     }
 
     try {
@@ -87,6 +75,12 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
   const handleReservation = async () => {
     if (!publicKey) {
       setError('Please connect your wallet first');
+      return;
+    }
+
+    // Double check wallet connection
+    if (!wallet.connected) {
+      setError('Wallet is not connected. Please connect your wallet and try again.');
       return;
     }
 
@@ -135,7 +129,6 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
         amount_sol: reservationPrice,
         status: 'pending'
       });
-
 
       // Wait for confirmation with timeout
       const confirmationPromise = connection.confirmTransaction({
@@ -233,7 +226,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
           <div className="space-y-4">
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-4">
-                Your place is secure for the EARTH 2089.
+                Your place is secured for EARTH 2089 NFT launch.
               </p>
             </div>
 
@@ -268,7 +261,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
             <div className="space-y-2">
               <Button
                 onClick={() => {
-                  onBackToNetworkSelect?.() // ✅ This will close the reservation screen
+                  onBackToNetworkSelect?.()
                 }}
                 className="w-full font-mono text-sm h-8 mt-2 bg-action hover:bg-action/50 text-action-foreground"
               >
@@ -277,10 +270,8 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">
-                To help test the game, switch to Devnet and create a burner character
+                Switch to Devnet to test the game with a burner character
               </p>
-
-
             </div>
           </div>
 
@@ -310,14 +301,14 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
               <button
                 onClick={onBackToNetworkSelect}
                 className="text-muted-foreground hover:text-primary transition-colors"
-                title="Back to network selection"
+                title="Back to registry"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
             <div className="flex items-center gap-2">
               <Activity className="w-3 h-3 animate-pulse text-primary" />
-              <span className="text-primary text-xs">{isMainnet ? 'MAINNET' : 'DEVNET'}</span>
+              <span className="text-primary text-xs">ONLINE</span>
             </div>
           </div>
         </div>
@@ -330,7 +321,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
           <div className="text-center">
             <div className="text-primary font-bold text-lg mb-2">EARTH_2089_RESERVATION</div>
             <div className="text-muted-foreground text-sm mb-4">
-              Secure first access to EARTH Minting
+              Secure priority access to NFT launch
             </div>
           </div>
 
@@ -339,16 +330,16 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-primary" />
-                <span className="font-bold text-primary">RESERVATION COST</span>
+                <span className="font-bold text-primary">RESERVATION_COST</span>
               </div>
-              <span className="text-xs text-primary">{isMainnet ? 'MAINNET' : 'DEVNET'}</span>
+              <span className="text-xs text-primary">SOLANA</span>
             </div>
             <div className="text-center mt-3">
               <div className="text-2xl font-bold text-success font-mono mb-1">
                 {reservationPrice} SOL
               </div>
               <div className="text-xs text-muted-foreground">
-                {isMainnet ? 'One-time reservation fee' : 'Test reservation (Devnet)'}
+                One-time reservation fee
               </div>
             </div>
           </div>
@@ -360,7 +351,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
                   Connect your wallet to reserve your spot in the EARTH 2089 whitelist
                 </p>
               </div>
-              <WalletMultiButton className="w-full !bg-primary hover:!bg-primary/90 !font-mono" />
+              <WalletMultiButton className="w-full !bg-action hover:!bg-action/90 !text-action-foreground !font-mono" />
             </div>
           ) : (
             <div className="space-y-3">
@@ -369,7 +360,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
                 disabled={isProcessing || !TREASURY_WALLET}
                 className={`w-full font-mono text-sm ${isProcessing || !TREASURY_WALLET
                   ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-primary hover:bg-primary/90'
+                  : 'bg-action hover:bg-action/90 text-action-foreground'
                   }`}
               >
                 {isProcessing ? (
@@ -386,13 +377,12 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
 
               <Button
                 onClick={() => {
-                  // Allow testing reservation flow on both networks
                   onReservationComplete?.();
                 }}
                 variant="outline"
-                className="w-full font-mono text-sm"
+                className="w-full font-mono text-sm border-muted-foreground/30 text-muted-foreground hover:bg-muted/10"
               >
-                {isMainnet ? 'SKIP_TO_GAME_TESTING' : 'ACCESS_GAME_FREE'}
+                SKIP_FOR_NOW
               </Button>
             </div>
           )}
@@ -402,9 +392,9 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
             <div className="text-xs text-muted-foreground font-mono">
               <div className="text-primary text-xs font-bold mb-2">[RESERVATION_INFO]</div>
               <div className="space-y-1">
-                <div>• Payment processed on Solana {isMainnet ? 'Mainnet' : 'Devnet'}</div>
+                <div>• Payment processed securely on Solana</div>
                 <div>• Whitelist status confirmed on blockchain</div>
-                <div>• NFT launch notifications via X (Twitter)</div>
+                <div>• Launch notifications via X (Twitter)</div>
               </div>
             </div>
           </div>

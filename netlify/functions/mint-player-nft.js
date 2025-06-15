@@ -10,7 +10,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const TREASURY_WALLET = process.env.TREASURY_WALLET_ADDRESS
-const NFT_PRICE_SOL = 0.01
+const NFT_PRICE_SOL = 1
 
 export const handler = async (event, context) => {
   const headers = {
