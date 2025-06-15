@@ -164,7 +164,7 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
 
             <DropdownMenuItem
               onClick={disconnect}
-              className="font-mono text-xs h-8 px-3 text-error hover:bg-red-500/10 hover:error/50"
+              className="font-mono text-xs h-8 px-3 text-error hover:bg-error/10 hover:error/50"
             >
               <AlertTriangle className="w-4 h-4 mr-3" />
               <span>DISCONNECT</span>

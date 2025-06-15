@@ -444,7 +444,7 @@ export function SVGMapper({
                 <span>Selected</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-3 bg-green-500 border border-green-600 rounded"></div>
+                <div className="w-4 h-3 bg-success border border-green-600 rounded"></div>
                 <span>Linked to DB</span>
               </div>
               <div className="flex items-center gap-2">

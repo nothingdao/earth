@@ -142,7 +142,7 @@ export default function AdminDashboard() {
       switch (activity.type) {
         case 'character': return 'text-blue-500'
         case 'mining': return 'text-yellow-500'
-        case 'travel': return 'text-green-500'
+        case 'travel': return 'text-success'
         case 'market': return 'text-purple-500'
         default: return 'text-primary'
       }
@@ -257,10 +257,10 @@ export default function AdminDashboard() {
     <div className="space-y-3">
       {/* Error Display */}
       {statsError && (
-        <div className="bg-red-950/20 border border-red-500/30 rounded p-2">
+        <div className="bg-red-950/20 border border-error/30 rounded p-2">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-3 w-3 text-red-500" />
-            <span className="text-red-500 text-xs font-mono font-bold">ERROR_LOADING_STATS</span>
+            <AlertTriangle className="h-3 w-3 text-error" />
+            <span className="text-error text-xs font-mono font-bold">ERROR_LOADING_STATS</span>
           </div>
           <div className="text-red-400 text-xs font-mono mt-1">{statsError}</div>
         </div>
@@ -413,10 +413,10 @@ export default function AdminDashboard() {
         </div>
 
         {charactersError && (
-          <div className="bg-red-950/20 border border-red-500/30 rounded p-2">
+          <div className="bg-red-950/20 border border-error/30 rounded p-2">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-3 w-3 text-red-500" />
-              <span className="text-red-500 text-xs font-mono font-bold">ERROR_LOADING_PLAYERS</span>
+              <AlertTriangle className="h-3 w-3 text-error" />
+              <span className="text-error text-xs font-mono font-bold">ERROR_LOADING_PLAYERS</span>
             </div>
             <div className="text-red-400 text-xs font-mono mt-1">{charactersError}</div>
           </div>
@@ -457,7 +457,7 @@ export default function AdminDashboard() {
                             <span className="text-muted-foreground">HP:</span>
                             <div className="flex items-center gap-1">
                               <div className="w-6 h-1 bg-muted rounded overflow-hidden">
-                                <div className="h-full bg-red-500" style={{ width: `${character.health}%` }} />
+                                <div className="h-full bg-error" style={{ width: `${character.health}%` }} />
                               </div>
                               <span className="text-xs">{character.health}</span>
                             </div>
@@ -586,10 +586,10 @@ export default function AdminDashboard() {
         </div>
 
         {marketError && (
-          <div className="bg-red-950/20 border border-red-500/30 rounded p-2">
+          <div className="bg-red-950/20 border border-error/30 rounded p-2">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-3 w-3 text-red-500" />
-              <span className="text-red-500 text-xs font-mono font-bold">ERROR_LOADING_MARKET</span>
+              <AlertTriangle className="h-3 w-3 text-error" />
+              <span className="text-error text-xs font-mono font-bold">ERROR_LOADING_MARKET</span>
             </div>
             <div className="text-red-400 text-xs font-mono mt-1">{marketError}</div>
           </div>
@@ -721,10 +721,10 @@ export default function AdminDashboard() {
         </div>
 
         {locationsError && (
-          <div className="bg-red-950/20 border border-red-500/30 rounded p-2">
+          <div className="bg-red-950/20 border border-error/30 rounded p-2">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-3 w-3 text-red-500" />
-              <span className="text-red-500 text-xs font-mono font-bold">ERROR_LOADING_LOCATIONS</span>
+              <AlertTriangle className="h-3 w-3 text-error" />
+              <span className="text-error text-xs font-mono font-bold">ERROR_LOADING_LOCATIONS</span>
             </div>
             <div className="text-red-400 text-xs font-mono mt-1">{locationsError}</div>
           </div>
@@ -860,10 +860,10 @@ export default function AdminDashboard() {
         </div>
 
         {itemsError && (
-          <div className="bg-red-950/20 border border-red-500/30 rounded p-2">
+          <div className="bg-red-950/20 border border-error/30 rounded p-2">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-3 w-3 text-red-500" />
-              <span className="text-red-500 text-xs font-mono font-bold">ERROR_LOADING_ITEMS</span>
+              <AlertTriangle className="h-3 w-3 text-error" />
+              <span className="text-error text-xs font-mono font-bold">ERROR_LOADING_ITEMS</span>
             </div>
             <div className="text-red-400 text-xs font-mono mt-1">{itemsError}</div>
           </div>
@@ -908,7 +908,7 @@ export default function AdminDashboard() {
                           {item.health_effect && (
                             <div>
                               <span className="text-muted-foreground">HEALTH:</span>
-                              <span className="text-red-500 font-bold ml-1">+{item.health_effect}</span>
+                              <span className="text-error font-bold ml-1">+{item.health_effect}</span>
                             </div>
                           )}
                           {item.durability && (

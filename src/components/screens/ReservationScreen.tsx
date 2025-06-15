@@ -178,7 +178,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
 
   // Error display component
   const ErrorDisplay = ({ message }: { message: string }) => (
-    <div className="bg-red-950/20 border border-red-500/30 rounded p-4 mb-4">
+    <div className="bg-red-950/20 border border-error/30 rounded p-4 mb-4">
       <div className="flex items-center gap-2 text-red-400">
         <AlertCircle className="w-4 h-4" />
         <span className="text-sm">{message}</span>

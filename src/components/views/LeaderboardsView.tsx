@@ -69,8 +69,8 @@ const RankIcon = React.memo(({ rank }: { rank: number }) => {
 
 const TrendIcon = React.memo(({ change }: { change?: number }) => {
   if (!change) return null
-  if (change > 0) return <TrendingUp className="h-3 w-3 text-green-500" />
-  if (change < 0) return <TrendingUp className="h-3 w-3 text-red-500 rotate-180" />
+  if (change > 0) return <TrendingUp className="h-3 w-3 text-success" />
+  if (change < 0) return <TrendingUp className="h-3 w-3 text-error rotate-180" />
   return null
 })
 
@@ -148,7 +148,7 @@ const LeaderboardEntry = React.memo(({
             <span className="font-mono">{formatValue(entry.value, type)}</span>
             <TrendIcon change={entry.change} />
             {entry.change && (
-              <span className={`text-xs font-mono ${entry.change > 0 ? 'text-green-500' : 'text-red-500'
+              <span className={`text-xs font-mono ${entry.change > 0 ? 'text-success' : 'text-error'
                 }`}>
                 {entry.change > 0 ? '+' : ''}{entry.change}
               </span>
@@ -325,7 +325,7 @@ export default function LeaderboardsView() {
       label: 'EXPLORE',
       icon: MapPin,
       description: 'ZONE_DISCOVERY',
-      color: 'text-green-500'
+      color: 'text-success'
     },
     {
       id: 'trading',
@@ -339,7 +339,7 @@ export default function LeaderboardsView() {
       label: 'ENERGY',
       icon: Zap,
       description: 'PEAK_PERFORMANCE',
-      color: 'text-red-500'
+      color: 'text-error'
     }
   ], [])
 
@@ -380,14 +380,14 @@ export default function LeaderboardsView() {
             <span className="text-primary font-bold">RANKING SYSTEM v2.089</span>
           </div>
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-3 h-3 text-red-500" />
-            <span className="text-red-500 text-xs">CONNECTION_ERROR</span>
+            <AlertTriangle className="w-3 h-3 text-error" />
+            <span className="text-error text-xs">CONNECTION_ERROR</span>
           </div>
         </div>
 
-        <div className="bg-muted/30 border border-red-500/30 rounded p-8 text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <div className="text-red-500 font-mono mb-4">
+        <div className="bg-muted/30 border border-error/30 rounded p-8 text-center">
+          <AlertTriangle className="w-12 h-12 text-error mx-auto mb-4" />
+          <div className="text-error font-mono mb-4">
             <div className="text-lg mb-2">SYSTEM_ERROR_DETECTED</div>
             <div className="text-sm">{error}</div>
           </div>

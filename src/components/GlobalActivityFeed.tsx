@@ -168,7 +168,7 @@ export default function GlobalActivityFeed({ className = "" }: GlobalActivityFee
             <div className="w-4 h-4 border-2 border-muted border-t-foreground rounded-full animate-spin"></div>
           )}
           <div className="flex items-center gap-1 ml-auto">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-error'}`}></div>
             <span className="text-xs text-muted-foreground">
               {isConnected ? 'Live' : 'Disconnected'}
             </span>

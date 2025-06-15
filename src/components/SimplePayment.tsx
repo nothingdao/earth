@@ -299,24 +299,24 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
   // If there's a configuration error, show it prominently
   if (configError || treasuryValidationError) {
     return (
-      <div className="w-full max-w-md mx-auto bg-background border border-red-500/50 rounded-lg p-4 font-mono">
+      <div className="w-full max-w-md mx-auto bg-background border border-error/50 rounded-lg p-4 font-mono">
         {/* Terminal Header */}
-        <div className="flex items-center justify-between mb-3 border-b border-red-500/30 pb-2">
+        <div className="flex items-center justify-between mb-3 border-b border-error/30 pb-2">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-500" />
-            <span className="text-red-500 font-bold text-sm">CONFIG_ERROR v2.089</span>
+            <AlertTriangle className="w-4 h-4 text-error" />
+            <span className="text-error font-bold text-sm">CONFIG_ERROR v2.089</span>
           </div>
           <div className="flex items-center gap-2">
-            <WifiOff className="w-3 h-3 text-red-500" />
-            <span className="text-red-500 text-xs">BLOCKED</span>
+            <WifiOff className="w-3 h-3 text-error" />
+            <span className="text-error text-xs">BLOCKED</span>
           </div>
         </div>
 
         {/* Error Display */}
-        <div className="bg-red-950/20 border border-red-500/30 rounded p-3 mb-3">
+        <div className="bg-red-950/20 border border-error/30 rounded p-3 mb-3">
           <div className="text-center">
-            <div className="text-red-500 text-2xl mb-2">🚨</div>
-            <div className="text-red-500 font-bold mb-1">TREASURY_WALLET_CONFLICT</div>
+            <div className="text-error text-2xl mb-2">🚨</div>
+            <div className="text-error font-bold mb-1">TREASURY_WALLET_CONFLICT</div>
             <div className="text-red-400 text-xs">
               CONNECTED_WALLET_MATCHES_TREASURY
             </div>
@@ -325,14 +325,14 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
 
         {/* Debug Info */}
         {publicKey && treasuryPubkey && (
-          <div className="bg-muted/20 border border-red-500/10 rounded p-2 mb-3">
+          <div className="bg-muted/20 border border-error/10 rounded p-2 mb-3">
             <div className="text-xs text-red-400 font-mono">
-              <div className="text-red-500 text-xs font-bold mb-1">[WALLET_ANALYSIS]</div>
+              <div className="text-error text-xs font-bold mb-1">[WALLET_ANALYSIS]</div>
               <div className="text-muted-foreground">SENDER:</div>
               <div className="text-red-400 break-all text-xs">{publicKey.toString()}</div>
               <div className="text-muted-foreground mt-1">TREASURY:</div>
               <div className="text-red-400 break-all text-xs">{treasuryPubkey.toString()}</div>
-              <div className="text-center text-red-500 font-bold mt-2">CONFLICT_DETECTED</div>
+              <div className="text-center text-error font-bold mt-2">CONFLICT_DETECTED</div>
             </div>
           </div>
         )}
@@ -348,7 +348,7 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
         </Button>
 
         {/* Footer */}
-        <div className="text-xs text-red-400/60 font-mono text-center border-t border-red-500/20 pt-2 mt-3">
+        <div className="text-xs text-red-400/60 font-mono text-center border-t border-error/20 pt-2 mt-3">
           PAYMENT_SYSTEM_v2089 | DEV_ERROR_DETECTED
         </div>
       </div>
@@ -410,7 +410,7 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
               {verifying ? (
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
               ) : (
-                <CheckCircle className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-4 h-4 text-success" />
               )}
               <span className="text-primary font-bold text-sm">
                 {verifying ? 'CONFIRMING_PAYMENT...' : 'PAYMENT_CONFIRMED'}
@@ -483,13 +483,13 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
 
       {/* Success Message */}
       {signature && !verifying && (
-        <div className="bg-green-950/20 border border-green-500/30 rounded p-2 mb-3">
+        <div className="bg-green-950/20 border border-success/30 rounded p-2 mb-3">
           <div className="text-center text-green-400 text-xs font-mono">
             <div className="flex items-center justify-center gap-2">
               <Shield className="w-3 h-3" />
               <span>PAYMENT_VERIFIED_SUCCESSFULLY</span>
             </div>
-            <div className="text-green-500/80 mt-1">CREATING_PLAYER_PROFILE...</div>
+            <div className="text-success/80 mt-1">CREATING_PLAYER_PROFILE...</div>
           </div>
         </div>
       )}

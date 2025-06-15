@@ -1,6 +1,35 @@
-// netlify/functions/mine-action.js - UPDATED
+// netlify/functions/mine-action.js - UPDATED with Dynamic Energy Cost
 import supabaseAdmin from '../../src/utils/supabase-admin'
 import { randomUUID } from 'crypto'
+
+// Power calculation functions (same as in the React component)
+function getMiningEnergyCost(character) {
+  const baseCost = 10
+
+  // Higher level characters are more efficient (lower cost)
+  const efficiencyReduction = Math.floor(character.level / 5)
+
+  // Health affects how much energy actions consume
+  const healthMultiplier = character.health < 50 ? 1.5 : 1.0
+
+  return Math.max(Math.floor((baseCost - efficiencyReduction) * healthMultiplier), 5)
+}
+
+function getPowerCoreCapacity(character) {
+  // Base power core capacity
+  const basePowerCore = 100
+
+  // Level upgrades (tech improvements)
+  const techUpgrades = character.level * 15
+
+  // Health affects power efficiency (damaged systems = less capacity)
+  const healthEfficiency = (character.health / 100) * 50
+
+  // Experience represents optimization knowledge
+  const optimizationBonus = Math.min(character.experience / 100, 50)
+
+  return Math.floor(basePowerCore + techUpgrades + healthEfficiency + optimizationBonus)
+}
 
 export const handler = async (event, context) => {
   const headers = {
@@ -51,15 +80,20 @@ export const handler = async (event, context) => {
       }
     }
 
-    // Check energy requirement
-    const energyCost = 10
+    // Calculate dynamic energy cost based on character stats
+    const energyCost = getMiningEnergyCost(character)
+    const maxEnergy = getPowerCoreCapacity(character)
+
     if (character.energy < energyCost) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           error: 'Insufficient energy',
-          message: `You need at least ${energyCost} energy to mine. Current: ${character.energy}`
+          message: `You need at least ${energyCost} energy to mine. Current: ${character.energy}`,
+          energyCost: energyCost,
+          maxEnergy: maxEnergy,
+          healthStatus: character.health < 50 ? 'DAMAGED_SYSTEMS_INCREASE_COST' : 'OPTIMAL'
         })
       }
     }
@@ -95,22 +129,44 @@ export const handler = async (event, context) => {
       }
     }
 
-    // Deduct energy
+    // Deduct dynamic energy cost
     const newEnergyLevel = character.energy - energyCost
     const { data: updatedCharacter, error: updateError } = await supabaseAdmin
       .from('characters')
-      .update({ energy: newEnergyLevel })
+      .update({
+        energy: newEnergyLevel,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', character.id)
       .select('*')
       .single()
 
     if (updateError) throw updateError
 
-    // Mining success rate and item finding logic
-    const miningSuccessRate = 0.7 // 70% chance to find something
-    const foundSomething = Math.random() < miningSuccessRate
+    // Enhanced mining success rate based on character stats
+    let baseMiningSuccessRate = 0.7 // 70% base chance
+
+    // Level bonus: +1% success rate per level (up to +20%)
+    const levelBonus = Math.min(character.level * 0.01, 0.20)
+
+    // Health penalty: reduced success rate if injured
+    const healthPenalty = character.health < 50 ? 0.1 : 0
+
+    // Experience bonus: slight bonus for experienced miners
+    const experienceBonus = Math.min(character.experience / 10000, 0.05) // Up to 5% bonus
+
+    const finalSuccessRate = Math.max(baseMiningSuccessRate + levelBonus + experienceBonus - healthPenalty, 0.3)
+    const foundSomething = Math.random() < finalSuccessRate
 
     let foundItem = null
+    let miningDetails = {
+      baseCost: 10,
+      actualCost: energyCost,
+      levelEfficiency: character.level >= 5 ? Math.floor(character.level / 5) : 0,
+      healthPenalty: character.health < 50,
+      successRate: Math.round(finalSuccessRate * 100),
+      maxEnergy: maxEnergy
+    }
 
     if (foundSomething) {
       // Get available items for this location's biome/difficulty
@@ -122,13 +178,23 @@ export const handler = async (event, context) => {
 
       if (itemsError) throw itemsError
 
-      // Simple rarity-based selection
-      const rarityWeights = {
+      // Enhanced rarity-based selection with character level influence
+      const baseRarityWeights = {
         'COMMON': 60,
         'UNCOMMON': 25,
         'RARE': 10,
         'EPIC': 4,
         'LEGENDARY': 1
+      }
+
+      // Higher level characters have slightly better chance at rare items
+      const levelRarityBonus = Math.min(character.level / 10, 2) // Up to 2x multiplier for rare+ items
+      const rarityWeights = {
+        'COMMON': baseRarityWeights.COMMON,
+        'UNCOMMON': baseRarityWeights.UNCOMMON,
+        'RARE': Math.floor(baseRarityWeights.RARE * (1 + levelRarityBonus * 0.3)),
+        'EPIC': Math.floor(baseRarityWeights.EPIC * (1 + levelRarityBonus * 0.5)),
+        'LEGENDARY': Math.floor(baseRarityWeights.LEGENDARY * (1 + levelRarityBonus))
       }
 
       // Create weighted array
@@ -156,7 +222,10 @@ export const handler = async (event, context) => {
           // Update existing inventory
           const { error: updateInvError } = await supabaseAdmin
             .from('character_inventory')
-            .update({ quantity: existingInventory.quantity + 1 })
+            .update({
+              quantity: existingInventory.quantity + 1,
+              updated_at: new Date().toISOString()
+            })
             .eq('id', existingInventory.id)
 
           if (updateInvError) throw updateInvError
@@ -178,8 +247,10 @@ export const handler = async (event, context) => {
           if (createInvError) throw createInvError
         }
 
-        // Log the mining transaction
+        // Log the enhanced mining transaction with energy details
         const transactionId = randomUUID()
+        const transactionDescription = `Mined ${foundItem.name} at ${location.name} (Cost: ${energyCost} energy, Success Rate: ${Math.round(finalSuccessRate * 100)}%)`
+
         const { data: transaction, error: transactionError } = await supabaseAdmin
           .from('transactions')
           .insert({
@@ -188,7 +259,8 @@ export const handler = async (event, context) => {
             type: 'MINE',
             item_id: foundItem.id,
             quantity: 1,
-            description: `Mined ${foundItem.name} at ${location.name}`
+            description: transactionDescription,
+            energy_burn: energyCost // Store the energy cost in the transaction
           })
           .select('*')
           .single()
@@ -206,7 +278,8 @@ export const handler = async (event, context) => {
               quantity: 1
             },
             transaction: transaction,
-            energyCost: energyCost
+            miningDetails: miningDetails,
+            message: `Successfully mined ${foundItem.name}! Energy cost: ${energyCost}`
           })
         }
       }
@@ -220,8 +293,8 @@ export const handler = async (event, context) => {
         success: true,
         character: updatedCharacter,
         found: null,
-        energyCost: energyCost,
-        message: 'No resources found this time'
+        miningDetails: miningDetails,
+        message: `No resources found this time. Energy cost: ${energyCost} (${character.health < 50 ? 'increased due to system damage' : 'standard rate'})`
       })
     }
 

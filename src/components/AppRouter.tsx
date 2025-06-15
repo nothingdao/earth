@@ -578,24 +578,24 @@ function EnteringGameScreen() {
 function ErrorScreen({ error, onRetry }: { error?: string, onRetry: () => void }) {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md mx-auto bg-background border border-red-500/50 rounded-lg p-6 font-mono">
+      <div className="w-full max-w-md mx-auto bg-background border border-error/50 rounded-lg p-6 font-mono">
         {/* Terminal Header */}
-        <div className="flex items-center justify-between mb-4 border-b border-red-500/30 pb-3">
+        <div className="flex items-center justify-between mb-4 border-b border-error/30 pb-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-500" />
-            <span className="text-red-500 font-bold text-sm">ERROR_HANDLER v2.089</span>
+            <AlertTriangle className="w-4 h-4 text-error" />
+            <span className="text-error font-bold text-sm">ERROR_HANDLER v2.089</span>
           </div>
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-3 h-3 text-red-500" />
-            <span className="text-red-500 text-xs">CRITICAL</span>
+            <AlertTriangle className="w-3 h-3 text-error" />
+            <span className="text-error text-xs">CRITICAL</span>
           </div>
         </div>
 
         {/* Error Display */}
-        <div className="bg-red-950/20 border border-red-500/30 rounded p-4 mb-4">
+        <div className="bg-red-950/20 border border-error/30 rounded p-4 mb-4">
           <div className="text-center">
-            <div className="text-red-500 text-2xl mb-2">💥</div>
-            <div className="text-red-500 font-bold mb-1">SYSTEM_MALFUNCTION</div>
+            <div className="text-error text-2xl mb-2">💥</div>
+            <div className="text-error font-bold mb-1">SYSTEM_MALFUNCTION</div>
             <div className="text-red-400 text-xs break-words">
               {error || 'UNKNOWN_ERROR_DETECTED'}
             </div>
@@ -614,14 +614,14 @@ function ErrorScreen({ error, onRetry }: { error?: string, onRetry: () => void }
           <Button
             onClick={() => window.location.reload()}
             variant="outline"
-            className="w-full border-red-500/50 text-red-400 hover:bg-red-950/20 font-mono text-sm"
+            className="w-full border-error/50 text-red-400 hover:bg-red-950/20 font-mono text-sm"
           >
             EMERGENCY_RESTART
           </Button>
         </div>
 
         {/* Footer */}
-        <div className="text-xs text-red-400/60 font-mono text-center border-t border-red-500/20 pt-3 mt-4">
+        <div className="text-xs text-red-400/60 font-mono text-center border-t border-error/20 pt-3 mt-4">
           ERROR_HANDLER_v2089 | DIAGNOSTIC_MODE
         </div>
       </div>

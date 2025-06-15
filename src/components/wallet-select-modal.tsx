@@ -97,7 +97,7 @@ export function WalletSelectModal({ open, onOpenChange }: WalletSelectModalProps
                         <span className="text-primary font-bold text-xs truncate">
                           {wallet.adapter.name.toUpperCase()}
                         </span>
-                        <Badge variant="default" className="text-xs font-mono bg-green-500/20 text-success flex-shrink-0">
+                        <Badge variant="default" className="text-xs font-mono bg-success/20 text-success flex-shrink-0">
                           READY
                         </Badge>
                       </div>
@@ -163,7 +163,7 @@ export function WalletSelectModal({ open, onOpenChange }: WalletSelectModalProps
             )}
 
             {installedWallets.length === 0 && notDetectedWallets.length === 0 && (
-              <div className="bg-red-950/20 border border-red-500/30 rounded p-4 text-center">
+              <div className="bg-red-950/20 border border-error/30 rounded p-4 text-center">
                 <div className="text-error text-2xl mb-2">⚠</div>
                 <div className="text-error font-bold text-xs font-mono mb-1">
                   <span className="hidden sm:inline">NO_WALLET_MODULES_DETECTED</span>

@@ -283,7 +283,7 @@ const EconomyView: React.FC = () => {
           <div className="text-primary text-lg font-bold">
             {rustMarketData ? rustMarketData.currentRate.toFixed(2) : '--'}
           </div>
-          <div className={`text-xs flex items-center gap-1 ${rustMarketData && rustMarketData.change24h >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+          <div className={`text-xs flex items-center gap-1 ${rustMarketData && rustMarketData.change24h >= 0 ? 'text-success dark:text-green-400' : 'text-error dark:text-red-400'}`}>
             {rustMarketData && rustMarketData.change24h >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {rustMarketData ? `${rustMarketData.change24h >= 0 ? '+' : ''}${rustMarketData.change24h.toFixed(2)}%` : '--'}
           </div>
@@ -413,7 +413,7 @@ const EconomyView: React.FC = () => {
               <div className="text-xs text-primary font-bold">
                 {economyData ? economyData.marketData.mostExpensiveItem.name : '--'}
               </div>
-              <div className="text-xs text-green-500">
+              <div className="text-xs text-success">
                 {economyData ? formatCurrency(economyData.marketData.mostExpensiveItem.price) : '--'}
               </div>
             </div>
@@ -475,7 +475,7 @@ const EconomyView: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">BURNED</span>
-                <span className="text-red-500">{formatCurrency(gameEconomyFlow.rustCirculation.burnedRust)}</span>
+                <span className="text-error">{formatCurrency(gameEconomyFlow.rustCirculation.burnedRust)}</span>
               </div>
             </div>
           </div>
@@ -509,11 +509,11 @@ const EconomyView: React.FC = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">SHARD</span>
-                <span className="text-green-500">{gameEconomyFlow.crossCurrencyFlow.solToRustTrades.toFixed(3)} SOL</span>
+                <span className="text-success">{gameEconomyFlow.crossCurrencyFlow.solToRustTrades.toFixed(3)} SOL</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">SHARD</span>
-                <span className="text-red-500">{gameEconomyFlow.crossCurrencyFlow.rustToSolTrades.toFixed(3)} SOL</span>
+                <span className="text-error">{gameEconomyFlow.crossCurrencyFlow.rustToSolTrades.toFixed(3)} SOL</span>
               </div>
               <div className="border-t border-primary/20 pt-2 mt-2">
                 <div className="text-xs text-muted-foreground mb-1">EXCHANGE ACTIVITY</div>

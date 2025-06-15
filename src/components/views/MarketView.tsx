@@ -32,7 +32,7 @@ export function MarketView({
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
       case 'COMMON': return 'text-muted-foreground'
-      case 'UNCOMMON': return 'text-green-500 dark:text-green-400'
+      case 'UNCOMMON': return 'text-success dark:text-green-400'
       case 'RARE': return 'text-blue-500 dark:text-blue-400'
       case 'EPIC': return 'text-purple-500 dark:text-purple-400'
       case 'LEGENDARY': return 'text-yellow-500 dark:text-yellow-400'
@@ -94,7 +94,7 @@ export function MarketView({
           {/* Price and Purchase Section */}
           <div className="flex flex-col items-end gap-1 min-w-[90px]">
             {/* Price */}
-            <div className={`font-bold font-mono text-sm flex items-center gap-1 ${!canAfford && marketItem.quantity > 0 ? 'text-red-500' : 'text-primary'}`}>
+            <div className={`font-bold font-mono text-sm flex items-center gap-1 ${!canAfford && marketItem.quantity > 0 ? 'text-error' : 'text-primary'}`}>
               <Coins className="w-3 h-3" />
               <span>{marketItem.price}</span>
             </div>
@@ -106,7 +106,7 @@ export function MarketView({
 
             {/* Error Message */}
             {!canAfford && marketItem.quantity > 0 && (
-              <div className="text-xs text-red-500 font-mono text-center leading-tight">
+              <div className="text-xs text-error font-mono text-center leading-tight">
                 NEED_{marketItem.price - character.coins}
               </div>
             )}
@@ -182,7 +182,7 @@ export function MarketView({
           </div>
           <div>
             <div className="text-muted-foreground mb-1">MARKET_STATUS</div>
-            <div className="text-green-500 font-bold">OPERATIONAL</div>
+            <div className="text-success font-bold">OPERATIONAL</div>
           </div>
         </div>
       </div>

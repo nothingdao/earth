@@ -539,7 +539,7 @@ const RustMarket: React.FC = () => {
                   MAINNET_MIGRATION_PATH
                 </h2>
                 <div className="space-y-3">
-                  <div className="bg-green-500/10 border border-green-500/30 p-3 rounded">
+                  <div className="bg-success/10 border border-success/30 p-3 rounded">
                     <span className="text-success font-bold">PHASE_1:</span>
                     <span className="text-muted-foreground ml-2 text-sm">
                       Current hybrid system with USDC reserves backing
@@ -800,7 +800,7 @@ const RustMarket: React.FC = () => {
               </div>
 
               <div className="flex flex-col items-center">
-                <div className={`p-2 border rounded ${isBuy ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10'}`}>
+                <div className={`p-2 border rounded ${isBuy ? 'border-success/50 bg-success/10' : 'border-error/50 bg-error/10'}`}>
                   {isBuy ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-warning" />}
                 </div>
                 <div className="text-muted-foreground text-xs mt-1">EXCHANGE</div>

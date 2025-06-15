@@ -235,8 +235,8 @@ export function ChatView({
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-xs">
-            <Signal className="w-3 h-3 animate-pulse text-green-500" />
-            <span className="text-green-500">ONLINE</span>
+            <Signal className="w-3 h-3 animate-pulse text-success" />
+            <span className="text-success">ONLINE</span>
           </div>
 
           <Button

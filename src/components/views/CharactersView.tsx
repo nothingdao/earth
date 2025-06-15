@@ -89,7 +89,7 @@ const getRarityColor = (level: number) => {
   if (level >= 20) return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
   if (level >= 15) return 'bg-purple-500/20 text-purple-500 border-purple-500/30'
   if (level >= 10) return 'bg-blue-500/20 text-blue-500 border-blue-500/30'
-  if (level >= 5) return 'bg-green-500/20 text-green-500 border-green-500/30'
+  if (level >= 5) return 'bg-success/20 text-success border-success/30'
   return 'bg-gray-500/20 text-gray-500 border-gray-500/30'
 }
 
@@ -103,8 +103,8 @@ const getRarityLabel = (level: number) => {
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'ACTIVE': return 'text-green-500 border-green-500/50 bg-green-500/20'
-    case 'DEAD': return 'text-red-500 border-red-500/50 bg-red-500/20'
+    case 'ACTIVE': return 'text-success border-success/50 bg-success/20'
+    case 'DEAD': return 'text-error border-error/50 bg-error/20'
     case 'INACTIVE': return 'text-gray-500 border-gray-500/50 bg-gray-500/20'
     default: return 'text-gray-500 border-gray-500/50 bg-gray-500/20'
   }
@@ -265,14 +265,14 @@ export default function CharactersView() {
             <span className="text-primary font-bold">NFT PLATER INTERFACE v2.089</span>
           </div>
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-3 h-3 text-red-500" />
-            <span className="text-red-500 text-xs">CONNECTION_FAILED</span>
+            <AlertTriangle className="w-3 h-3 text-error" />
+            <span className="text-error text-xs">CONNECTION_FAILED</span>
           </div>
         </div>
 
-        <div className="bg-muted/30 border border-red-500/30 rounded p-8 text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <div className="text-red-500 font-mono mb-4">
+        <div className="bg-muted/30 border border-error/30 rounded p-8 text-center">
+          <AlertTriangle className="w-12 h-12 text-error mx-auto mb-4" />
+          <div className="text-error font-mono mb-4">
             <div className="text-lg mb-2">GALLERY_ACCESS_DENIED</div>
             <div className="text-sm">{error}</div>
           </div>
@@ -350,12 +350,12 @@ export default function CharactersView() {
               <div className="text-muted-foreground mb-1">ACTIVE_STATUS</div>
               <div className="flex flex-col gap-1 text-xs">
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-green-500 font-mono">{statusCounts.active}_LIVE</span>
+                  <div className="w-2 h-2 rounded-full bg-success"></div>
+                  <span className="text-success font-mono">{statusCounts.active}_LIVE</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-red-500 font-mono">{statusCounts.dead}_KIA</span>
+                  <div className="w-2 h-2 rounded-full bg-error"></div>
+                  <span className="text-error font-mono">{statusCounts.dead}_KIA</span>
                 </div>
               </div>
             </div>
@@ -364,7 +364,7 @@ export default function CharactersView() {
               <div className="text-muted-foreground mb-1">LEVEL_DIST</div>
               <div className="flex flex-col gap-1 text-xs font-mono">
                 <span className="text-gray-500">L1:{levelCounts.level1}</span>
-                <span className="text-green-500">L2-4:{levelCounts.level2to4}</span>
+                <span className="text-success">L2-4:{levelCounts.level2to4}</span>
                 <span className="text-blue-500">L5-9:{levelCounts.level5to9}</span>
                 {levelCounts.level10plus > 0 && (
                   <span className="text-purple-500">L10+:{levelCounts.level10plus}</span>
@@ -387,12 +387,12 @@ export default function CharactersView() {
               <div className="text-muted-foreground mb-1">ACTIVE_STATUS</div>
               <div className="flex items-center gap-2 text-xs">
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-green-500 font-mono">{statusCounts.active}_LIVE</span>
+                  <div className="w-2 h-2 rounded-full bg-success"></div>
+                  <span className="text-success font-mono">{statusCounts.active}_LIVE</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-red-500 font-mono">{statusCounts.dead}_KIA</span>
+                  <div className="w-2 h-2 rounded-full bg-error"></div>
+                  <span className="text-error font-mono">{statusCounts.dead}_KIA</span>
                 </div>
               </div>
             </div>
@@ -400,7 +400,7 @@ export default function CharactersView() {
               <div className="text-muted-foreground mb-1">LEVEL_DIST</div>
               <div className="flex items-center gap-1 text-xs font-mono">
                 <span className="text-gray-500">L1:{levelCounts.level1}</span>
-                <span className="text-green-500">L2-4:{levelCounts.level2to4}</span>
+                <span className="text-success">L2-4:{levelCounts.level2to4}</span>
                 <span className="text-blue-500">L5-9:{levelCounts.level5to9}</span>
                 {levelCounts.level10plus > 0 && <span className="text-purple-500">L10+:{levelCounts.level10plus}</span>}
               </div>
@@ -593,7 +593,7 @@ export default function CharactersView() {
                   {/* Death Overlay */}
                   {character.status === 'DEAD' && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded">
-                      <div className="text-red-500 text-center font-mono">
+                      <div className="text-error text-center font-mono">
                         <Skull className="h-6 w-6 mx-auto mb-2" />
                         <div className="text-xs font-bold">KIA</div>
                       </div>
@@ -700,8 +700,8 @@ export default function CharactersView() {
 
               {/* Death Notice */}
               {selectedCharacter.status === 'DEAD' && (
-                <div className="bg-red-500/20 border border-red-500/30 rounded p-3">
-                  <div className="flex items-center gap-2 text-red-500 font-mono text-sm">
+                <div className="bg-error/20 border border-error/30 rounded p-3">
+                  <div className="flex items-center gap-2 text-error font-mono text-sm">
                     <Skull className="h-4 w-4" />
                     <span className="font-bold">PEOPLE_TERMINATED</span>
                   </div>
@@ -733,7 +733,7 @@ export default function CharactersView() {
                   </div>
                   <div>
                     <div className="text-muted-foreground mb-1">USD_VALUE</div>
-                    <div className="text-lg font-bold text-green-500 font-mono">
+                    <div className="text-lg font-bold text-success font-mono">
                       {selectedCharacterBalance !== null
                         ? `${(selectedCharacterBalance * 180).toFixed(2)}`
                         : '--'}
@@ -759,11 +759,11 @@ export default function CharactersView() {
                   <div>
                     <div className="text-muted-foreground text-xs mb-1">HEALTH_LVL</div>
                     <div className="flex items-center gap-2">
-                      <Heart className="w-3 h-3 text-red-500" />
+                      <Heart className="w-3 h-3 text-error" />
                       <div className="text-sm font-bold text-primary font-mono">{selectedCharacter.health}%</div>
                       <div className="flex-1 bg-muted/50 rounded-full h-1">
                         <div
-                          className={`h-1 rounded-full transition-all ${selectedCharacter.status === 'DEAD' ? 'bg-gray-400' : 'bg-red-500'
+                          className={`h-1 rounded-full transition-all ${selectedCharacter.status === 'DEAD' ? 'bg-gray-400' : 'bg-error'
                             }`}
                           style={{ width: `${selectedCharacter.health}%` }}
                         />

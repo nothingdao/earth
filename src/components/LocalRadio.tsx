@@ -307,7 +307,7 @@ export const LocalRadio: React.FC<LocalRadioProps> = ({
         {[0, 1, 2, 3].map(i => (
           <div
             key={i}
-            className="w-[2px] bg-green-500 rounded-sm animate-pulse"
+            className="w-[2px] bg-success rounded-sm animate-pulse"
             style={{
               height: Math.random() * 8 + 4 + 'px',
               animationDelay: i * 0.1 + 's',
@@ -404,7 +404,7 @@ export const LocalRadio: React.FC<LocalRadioProps> = ({
 
         {/* Error indicator */}
         {error && (
-          <div className="text-[10px] text-red-500 flex-shrink-0" title={error}>!</div>
+          <div className="text-[10px] text-error flex-shrink-0" title={error}>!</div>
         )}
       </div>
 

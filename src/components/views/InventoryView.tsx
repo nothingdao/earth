@@ -194,7 +194,7 @@ export function InventoryView({
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
       case 'COMMON': return 'text-muted-foreground'
-      case 'UNCOMMON': return 'text-green-500 dark:text-green-400'
+      case 'UNCOMMON': return 'text-success dark:text-green-400'
       case 'RARE': return 'text-blue-500 dark:text-blue-400'
       case 'EPIC': return 'text-purple-500 dark:text-purple-400'
       case 'LEGENDARY': return 'text-yellow-500 dark:text-yellow-400'
@@ -448,7 +448,7 @@ export function InventoryView({
 
             {/* Show consumable effects */}
             {isConsumable && (energy_effect > 0 || health_effect > 0) && (
-              <div className="text-xs text-green-500 mb-2 flex items-center gap-3 font-mono">
+              <div className="text-xs text-success mb-2 flex items-center gap-3 font-mono">
                 {energy_effect > 0 && (
                   <span className="flex items-center gap-1">
                     <Zap className="w-3 h-3" />
@@ -578,7 +578,7 @@ export function InventoryView({
           </div>
           <div>
             <div className="text-muted-foreground">STATUS</div>
-            <div className="text-green-500 font-bold">AUTHORIZED</div>
+            <div className="text-success font-bold">AUTHORIZED</div>
           </div>
         </div>
       </div>
@@ -725,8 +725,8 @@ export function InventoryView({
 
               <div className="grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <h4 className="font-bold text-red-500 mb-2 font-mono">REMOVING:</h4>
-                  <div className="border border-red-500/50 rounded p-2 bg-red-950/20">
+                  <h4 className="font-bold text-error mb-2 font-mono">REMOVING:</h4>
+                  <div className="border border-error/50 rounded p-2 bg-red-950/20">
                     <div className="font-bold font-mono">{equipCandidate.conflictingItem.item.name.toUpperCase()}</div>
                     <div className="text-muted-foreground font-mono">
                       {equipCandidate.conflictingItem.item.rarity} • SLOT_{equipCandidate.slotIndex}
@@ -735,8 +735,8 @@ export function InventoryView({
                 </div>
 
                 <div>
-                  <h4 className="font-bold text-green-500 mb-2 font-mono">INSTALLING:</h4>
-                  <div className="border border-green-500/50 rounded p-2 bg-green-950/20">
+                  <h4 className="font-bold text-success mb-2 font-mono">INSTALLING:</h4>
+                  <div className="border border-success/50 rounded p-2 bg-green-950/20">
                     <div className="font-bold font-mono">{equipCandidate.newItem.item.name.toUpperCase()}</div>
                     <div className="text-muted-foreground font-mono">
                       {equipCandidate.newItem.item.rarity}

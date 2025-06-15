@@ -13,8 +13,8 @@ export function WalletScreen() {
             <span className="text-primary font-bold text-sm">ACCESS_CONTROL v2.089</span>
           </div>
           <div className="flex items-center gap-2">
-            <WifiOff className="w-3 h-3 text-red-500" />
-            <span className="text-red-500 text-xs">DISCONNECTED</span>
+            <WifiOff className="w-3 h-3 text-error" />
+            <span className="text-error text-xs">DISCONNECTED</span>
           </div>
         </div>
 

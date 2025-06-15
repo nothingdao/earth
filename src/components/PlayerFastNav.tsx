@@ -58,7 +58,7 @@ export function PlayerFastNav({
       action: onMapClick,
       isActive: currentView === 'map',
       showAvatar: false,
-      colorClass: 'text-green-500'
+      colorClass: 'text-success'
     },
     {
       id: 'home',
@@ -123,7 +123,7 @@ export function PlayerFastNav({
           />
           {/* Activity Indicator */}
           <div className="absolute -top-1 -right-1">
-            <Activity className="w-3 h-3 text-green-500 animate-pulse" />
+            <Activity className="w-3 h-3 text-success animate-pulse" />
           </div>
         </div>
 

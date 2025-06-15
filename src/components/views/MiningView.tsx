@@ -1,4 +1,4 @@
-// src/components/views/MiningView.tsx - Cyberpunk Terminal Edition
+// src/components/views/MiningView.tsx - Cyberpunk Terminal Edition with Dynamic Power Core
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,10 +21,63 @@ interface MiningViewProps {
   onMine: () => void
 }
 
+// Power core calculation functions
+function getPowerCoreCapacity(character: Character): number {
+  // Base power core capacity
+  const basePowerCore = 100
+
+  // Level upgrades (tech improvements)
+  const techUpgrades = character.level * 15
+
+  // Health affects power efficiency (damaged systems = less capacity)
+  const healthEfficiency = (character.health / 100) * 50
+
+  // Experience represents optimization knowledge
+  const optimizationBonus = Math.min(character.experience / 100, 50)
+
+  return Math.floor(basePowerCore + techUpgrades + healthEfficiency + optimizationBonus)
+}
+
+function getMiningEnergyCost(character: Character): number {
+  const baseCost = 10
+
+  // Higher level characters are more efficient (lower cost)
+  const efficiencyReduction = Math.floor(character.level / 5)
+
+  // Health affects how much energy actions consume
+  const healthMultiplier = character.health < 50 ? 1.5 : 1.0
+
+  return Math.max(Math.floor((baseCost - efficiencyReduction) * healthMultiplier), 5)
+}
+
+function getCharacterPowerStatus(character: Character) {
+  const maxEnergy = getPowerCoreCapacity(character)
+  const currentEnergy = character.energy
+  const energyPercentage = (currentEnergy / maxEnergy) * 100
+  const miningCost = getMiningEnergyCost(character)
+  const canMine = currentEnergy >= miningCost
+
+  return {
+    maxEnergy,
+    currentEnergy,
+    energyPercentage,
+    miningCost,
+    canMine,
+    powerStatus: energyPercentage > 75 ? 'OPTIMAL' :
+      energyPercentage > 50 ? 'STABLE' :
+        energyPercentage > 25 ? 'DEGRADED' : 'CRITICAL',
+    statusColor: energyPercentage > 75 ? 'text-success' :
+      energyPercentage > 50 ? 'text-blue-500' :
+        energyPercentage > 25 ? 'text-yellow-500' : 'text-red-500'
+  }
+}
+
 export function MiningView({ character, loadingItems, onMine }: MiningViewProps) {
   const isMining = loadingItems.has('mining') || loadingItems.has('mining-action')
-  const canMine = character.energy >= 10 && !isMining
-  const energyPercentage = (character.energy / character.maxEnergy) * 100
+
+  // Use dynamic power calculations
+  const powerStatus = getCharacterPowerStatus(character)
+  const { maxEnergy, currentEnergy, energyPercentage, miningCost, canMine, powerStatus: status, statusColor } = powerStatus
 
   // Get location-specific resources (you can customize this based on your game data)
   const getLocationResources = () => {
@@ -49,8 +102,8 @@ export function MiningView({ character, loadingItems, onMine }: MiningViewProps)
 
     if (!canMine) {
       console.log('🚫 Mining blocked:', {
-        energy: character.energy,
-        minRequired: 10,
+        energy: currentEnergy,
+        minRequired: miningCost,
         isMining
       })
       return
@@ -105,7 +158,7 @@ export function MiningView({ character, loadingItems, onMine }: MiningViewProps)
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono text-primary">{resource}</span>
                 <div className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${Math.random() > 0.3 ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'
+                  <div className={`w-2 h-2 rounded-full ${Math.random() > 0.3 ? 'bg-success animate-pulse' : 'bg-yellow-500'
                     }`} />
                   <span className="text-xs text-muted-foreground">
                     {Math.random() > 0.3 ? 'DETECTED' : 'TRACE'}
@@ -117,31 +170,48 @@ export function MiningView({ character, loadingItems, onMine }: MiningViewProps)
         </div>
       </div>
 
-      {/* Energy Status */}
+      {/* Enhanced Power Core Status */}
       <div className="bg-muted/30 border border-primary/20 rounded p-3 mb-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-primary" />
             <span className="text-primary font-bold text-sm">POWER_CORE_STATUS</span>
           </div>
-          <div className="text-xs font-mono">
-            <span className="text-primary">{character.energy}</span>
-            <span className="text-muted-foreground">/{character.maxEnergy}</span>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-mono font-bold ${statusColor}`}>
+              {status}
+            </span>
+            <div className="text-xs font-mono">
+              <span className="text-primary">{currentEnergy}</span>
+              <span className="text-muted-foreground">/{maxEnergy}</span>
+            </div>
           </div>
         </div>
 
         <div className="w-full bg-muted h-2 rounded overflow-hidden mb-2">
           <div
-            className={`h-full transition-all duration-300 ${energyPercentage > 50 ? 'bg-green-500' :
+            className={`h-full transition-all duration-300 ${energyPercentage > 50 ? 'bg-success' :
               energyPercentage > 25 ? 'bg-yellow-500' : 'bg-red-500'
               } ${isMining ? 'animate-pulse' : ''}`}
-            style={{ width: `${energyPercentage}%` }}
+            style={{ width: `${Math.min(energyPercentage, 100)}%` }}
           />
         </div>
 
+        {/* Enhanced Power Core Info */}
+        <div className="grid grid-cols-2 gap-2 text-xs font-mono mb-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">CORE_LVL:</span>
+            <span className="text-primary">{character.level}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">EFFICIENCY:</span>
+            <span className="text-primary">{Math.floor((character.health / 100) * 100)}%</span>
+          </div>
+        </div>
+
         <div className="flex justify-between text-xs font-mono">
-          <span className="text-muted-foreground">EXTRACTION_COST: 10_ENERGY</span>
-          <span className={`${canMine ? 'text-green-500' : 'text-red-500'}`}>
+          <span className="text-muted-foreground">EXTRACTION_COST: {miningCost}_ENERGY</span>
+          <span className={`${canMine ? 'text-success' : 'text-red-500'}`}>
             {canMine ? 'OPERATIONAL' : 'INSUFFICIENT_POWER'}
           </span>
         </div>
@@ -202,15 +272,28 @@ export function MiningView({ character, loadingItems, onMine }: MiningViewProps)
         )}
       </Button>
 
-      {/* Status Messages */}
-      {character.energy < 10 && !isMining && (
+      {/* Enhanced Status Messages */}
+      {currentEnergy < miningCost && !isMining && (
         <div className="bg-red-950/20 border border-red-500/30 rounded p-3 mt-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-red-500" />
             <span className="text-red-500 font-bold text-sm">POWER_CRITICAL</span>
           </div>
           <div className="text-xs text-red-400 mt-1">
-            ENERGY_INSUFFICIENT • CONSUME_ENERGY_DRINK_TO_RESTORE_POWER
+            ENERGY_INSUFFICIENT • NEED_{miningCost}_UNITS • CONSUME_ENERGY_DRINK_TO_RESTORE_POWER
+          </div>
+        </div>
+      )}
+
+      {/* Health Warning */}
+      {character.health < 50 && (
+        <div className="bg-orange-950/20 border border-orange-500/30 rounded p-3 mt-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-orange-500" />
+            <span className="text-orange-500 font-bold text-sm">SYSTEM_DAMAGE_DETECTED</span>
+          </div>
+          <div className="text-xs text-orange-400 mt-1">
+            CYBERNETIC_EFFICIENCY_REDUCED • EXTRACTION_COST_INCREASED • REPAIR_RECOMMENDED
           </div>
         </div>
       )}
@@ -218,7 +301,7 @@ export function MiningView({ character, loadingItems, onMine }: MiningViewProps)
       {/* System Info */}
       <div className="border-t border-primary/20 pt-2 mt-4 flex justify-between text-xs text-muted-foreground/60">
         <span>EXTRACTOR_v2089 | QUANTUM_MINING_PROTOCOL</span>
-        <span>YIELD_RATE: VARIABLE | ENERGY_COST: 10</span>
+        <span>YIELD_RATE: VARIABLE | ENERGY_COST: {miningCost}</span>
       </div>
     </div>
   )

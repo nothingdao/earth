@@ -104,7 +104,7 @@ export const ItemsTab: React.FC<ItemsTabProps> = ({
                         {item.health_effect && (
                           <div>
                             <span className="text-muted-foreground">HEALTH:</span>
-                            <span className="text-red-500 font-bold ml-1">+{item.health_effect}</span>
+                            <span className="text-error font-bold ml-1">+{item.health_effect}</span>
                           </div>
                         )}
                         {item.durability && (

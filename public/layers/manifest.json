@@ -55,6 +55,10 @@
       {
         "file": "male-blue-ball-cap.png",
         "incompatible_hair": ["male-long-black-hair.png"]
+      },
+      {
+        "file": "male-shaved-head-bandage.png",
+        "incompatible_hair": ["male-long-black-hair.png"]
       }
     ],
     "female": [
@@ -64,6 +68,10 @@
       },
       {
         "file": "female-fbi-beanie.png",
+        "requires_hair": []
+      },
+      {
+        "file": "female-shaved-head-bandage.png",
         "requires_hair": []
       }
     ],

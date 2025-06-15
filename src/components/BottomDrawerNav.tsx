@@ -209,8 +209,8 @@ export function BottomDrawerNav({
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="gap-1 text-xs bg-green-500/10 p-1 mr-2 rounded float-left">
-                    <Activity className="w-3 h-3 animate-pulse text-green-500" />
+                  <div className="gap-1 text-xs bg-success/10 p-1 mr-2 rounded float-left">
+                    <Activity className="w-3 h-3 animate-pulse text-success" />
                   </div>
                   <div className="font-bold text-sm text-primary font-mono">{character.name.toUpperCase()}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1 font-mono mb-1">
@@ -228,7 +228,7 @@ export function BottomDrawerNav({
                       <span className="text-primary font-mono">{character.energy || 0}%</span>
                     </div>
                     <div className="flex items-center gap-0.5">
-                      <Heart className="w-2.5 h-2.5 text-red-500" />
+                      <Heart className="w-2.5 h-2.5 text-error" />
                       <span className="text-primary font-mono">{character.health || 0}%</span>
                     </div>
                     <div className="flex items-center gap-0.5">
@@ -299,8 +299,8 @@ export function BottomDrawerNav({
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <div className="gap-1 text-xs bg-green-500/10 p-1 mr-2 rounded float-left">
-                <Activity className="w-3 h-3 animate-pulse text-green-500" />
+              <div className="gap-1 text-xs bg-success/10 p-1 mr-2 rounded float-left">
+                <Activity className="w-3 h-3 animate-pulse text-success" />
               </div>
               <div className="font-bold text-sm truncate text-primary font-mono">{character.name.toUpperCase()}</div>
               <div className="text-xs text-muted-foreground flex items-center gap-1 font-mono mb-1">
@@ -318,7 +318,7 @@ export function BottomDrawerNav({
                   <span className="text-primary font-mono">{character.energy || 0}%</span>
                 </div>
                 <div className="flex items-center gap-0.5">
-                  <Heart className="w-2.5 h-2.5 text-red-500" />
+                  <Heart className="w-2.5 h-2.5 text-error" />
                   <span className="text-primary font-mono">{character.health || 0}%</span>
                 </div>
                 <div className="flex items-center gap-0.5">
@@ -346,8 +346,8 @@ export function BottomDrawerNav({
                       <span className="text-primary font-bold font-mono">MOBILE_INTERFACE v2.089</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Activity className="w-3 h-3 animate-pulse text-green-500" />
-                      <span className="text-green-500 text-xs font-mono">ACTIVE</span>
+                      <Activity className="w-3 h-3 animate-pulse text-success" />
+                      <span className="text-success text-xs font-mono">ACTIVE</span>
                       <ModeToggle />
                     </div>
                   </div>
@@ -429,8 +429,8 @@ export function BottomDrawerNav({
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1">
-                              <div className="gap-1 text-xs bg-green-500/10 p-1 mr-2 rounded float-left">
-                                <Activity className="w-3 h-3 animate-pulse text-green-500" />
+                              <div className="gap-1 text-xs bg-success/10 p-1 mr-2 rounded float-left">
+                                <Activity className="w-3 h-3 animate-pulse text-success" />
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-primary font-mono">{character.name.toUpperCase()}</span>

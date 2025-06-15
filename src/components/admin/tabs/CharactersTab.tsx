@@ -97,7 +97,7 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                           <div className="flex items-center gap-1">
                             <div className="w-6 h-1 bg-muted rounded overflow-hidden">
                               <div
-                                className="h-full bg-red-500"
+                                className="h-full bg-error"
                                 style={{ width: `${character.health}%` }}
                               />
                             </div>

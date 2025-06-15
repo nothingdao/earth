@@ -129,15 +129,15 @@ export const MainView: React.FC<MainViewProps> = ({
   }, [location_id, location.has_market])
 
   const getDifficultyColor = (difficulty: number) => {
-    if (difficulty <= 1) return 'text-green-500 dark:text-green-400'
+    if (difficulty <= 1) return 'text-success dark:text-green-400'
     if (difficulty <= 3) return 'text-yellow-500 dark:text-yellow-400'
-    return 'text-red-500 dark:text-red-400'
+    return 'text-error dark:text-red-400'
   }
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
       case 'COMMON': return 'text-muted-foreground'
-      case 'UNCOMMON': return 'text-green-500 dark:text-green-400'
+      case 'UNCOMMON': return 'text-success dark:text-green-400'
       case 'RARE': return 'text-blue-500 dark:text-blue-400'
       case 'EPIC': return 'text-purple-500 dark:text-purple-400'
       case 'LEGENDARY': return 'text-yellow-500 dark:text-yellow-400'
@@ -146,7 +146,7 @@ export const MainView: React.FC<MainViewProps> = ({
   }
 
   const getStatusColor = (isAvailable: boolean) => {
-    return isAvailable ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+    return isAvailable ? 'text-success dark:text-green-400' : 'text-error dark:text-red-400'
   }
 
   const AtmosphericHeader = () => (

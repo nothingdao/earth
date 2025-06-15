@@ -63,8 +63,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return 'text-green-500 dark:text-green-400'
-      case 'DEAD': return 'text-red-500 dark:text-red-400'
+      case 'ACTIVE': return 'text-success dark:text-green-400'
+      case 'DEAD': return 'text-error dark:text-red-400'
       case 'PENDING_MINT': return 'text-yellow-500 dark:text-yellow-400'
       default: return 'text-muted-foreground'
     }
@@ -322,7 +322,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
               </div>
               <div className="bg-muted/20 border border-primary/10 rounded p-2 text-center">
                 <div className="text-muted-foreground mb-1">MUTABLE</div>
-                <div className="text-green-500 font-bold font-mono">TRUE</div>
+                <div className="text-success font-bold font-mono">TRUE</div>
               </div>
             </div>
 
@@ -478,11 +478,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="text-center">
                 <div className="text-muted-foreground mb-1">NETWORK_STATUS</div>
-                <div className="text-green-500 font-bold font-mono">ONLINE</div>
+                <div className="text-success font-bold font-mono">ONLINE</div>
               </div>
               <div className="text-center">
                 <div className="text-muted-foreground mb-1">CONNECTION</div>
-                <div className="text-green-500 font-bold font-mono">SECURE</div>
+                <div className="text-success font-bold font-mono">SECURE</div>
               </div>
             </div>
           </div>

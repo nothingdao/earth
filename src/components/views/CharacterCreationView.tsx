@@ -741,7 +741,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
                       </div>
                     </div>
                   ) : manifestError ? (
-                    <div className="flex flex-col items-center gap-2 text-red-500">
+                    <div className="flex flex-col items-center gap-2 text-error">
                       <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8" />
                       <span className="text-xs sm:text-sm">Assets not loaded</span>
                     </div>
@@ -776,7 +776,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
             {/* Status Message - FIXED HEIGHT, smaller on mobile */}
             <div className="h-4 sm:h-5 flex items-center justify-center">
               {manifestError && (
-                <p className="text-xs sm:text-sm text-red-500 text-center">
+                <p className="text-xs sm:text-sm text-error text-center">
                   Cannot create character until assets are loaded
                 </p>
               )}

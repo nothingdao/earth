@@ -223,9 +223,22 @@ export function ViewRenderer({
         <WorldMapView
           locations={gameData.locations || []}
           character={character}
-          onTravel={handleTravel} // ✅ Use our custom travel handler
+          onTravel={handleTravel}
           isTravelingOnMap={state.isTravelingOnMap}
           mapTravelDestination={state.mapTravelDestination}
+          onLocationUpdate={(locationId, updates) => {
+            // Update the gameData.locations array directly
+            if (gameData.locations) {
+              const updatedLocations = gameData.locations.map(loc =>
+                loc.id === locationId ? { ...loc, ...updates } : loc
+              )
+              // We need to update this in the GameProvider state
+              state.dispatch?.({
+                type: 'UPDATE_LOCATIONS',
+                locations: updatedLocations
+              })
+            }
+          }}
         />
       )
 

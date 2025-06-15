@@ -104,7 +104,7 @@ export function LoadingScreen({ message = 'INITIALIZING_SYSTEMS' }: LoadingScree
               <div key={step} className="bg-muted/20 border border-primary/10 rounded p-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground font-mono">{step}</span>
-                  <span className={`font-mono ${status === 'COMPLETE' ? 'text-green-500' : status === 'PROCESSING...' ? 'text-yellow-500' : 'text-muted-foreground'}`}>
+                  <span className={`font-mono ${status === 'COMPLETE' ? 'text-success' : status === 'PROCESSING...' ? 'text-yellow-500' : 'text-muted-foreground'}`}>
                     {status}
                   </span>
                 </div>

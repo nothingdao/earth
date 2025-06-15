@@ -24,7 +24,7 @@ const ActivityItem: React.FC<{ activity: AdminActivity }> = ({ activity }) => {
     switch (activity.type) {
       case 'character': return 'text-blue-500'
       case 'mining': return 'text-yellow-500'
-      case 'travel': return 'text-green-500'
+      case 'travel': return 'text-success'
       case 'market': return 'text-purple-500'
       default: return 'text-primary'
     }
