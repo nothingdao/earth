@@ -100,7 +100,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </div>
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-mono text-muted-foreground">CHARACTER_ENERGY_CAP</span>
+            <span className="text-xs font-mono text-muted-foreground">PLAYER_ENERGY_CAP</span>
             <Input className="w-12 h-6 text-xs font-mono" defaultValue="100" type="number" />
           </div>
           <div className="flex justify-between items-center">

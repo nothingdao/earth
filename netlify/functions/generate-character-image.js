@@ -344,7 +344,7 @@ function generateFallbackImage(gender) {
     <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
       <rect width="400" height="400" fill="#${baseColor}"/>
       <circle cx="200" cy="150" r="60" fill="#FFDBAC"/>
-      <text x="200" y="250" font-family="Arial" font-size="18" fill="white" text-anchor="middle">${gender} Wojak</text>
+      <text x="200" y="250" font-family="Arial" font-size="18" fill="white" text-anchor="middle">${gender} Player</text>
       <text x="200" y="280" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Fallback Image</text>
     </svg>
   `)}`

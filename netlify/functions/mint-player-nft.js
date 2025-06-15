@@ -1,4 +1,5 @@
-// netlify/functions/mint-nft.js - SIMPLIFIED VERSION (FUCK SOLANA PAY)
+// netlify/functions/mint-player-nft.js
+// Not to be used for minting npc nfts (see: `mint-npc-nft.js`). These are the real deal player NFTs!
 import { Metaplex, keypairIdentity } from "@metaplex-foundation/js"
 import { Connection, Keypair, PublicKey } from "@solana/web3.js"
 import { createClient } from '@supabase/supabase-js'
@@ -241,12 +242,12 @@ export const handler = async (event, context) => {
         body: JSON.stringify({
           error: 'Wallet already has a character',
           existingCharacter: existingChar.name,
-          code: 'WALLET_HAS_CHARACTER'
+          code: 'WALLET_HAS_PLAYER'
         })
       }
     }
 
-    // 📝 CHARACTER CREATION - Same as before but with payment signature
+    // 📝 PLAYER CREATION - Same as before but with payment signature
     const wojakNumber = await getNextWojakNumber()
     const characterName = `Wojak #${wojakNumber}`
     const characterData = await generateRandomCharacter(characterName, gender, wallet_address, isNPC)
@@ -292,9 +293,9 @@ export const handler = async (event, context) => {
 
     // Collection handling
     let collectionMint = null
-    if (process.env.WOJAK_COLLECTION_ADDRESS) {
+    if (process.env.PLAYER_COLLECTION_ADDRESS) {
       try {
-        collectionMint = new PublicKey(process.env.WOJAK_COLLECTION_ADDRESS)
+        collectionMint = new PublicKey(process.env.PLAYER_COLLECTION_ADDRESS)
         console.log('🗂️ Using collection:', collectionMint.toBase58())
       } catch (collectionError) {
         console.warn('⚠️ Collection setup failed:', collectionError)
@@ -309,7 +310,7 @@ export const handler = async (event, context) => {
     let nftParams = {
       uri: metadataUri,
       name: characterName,
-      symbol: "WOJAK",
+      symbol: "PLAYER",
       sellerFeeBasisPoints: 500,
       creators: [
         {

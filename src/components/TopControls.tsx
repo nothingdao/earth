@@ -8,9 +8,11 @@ interface TopControlsProps {
 
 export function TopControls({ className = '' }: TopControlsProps) {
   return (
-    <div className={`fixed top-4 right-4 z-40 flex items-center gap-2 ${className}`}>
-      <ModeToggle />
-      <WalletConnectButton />
+    <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 pointer-events-auto ${className}`}>
+      <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
+        <ModeToggle />
+        <WalletConnectButton />
+      </div>
     </div>
   )
 }

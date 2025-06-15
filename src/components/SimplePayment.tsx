@@ -28,8 +28,8 @@ interface SimplePaymentProps {
 
 // Network-specific treasury wallets
 const TREASURY_WALLETS = {
-  devnet: '9THaas19LkNrs6ZjVXczyE7iTadPpvxUfvroNGkf3xqs',
-  mainnet: '9THaas19LkNrs6ZjVXczyE7iTadPpvxUfvroNGkf3xqs' // Replace with mainnet treasury
+  devnet: '6cfjMdM6yNJQfZRDx25hLUsR8PFFhh4Xb5bdxHPBtoa4',
+  mainnet: '6cfjMdM6yNJQfZRDx25hLUsR8PFFhh4Xb5bdxHPBtoa4' // Replace with mainnet treasury
 }
 
 const NFT_PRICE = 0.01 // SOL - FIXED: Match backend expectation
@@ -372,7 +372,7 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
       {/* Payment Header */}
       <div className="bg-muted/30 border border-primary/20 rounded p-3 mb-3">
         <div className="text-center">
-          <div className="text-primary font-bold mb-1">CHARACTER_NFT_MINTING</div>
+          <div className="text-primary font-bold mb-1">PLAYER_NFT_MINTING</div>
           <div className="text-muted-foreground text-xs">
             ONE_TIME_PAYMENT_REQUIRED
           </div>
@@ -462,7 +462,7 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
           ) : (
             <>
               <Coins className="w-3 h-3 mr-2" />
-              PAY_{NFT_PRICE}_SOL_&_CREATE_CHARACTER
+              PAY_{NFT_PRICE}_SOL_&_CREATE_PLAYER
             </>
           )}
         </Button>
@@ -489,7 +489,7 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
               <Shield className="w-3 h-3" />
               <span>PAYMENT_VERIFIED_SUCCESSFULLY</span>
             </div>
-            <div className="text-green-500/80 mt-1">CREATING_CHARACTER_PROFILE...</div>
+            <div className="text-green-500/80 mt-1">CREATING_PLAYER_PROFILE...</div>
           </div>
         </div>
       )}

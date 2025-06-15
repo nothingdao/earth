@@ -194,12 +194,12 @@ export function PlayerFastNav({
               {btn.id === 'profile' ? (
                 <div className="relative w-full h-full">
                   <img
-                    src={character.current_image_url || '/wojak.png'}
+                    src={character.current_image_url || '/earth.png'}
                     alt={character.name}
                     className="w-full h-full object-cover border border-primary/20"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
-                      target.src = '/wojak.png'
+                      target.src = '/earth.png'
                     }}
                   />
                   {btn.isActive && (

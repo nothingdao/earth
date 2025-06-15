@@ -43,7 +43,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-2">
         <StatCard
-          title="CHARACTERS"
+          title="PLAYERS"
           value={stats?.totalCharacters || 0}
           subtitle={`${stats?.activeCharacters || 0} ACTIVE`}
           icon={Users}

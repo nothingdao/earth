@@ -107,7 +107,7 @@ export async function getRecentActivity(limit = 20) {
   }
 }
 
-// ===== CHARACTER MANAGEMENT =====
+// ===== PLAYER MANAGEMENT =====
 
 export async function getCharacterDetails(character_id: string) {
   const { data, error } = await supabase

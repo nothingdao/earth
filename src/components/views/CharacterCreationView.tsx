@@ -252,7 +252,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
         ? '/layers/manifest.json'  // Vite dev server serves from public/
         : '/.netlify/functions/manifest' // The deployed manifest endpoint
 
-      console.log(`Loading manifest from: ${manifestPath}`)
+      // console.log(`Loading manifest from: ${manifestPath}`)
 
       const response = await fetch(manifestPath)
       if (!response.ok) {
@@ -495,7 +495,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
         paymentSignature
       })
 
-      const response = await fetch('/.netlify/functions/mint-nft', {
+      const response = await fetch('/.netlify/functions/mint-player-nft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -545,7 +545,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
       console.error('Character creation failed:', error)
 
       // Check if this is the "wallet already has character" error
-      if (error instanceof Error && (error.message?.includes('WALLET_HAS_CHARACTER') || error.message?.includes('Wallet already has a character'))) {
+      if (error instanceof Error && (error.message?.includes('WALLET_HAS_PLAYER') || error.message?.includes('Wallet already has a character'))) {
         console.log('🎉 Wallet already has a character, proceeding to game...')
 
         // Clear the creation state

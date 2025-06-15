@@ -41,8 +41,8 @@ type GameAction =
   | { type: 'START_TRAVEL'; destination: DatabaseLocation }
   | { type: 'END_TRAVEL' }
   | { type: 'SET_SELECTED_LOCATION'; location: DatabaseLocation | undefined }
-  | { type: 'SET_CHARACTER_DATA'; character: Character; hasCharacter: boolean; loading: boolean }
-  | { type: 'CHARACTER_CHECK_COMPLETE'; hasCharacter: boolean }
+  | { type: 'SET_PLAYER_DATA'; character: Character; hasCharacter: boolean; loading: boolean }
+  | { type: 'PLAYER_CHECK_COMPLETE'; hasCharacter: boolean }
   | { type: 'GAME_DATA_LOADED' }
   | { type: 'USER_WANTS_TO_ENTER_GAME' }
   | { type: 'SET_MAP_TRAVELING'; isTraveling: boolean; destination: string | null }
@@ -83,7 +83,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SET_SELECTED_LOCATION':
       return { ...state, selectedLocation: action.location || undefined }
 
-    case 'SET_CHARACTER_DATA':
+    case 'SET_PLAYER_DATA':
       return {
         ...state,
         character: action.character,
@@ -91,11 +91,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         characterLoading: action.loading
       }
 
-    case 'CHARACTER_CHECK_COMPLETE':
+    case 'PLAYER_CHECK_COMPLETE':
       return {
         ...state,
         hasCheckedCharacter: true,
-        appState: action.hasCharacter ? 'entering-game' : 'character-required'
+        appState: 'character-required'  // ✅ Always go to registry regardless of hasCharacter
       }
 
     case 'GAME_DATA_LOADED':
@@ -209,9 +209,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Character location updates - ONLY ON DEVNET
   useEffect(() => {
     if (character && !isMainnet) {
-      console.log('🔥 CHARACTER LOCATION UPDATED:', character.current_location_id)
+      console.log('🔥 PLAYER LOCATION UPDATED:', character.current_location_id)
       dispatch({
-        type: 'SET_CHARACTER_DATA',
+        type: 'SET_PLAYER_DATA',
         character: character,
         hasCharacter,
         loading: characterLoading
@@ -237,21 +237,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isMainnet && character && character.id && !hasCharacter && !characterLoading) {
       dispatch({
-        type: 'CHARACTER_CHECK_COMPLETE',
-        hasCharacter: true
+        type: 'PLAYER_CHECK_COMPLETE',
+        hasCharacter: true  // ✅ This will show Registry Dashboard instead of auto-entering game
       })
     }
   }, [character, hasCharacter, characterLoading, isMainnet])
 
-  // App state management - ONLY ON DEVNET
-  useEffect(() => {
-    if (!isMainnet && character && character.id && hasCharacter && state.appState === 'character-required') {
-      dispatch({
-        type: 'SET_APP_STATE',
-        appState: 'entering-game'
-      })
-    }
-  }, [character, hasCharacter, state.appState, isMainnet])
+  // let Registry Dashboard handle the "enter game" choice
 
   const actions = {
     navigate: useCallback((view: GameView) => {
@@ -274,7 +266,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (!wallet.connected || isMainnet) return
       try {
         await refetchCharacter()
-        dispatch({ type: 'CHARACTER_CHECK_COMPLETE', hasCharacter })
+        dispatch({ type: 'PLAYER_CHECK_COMPLETE', hasCharacter })
       } catch (error) {
         dispatch({ type: 'SET_ERROR', error: 'Failed to check character' })
       }

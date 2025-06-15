@@ -39,7 +39,7 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
     <div className="space-y-3">
       <div className="flex justify-between items-center">
         <span className="text-primary font-bold font-mono">
-          CHARACTERS ({characters.length})
+          PLAYERS ({characters.length})
         </span>
         <Button size="sm" className="text-xs font-mono h-6">
           <Plus className="h-3 w-3 mr-1" />
@@ -50,17 +50,17 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
       <SearchBar
         value={searchTerm}
         onChange={onSearchChange}
-        placeholder="SEARCH_CHARACTERS..."
+        placeholder="SEARCH_PLAYERS..."
       />
 
       {error && (
-        <ErrorAlert title="ERROR_LOADING_CHARACTERS" error={error} />
+        <ErrorAlert title="ERROR_LOADING_PLAYERS" error={error} />
       )}
 
       <div className="bg-muted/30 border border-primary/20 rounded p-2">
         <ScrollArea className="h-64">
           {loading ? (
-            <LoadingSpinner message="LOADING_CHARACTERS..." />
+            <LoadingSpinner message="LOADING_PLAYERS..." />
           ) : (
             <div className="space-y-2">
               {filteredCharacters.map((character) => (
@@ -160,8 +160,8 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
               {filteredCharacters.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground font-mono text-xs">
                   {searchTerm
-                    ? `NO_CHARACTERS_FOUND_MATCHING "${searchTerm.toUpperCase()}"`
-                    : 'NO_CHARACTERS_FOUND'
+                    ? `NO_PLAYERS_FOUND_MATCHING "${searchTerm.toUpperCase()}"`
+                    : 'NO_PLAYERS_FOUND'
                   }
                 </div>
               )}

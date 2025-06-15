@@ -39,14 +39,14 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md font-mono">
         <DialogHeader>
-          <DialogTitle className="font-mono">EDIT_CHARACTER</DialogTitle>
+          <DialogTitle className="font-mono">EDIT_PLAYER</DialogTitle>
           <DialogDescription className="font-mono text-xs">
-            MODIFY_CHARACTER_STATS_AND_ATTRIBUTES
+            MODIFY_PLAYER_STATS_AND_ATTRIBUTES
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label className="text-xs font-mono">CHARACTER_NAME</Label>
+            <Label className="text-xs font-mono">PLAYER_NAME</Label>
             <Input
               value={character.name}
               className="font-mono text-xs"

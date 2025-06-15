@@ -15,10 +15,10 @@ export function LoadingScreen({ message = 'INITIALIZING_SYSTEMS' }: LoadingScree
   // Different content based on message type (from your existing code)
   const getContent = () => {
     switch (message) {
-      case 'SCANNING_CHARACTER_PROFILE':
+      case 'SCANNING_PLAYER_PROFILE':
         return {
           icon: <Loader2 className="w-8 h-8 text-primary animate-spin" />,
-          title: 'SCANNING_CHARACTER_PROFILE',
+          title: 'SCANNING_PLAYER_PROFILE',
           subtitle: 'VERIFYING_ACCOUNT_STATUS...',
           systemName: 'PROFILE_SCANNER'
         }

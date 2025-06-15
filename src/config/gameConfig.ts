@@ -358,7 +358,7 @@ export const UI_CONFIG = {
   LOADING_DEBOUNCE: 300,
 
   // Auto-refresh intervals
-  CHARACTER_REFRESH_INTERVAL: 30000, // 30 seconds
+  PLAYER_REFRESH_INTERVAL: 30000, // 30 seconds
   MARKET_REFRESH_INTERVAL: 60000, // 1 minute
   CHAT_REFRESH_INTERVAL: 5000, // 5 seconds
 

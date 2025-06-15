@@ -90,7 +90,7 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className={`${className} flex items-center gap-2 h-8 px-2 text-xs font-mono border-primary/30 bg-green-500/10 text-green-500 hover:bg-green-500/20`}
+            className={`${className} flex items-center gap-2 h-8 px-2 text-xs font-mono border-primary/30 bg-success/50 text-success hover:bg-success/20`}
             size="sm"
           >
             <Avatar className="w-4 h-4 border border-primary/20">
@@ -110,7 +110,7 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
             <div className="flex items-center gap-2">
               <Wallet className="w-4 h-4 text-primary" />
               <span className="text-primary font-bold text-sm font-mono">WALLET_INTERFACE</span>
-              <Badge variant="secondary" className="text-xs font-mono bg-green-500/20 text-green-500">
+              <Badge variant="secondary" className="text-xs font-mono bg-success/20 text-success">
                 <Activity className="w-3 h-3 mr-1 animate-pulse" />
                 LINKED
               </Badge>
@@ -164,7 +164,7 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
 
             <DropdownMenuItem
               onClick={disconnect}
-              className="font-mono text-xs h-8 px-3 text-red-500 hover:bg-red-500/10 hover:text-red-400"
+              className="font-mono text-xs h-8 px-3 text-error hover:bg-red-500/10 hover:error/50"
             >
               <AlertTriangle className="w-4 h-4 mr-3" />
               <span>DISCONNECT</span>

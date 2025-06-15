@@ -43,7 +43,7 @@ export const handler = async (event, context) => {
       const { data: playerChar } = await supabaseAdmin
         .from('characters')
         .select('id')
-        .eq('name', 'Wojak #1337')
+        .eq('name', 'Player #1337')
         .single()
 
       if (playerChar) {

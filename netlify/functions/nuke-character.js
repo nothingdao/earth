@@ -3,7 +3,7 @@ import supabaseAdmin from '../../src/utils/supabase-admin'
 import { randomUUID } from 'crypto'
 
 export const handler = async (event, context) => {
-  console.log('🔥 NUKE CHARACTER FUNCTION CALLED')
+  console.log('🔥 NUKE PLAYER FUNCTION CALLED')
   console.log('📥 Event method:', event.httpMethod)
   console.log('📥 Event body:', event.body)
 
@@ -51,7 +51,7 @@ export const handler = async (event, context) => {
     const { data: character, error: characterError } = await supabaseAdmin
       .from('characters')
       .select('*')
-      .eq('id', character_id) // ✅ USE CHARACTER_ID
+      .eq('id', character_id) // ✅ USE PLAYER_ID
       .eq('wallet_address', wallet_address) // ✅ VERIFY OWNERSHIP
       .single()
 

@@ -238,7 +238,7 @@ export const MainView: React.FC<MainViewProps> = ({
       {/* Status Line */}
       <div className="text-xs text-muted-foreground border-t border-primary/20 pt-2">
         <div className="flex justify-between">
-          <span>SURVIVOR: {character.name}</span>
+          <span>PLAYER: {character.name}</span>
           <span>ENERGY: {character.energy}/100</span>
           <span>HEALTH: {character.health}/100</span>
           <span>RUST: {character.coins}</span>

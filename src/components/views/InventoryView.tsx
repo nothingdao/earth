@@ -561,7 +561,7 @@ export function InventoryView({
         </div>
       </div>
 
-      {/* Survivor Info */}
+      {/* Player Info */}
       <div className="bg-muted/30 border border-primary/20 rounded p-3 mb-4">
         <div className="grid grid-cols-4 gap-4 text-xs">
           <div>

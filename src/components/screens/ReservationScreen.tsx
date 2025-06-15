@@ -233,7 +233,7 @@ export function ReservationScreen({ onReservationComplete, onBackToNetworkSelect
           <div className="space-y-4">
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-4">
-                Welcome to the EARTH 2089 whitelist! Your spot is secured for the NFT launch.
+                Your place is secure for the EARTH 2089.
               </p>
             </div>
 

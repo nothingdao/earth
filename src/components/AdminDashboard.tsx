@@ -83,7 +83,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
   // Tab configuration
   const tabs = [
     { id: 'overview', label: 'OVERVIEW', icon: Activity },
-    { id: 'characters', label: 'CHARACTERS', icon: Users },
+    { id: 'characters', label: 'PLAYERS', icon: Users },
     { id: 'locations', label: 'LOCATIONS', icon: MapPin },
     { id: 'svg-mapper', label: 'SVG_MAPPER', icon: Map },
     { id: 'items', label: 'ITEMS', icon: Package },

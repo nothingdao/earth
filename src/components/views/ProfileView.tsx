@@ -76,7 +76,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
       <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4" />
-          <span className="text-primary font-bold">SURVIVOR DOSSIER v2.089</span>
+          <span className="text-primary font-bold">PLAYER DOSSIER v2.089</span>
         </div>
         <div className="flex items-center gap-2">
           <Signal className="w-3 h-3 animate-pulse" />
@@ -310,7 +310,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
             <div className="grid grid-cols-4 gap-2 text-xs">
               <div className="bg-muted/20 border border-primary/10 rounded p-2 text-center">
                 <div className="text-muted-foreground mb-1">SYMBOL</div>
-                <div className="text-primary font-bold font-mono">WOJAK</div>
+                <div className="text-primary font-bold font-mono">PLAYER</div>
               </div>
               <div className="bg-muted/20 border border-primary/10 rounded p-2 text-center">
                 <div className="text-muted-foreground mb-1">ROYALTY</div>

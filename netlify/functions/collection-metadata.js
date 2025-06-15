@@ -10,13 +10,13 @@ export const handler = async (event, context) => {
   }
 
   const metadata = {
-    name: "Wojak Earth Characters",
-    description: "Unique character NFTs from Wojak Earth, a Web3 MMORPG built on Solana. Each character is a playable avatar with real game stats, inventory, and progression stored on-chain.",
-    image: "https://earth.ndao.computer/wojak.png", // Using your existing wojak image for now
+    name: "EARTH 2089 Players",
+    description: "Unique character NFTs from Earth 2089, a Web3 MMORPG built on Solana. Each character is a playable avatar with real game stats, inventory, and progression stored on-chain.",
+    image: "https://earth.ndao.computer/earth.png",
     external_url: "https://earth.ndao.computer",
 
     attributes: [
-      { trait_type: "Collection", value: "Wojak Earth Characters" },
+      { trait_type: "Collection", value: "EARTH 2089 Characters" },
       { trait_type: "Game_Type", value: "Web3 MMORPG" },
       { trait_type: "Blockchain", value: "Solana" }
     ],
@@ -24,8 +24,8 @@ export const handler = async (event, context) => {
     properties: {
       category: "image",
       collection: {
-        name: "Wojak Earth Characters",
-        family: "Wojak Earth"
+        name: "Earth 2089 Characters",
+        family: "Earth 2089"
       }
     }
   }

@@ -96,7 +96,7 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'overview', label: 'OVERVIEW', icon: Activity },
-    { id: 'characters', label: 'CHARACTERS', icon: Users },
+    { id: 'characters', label: 'PLAYERS', icon: Users },
     { id: 'locations', label: 'LOCATIONS', icon: MapPin },
     { id: 'svg-mapper', label: 'SVG_MAPPER', icon: Map },
     { id: 'items', label: 'ITEMS', icon: Package },
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-2">
         <StatCard
-          title="CHARACTERS"
+          title="PLAYERS"
           value={stats?.totalCharacters || 0}
           subtitle={`${stats?.activeCharacters || 0} ACTIVE`}
           icon={Users}
@@ -395,7 +395,7 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-3">
         <div className="flex justify-between items-center">
-          <span className="text-primary font-bold font-mono">CHARACTERS ({characters.length})</span>
+          <span className="text-primary font-bold font-mono">PLAYERS ({characters.length})</span>
           <Button size="sm" className="text-xs font-mono h-6">
             <Plus className="h-3 w-3 mr-1" />
             ADD
@@ -405,7 +405,7 @@ export default function AdminDashboard() {
         <div className="relative">
           <Search className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="SEARCH_CHARACTERS..."
+            placeholder="SEARCH_PLAYERS..."
             className="pl-7 text-xs font-mono h-7"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -416,7 +416,7 @@ export default function AdminDashboard() {
           <div className="bg-red-950/20 border border-red-500/30 rounded p-2">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-3 w-3 text-red-500" />
-              <span className="text-red-500 text-xs font-mono font-bold">ERROR_LOADING_CHARACTERS</span>
+              <span className="text-red-500 text-xs font-mono font-bold">ERROR_LOADING_PLAYERS</span>
             </div>
             <div className="text-red-400 text-xs font-mono mt-1">{charactersError}</div>
           </div>
@@ -427,7 +427,7 @@ export default function AdminDashboard() {
             {charactersLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-                <span className="text-muted-foreground font-mono text-xs">LOADING_CHARACTERS...</span>
+                <span className="text-muted-foreground font-mono text-xs">LOADING_PLAYERS...</span>
               </div>
             ) : (
               <div className="space-y-2">
@@ -520,7 +520,7 @@ export default function AdminDashboard() {
 
                 {filteredCharacters.length === 0 && (
                   <div className="text-center py-6 text-muted-foreground font-mono text-xs">
-                    {searchTerm ? `NO_CHARACTERS_FOUND_MATCHING "${searchTerm.toUpperCase()}"` : 'NO_CHARACTERS_FOUND'}
+                    {searchTerm ? `NO_PLAYERS_FOUND_MATCHING "${searchTerm.toUpperCase()}"` : 'NO_PLAYERS_FOUND'}
                   </div>
                 )}
               </div>
@@ -1111,7 +1111,7 @@ export default function AdminDashboard() {
           </div>
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-mono text-muted-foreground">CHARACTER_ENERGY_CAP</span>
+              <span className="text-xs font-mono text-muted-foreground">PLAYER_ENERGY_CAP</span>
               <Input className="w-12 h-6 text-xs font-mono" defaultValue="100" type="number" />
             </div>
             <div className="flex justify-between items-center">
@@ -1225,15 +1225,15 @@ export default function AdminDashboard() {
       <Dialog open={showEditCharacterModal} onOpenChange={setShowEditCharacterModal}>
         <DialogContent className="sm:max-w-md font-mono">
           <DialogHeader>
-            <DialogTitle className="font-mono">EDIT_CHARACTER</DialogTitle>
+            <DialogTitle className="font-mono">EDIT_PLAYER</DialogTitle>
             <DialogDescription className="font-mono text-xs">
-              MODIFY_CHARACTER_STATS_AND_ATTRIBUTES
+              MODIFY_PLAYER_STATS_AND_ATTRIBUTES
             </DialogDescription>
           </DialogHeader>
           {selectedCharacter && (
             <div className="space-y-3">
               <div>
-                <Label className="text-xs font-mono">CHARACTER_NAME</Label>
+                <Label className="text-xs font-mono">PLAYER_NAME</Label>
                 <Input
                   defaultValue={selectedCharacter.name}
                   className="font-mono text-xs"

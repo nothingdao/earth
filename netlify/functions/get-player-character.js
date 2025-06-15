@@ -3,7 +3,7 @@ import supabaseAdmin from '../../src/utils/supabase-admin'
 
 export const handler = async (event, context) => {
 
-  console.log('🚀 GET-PLAYER-CHARACTER FUNCTION CALLED!', {
+  console.log('🚀 GET-PLAYER-PLAYER FUNCTION CALLED!', {
     method: event.httpMethod,
     wallet: event.queryStringParameters?.wallet_address
   })

@@ -39,7 +39,7 @@ export function CharacterCreationScreen({ onBack }: CharacterCreationScreenProps
         <div className="flex items-center justify-between mb-3 border-b border-primary/20 pb-2">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4" />
-            <span className="text-primary font-bold text-sm">CHARACTER_CREATION v2.089</span>
+            <span className="text-primary font-bold text-sm">PLAYER_CREATION v2.089</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export function CharacterCreationScreen({ onBack }: CharacterCreationScreenProps
 
         {/* Footer */}
         <div className="text-xs text-muted-foreground/60 font-mono text-center border-t border-primary/20 pt-2 mt-3">
-          CHARACTER_SYSTEM_v2089 | PROFILE_REQUIRED
+          PLAYER_SYSTEM_v2089 | PROFILE_REQUIRED
         </div>
       </div>
     </div>

@@ -640,7 +640,7 @@ const RustMarket: React.FC = () => {
           <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
             <div className="flex items-center gap-2">
               <Search className="w-4 h-4" />
-              <span className="text-primary font-bold">CHARACTER_LOOKUP v2.089</span>
+              <span className="text-primary font-bold">PLAYER_LOOKUP v2.089</span>
             </div>
             <button
               onClick={() => {
@@ -656,7 +656,7 @@ const RustMarket: React.FC = () => {
 
           {/* Search Input */}
           <div className="mb-4">
-            <div className="text-muted-foreground text-xs mb-2">ENTER_CHARACTER_ID_OR_SHARD:</div>
+            <div className="text-muted-foreground text-xs mb-2">ENTER_PLAYER_ID_OR_SHARD:</div>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -731,7 +731,7 @@ const RustMarket: React.FC = () => {
 
           {/* Footer */}
           <div className="mt-4 pt-2 border-t border-primary/20 text-muted-foreground/60 text-xs text-center">
-            {'>'} WASTELAND_CHARACTER_TRACKER_v2.089
+            {'>'} WASTELAND_PLAYER_TRACKER_v2.089
           </div>
         </div>
       </div>
@@ -823,7 +823,7 @@ const RustMarket: React.FC = () => {
 
           {/* Character Info */}
           <div className="bg-muted/50 border border-primary/20 p-3 rounded mb-4">
-            <div className="text-muted-foreground text-xs mb-1">CHARACTER_DATA</div>
+            <div className="text-muted-foreground text-xs mb-1">PLAYER_DATA</div>
             <div className="grid grid-cols-3 gap-4 text-xs">
               <div>
                 <span className="text-muted-foreground">SENDER: </span>

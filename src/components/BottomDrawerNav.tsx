@@ -78,8 +78,8 @@ export function BottomDrawerNav({
   }
 
   const getCharacterimage_url = () => {
-    if (!character) return '/wojak.png'
-    if (imageError || !character.current_image_url) return '/wojak.png'
+    if (!character) return '/earth.png'
+    if (imageError || !character.current_image_url) return '/earth.png'
     return character.current_image_url
   }
 
@@ -434,7 +434,7 @@ export function BottomDrawerNav({
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-primary font-mono">{character.name.toUpperCase()}</span>
-                                <Badge variant="secondary" className="text-xs font-mono">CHARACTER</Badge>
+                                <Badge variant="secondary" className="text-xs font-mono">PLAYER</Badge>
                               </div>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="font-bold text-primary font-mono">{wallet.adapter.name.toUpperCase()}</span>
@@ -483,7 +483,7 @@ export function BottomDrawerNav({
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-primary font-mono">{character.name.toUpperCase()}</span>
-                                <Badge variant="secondary" className="text-xs font-mono">CHARACTER</Badge>
+                                <Badge variant="secondary" className="text-xs font-mono">PLAYER</Badge>
                               </div>
                             </div>
                           </div>

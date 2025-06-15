@@ -84,7 +84,7 @@ interface LocationsResponse {
 // ===== CONFIGURATION =====
 const config = createNPCEngineConfig({
   // SUPER AGGRESSIVE EXCHANGE TESTING MODE
-  DEFAULT_NPC_COUNT: 4, // Default NPC count
+  DEFAULT_NPC_COUNT: 6, // Default NPC count
   BASE_ACTIVITY_INTERVAL: 45000, // 45 seconds base interval
   ACTIVITY_VARIANCE: 0.4, // 40% variance
   FUNDING_AMOUNT: 0.02, // SOL per NPC
@@ -473,7 +473,7 @@ export class NPCEngine {
     isNPC: boolean
     paymentSignature?: string // Add optional payment signature
   }): Promise<{ character: CharacterData; nft_address: string }> {
-    console.log('📤 Calling mint-nft with data:', {
+    console.log('📤 Calling mint-npc-nft with data:', {
       wallet_address: npcData.wallet_address,
       gender: npcData.gender,
       hasImageBlob: !!npcData.imageBlob,
@@ -482,7 +482,7 @@ export class NPCEngine {
     })
 
     const API_BASE = 'http://localhost:8888/.netlify/functions'
-    const response = await fetch(`${API_BASE}/mint-nft`, {
+    const response = await fetch(`${API_BASE}/mint-npc-nft`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

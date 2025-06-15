@@ -1,4 +1,4 @@
-// src/hooks/usePlayerCharacter.ts - Simplified network awareness
+// src/hooks/usePlayerCharacter.ts - Improved logging and error handling
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import supabase from '../utils/supabase'
@@ -32,9 +32,6 @@ export function usePlayerCharacter(
         return
       }
 
-      console.log('DEBUG: Wallet Connected:', wallet.connected)
-      console.log('DEBUG: Wallet Public Key:', wallet.publicKey?.toString())
-
       if (!wallet.connected || !wallet.publicKey) {
         if (!isRefetch) {
           setCharacter(null)
@@ -47,6 +44,10 @@ export function usePlayerCharacter(
       // Only show loading spinner on initial load, not on refetches
       if (!isRefetch) {
         setLoading(true)
+        console.log(
+          '🔍 Loading character for wallet:',
+          wallet.publicKey.toString().slice(0, 8) + '...'
+        )
       }
       setError(null)
 
@@ -56,28 +57,60 @@ export function usePlayerCharacter(
         )
 
         const data = await response.json()
-        console.log('📥 Character API Response:', data)
 
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch character')
+          // Handle 404 (no character) vs other errors differently
+          if (response.status === 404 || data.error === 'NO_PROFILE_FOUND') {
+            console.log(
+              '💭 No character found for this wallet (this is normal for new players)'
+            )
+            setCharacter(null)
+            setHasCharacter(false)
+            setError(null) // Don't set this as an error state
+            return
+          }
+
+          throw new Error(
+            data.message || data.error || 'Failed to fetch character'
+          )
         }
 
         if (data.hasCharacter && data.character) {
-          console.log('✅ Character found:', data.character.name)
+          console.log(
+            '✅ Character loaded:',
+            data.character.name,
+            `(Level ${data.character.level})`
+          )
           setCharacter(data.character)
           setHasCharacter(true)
+          setError(null)
         } else {
-          console.log('❌ No character found in response')
+          console.log('💭 API returned successfully but no character found')
           setCharacter(null)
           setHasCharacter(false)
+          setError(null)
         }
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Unknown error'
-        setError(errorMessage)
-        setCharacter(null)
-        setHasCharacter(false)
-        console.error('Error fetching character:', err)
+
+        // Don't log "No character found" as an error - it's expected
+        if (
+          errorMessage.includes('NO_PROFILE_FOUND') ||
+          errorMessage.includes('No active character')
+        ) {
+          console.log(
+            '💭 No character exists for this wallet (ready for character creation)'
+          )
+          setCharacter(null)
+          setHasCharacter(false)
+          setError(null)
+        } else {
+          console.warn('⚠️ Character fetch failed:', errorMessage)
+          setError(errorMessage)
+          setCharacter(null)
+          setHasCharacter(false)
+        }
       } finally {
         setLoading(false)
       }
@@ -107,7 +140,7 @@ export function usePlayerCharacter(
             filter: `id=eq.${character_id}`,
           },
           (payload) => {
-            console.log('📡 Character update received:', payload.new)
+            console.log('📡 Character stats updated')
 
             // Update character state with new data
             setCharacter((prev) => {
@@ -130,29 +163,51 @@ export function usePlayerCharacter(
                 _lastUpdated: Date.now(),
               }
 
-              // Show toast for significant changes
+              // Show toast for significant changes (but log details)
               if (new_.energy !== undefined && new_.energy !== prev.energy) {
                 const diff = new_.energy - prev.energy
                 if (diff > 0) {
+                  console.log(
+                    `⚡ Energy: ${prev.energy} → ${new_.energy} (+${diff})`
+                  )
                   toast.success(`+${diff} Energy`, { duration: 2000 })
+                } else if (diff < 0) {
+                  console.log(
+                    `⚡ Energy: ${prev.energy} → ${new_.energy} (${diff})`
+                  )
                 }
               }
 
               if (new_.health !== undefined && new_.health !== prev.health) {
                 const diff = new_.health - prev.health
                 if (diff > 0) {
+                  console.log(
+                    `❤️ Health: ${prev.health} → ${new_.health} (+${diff})`
+                  )
                   toast.success(`+${diff} Health`, { duration: 2000 })
+                } else if (diff < 0) {
+                  console.log(
+                    `❤️ Health: ${prev.health} → ${new_.health} (${diff})`
+                  )
                 }
               }
 
               if (new_.coins !== undefined && new_.coins !== prev.coins) {
                 const diff = new_.coins - prev.coins
                 if (diff > 0) {
+                  console.log(
+                    `🪙 Coins: ${prev.coins} → ${new_.coins} (+${diff})`
+                  )
                   toast.success(`+${diff} Coins`, { duration: 2000 })
+                } else if (diff < 0) {
+                  console.log(
+                    `🪙 Coins: ${prev.coins} → ${new_.coins} (${diff})`
+                  )
                 }
               }
 
               if (new_.level !== undefined && new_.level > prev.level) {
+                console.log(`🎉 Level Up! ${prev.level} → ${new_.level}`)
                 toast.success(`🎉 Level Up! Level ${new_.level}`, {
                   duration: 4000,
                 })
@@ -163,7 +218,11 @@ export function usePlayerCharacter(
           }
         )
         .subscribe((status) => {
-          console.log('📡 Character subscription status:', status)
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 Real-time character updates connected')
+          } else if (status === 'CLOSED') {
+            console.log('📡 Real-time character updates disconnected')
+          }
         })
     },
     [shouldLoad]
@@ -191,11 +250,7 @@ export function usePlayerCharacter(
             filter: `character_id=eq.${character_id}`,
           },
           async (payload) => {
-            console.log(
-              '🎒 Inventory update received:',
-              payload.eventType,
-              payload
-            )
+            console.log('🎒 Inventory updated:', payload.eventType)
 
             // For inventory changes, we need to refetch to get the full item details
             await fetchCharacter(true)
@@ -223,7 +278,11 @@ export function usePlayerCharacter(
           }
         )
         .subscribe((status) => {
-          console.log('🎒 Inventory subscription status:', status)
+          if (status === 'SUBSCRIBED') {
+            console.log('🎒 Real-time inventory updates connected')
+          } else if (status === 'CLOSED') {
+            console.log('🎒 Real-time inventory updates disconnected')
+          }
         })
     },
     [fetchCharacter, shouldLoad]
@@ -244,7 +303,7 @@ export function usePlayerCharacter(
     }
   }, [])
 
-  // Add this useEffect to your usePlayerCharacter hook:
+  // Handle wallet disconnection
   useEffect(() => {
     if (!wallet.connected || !wallet.publicKey) {
       console.log('🔌 Wallet disconnected - clearing character state')
@@ -259,10 +318,7 @@ export function usePlayerCharacter(
   // Set up real-time subscriptions when character is loaded
   useEffect(() => {
     if (character?.id && hasCharacter && shouldLoad) {
-      console.log(
-        '🚀 Setting up real-time subscriptions for character:',
-        character.id
-      )
+      console.log('🚀 Setting up real-time subscriptions for:', character.name)
       subscribeToCharacterUpdates(character.id)
       subscribeToInventoryUpdates(character.id)
     } else {
@@ -336,6 +392,8 @@ export function useCharacterActions(shouldLoad: boolean = true) {
       }
 
       try {
+        console.log(`🎮 Performing action: ${actionType}`)
+
         const response = await fetch(`${API_BASE}/${actionType}`, {
           method: 'POST',
           headers: {
@@ -350,20 +408,19 @@ export function useCharacterActions(shouldLoad: boolean = true) {
           // Enhanced error reporting
           const errorMessage =
             result.message || result.error || `${actionType} failed`
-          console.error(`❌ ${actionType} failed:`, {
+          console.warn(`❌ ${actionType} failed:`, {
             status: response.status,
             error: errorMessage,
-            requestBody,
-            result,
           })
           throw new Error(errorMessage)
         }
 
+        console.log(`✅ ${actionType} completed successfully`)
         return result
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error'
-        console.error(`❌ ${actionType} error:`, error)
+        console.error(`❌ ${actionType} error:`, errorMessage)
         toast.error(`Failed: ${errorMessage}`)
         throw error
       }
@@ -383,10 +440,7 @@ export function useCharacterActions(shouldLoad: boolean = true) {
           throw error
         }
 
-        console.log(
-          '🗺️ Travel action called with destinationId:',
-          destinationId
-        )
+        console.log('🗺️ Travel action:', destinationId)
         return performAction('travel-action', { destinationId })
       },
       [performAction]

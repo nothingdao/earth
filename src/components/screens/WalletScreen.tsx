@@ -46,7 +46,7 @@ export function WalletScreen() {
 
         {/* Footer */}
         <div className="text-xs text-muted-foreground/60 font-mono text-center border-t border-primary/20 pt-2">
-          WOJAK_EARTH_v2089 | AUTH_REQUIRED
+          EARTH_v2089 | AUTH_REQUIRED
         </div>
       </div>
     </div>

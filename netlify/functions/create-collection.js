@@ -22,7 +22,7 @@ export const handler = async (event, context) => {
   }
 
   try {
-    console.log('🚀 Creating Wojak Earth Collection...')
+    console.log('🚀 Creating Earth 2089 Collection...')
 
     const connection = new Connection("https://api.devnet.solana.com", "confirmed")
 
@@ -33,8 +33,8 @@ export const handler = async (event, context) => {
     const metaplex = Metaplex.make(connection).use(keypairIdentity(serverKeypair))
 
     const collectionNft = await metaplex.nfts().create({
-      name: "Wojak Earth Characters",
-      symbol: "WOJAK",
+      name: "Earth 2089",
+      symbol: "PLAYER",
       uri: "https://earth.ndao.computer/.netlify/functions/collection-metadata",
       sellerFeeBasisPoints: 500,
       isCollection: true,
@@ -60,8 +60,8 @@ export const handler = async (event, context) => {
         success: true,
         collectionAddress: collectionAddress,
         transactionSignature: collectionNft.response.signature,
-        envVariable: `WOJAK_COLLECTION_ADDRESS=${collectionAddress}`,
-        message: "Wojak Earth Collection created successfully!"
+        envVariable: `PLAYER_COLLECTION_ADDRESS=${collectionAddress}`,
+        message: "Earth 2089 Collection created successfully!"
       }, null, 2)
     }
 
