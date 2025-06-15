@@ -488,7 +488,7 @@ async function generateRandomCharacter(name, gender, wallet_address, isNPC = fal
     current_location_id: startingLocation.id, // FIXED: changed from current_location_id
     energy: 100,
     health: 100,
-    level: 1,
+    level: 9000,
     coins: 1200,
     current_version: 1
   }
