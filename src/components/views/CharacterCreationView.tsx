@@ -247,12 +247,10 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
     if (manifest) return manifest
 
     try {
-      // Use local path in development, deployed path in production
-      const manifestPath = import.meta.env.DEV
-        ? '/layers/manifest.json'  // Vite dev server serves from public/
-        : '/.netlify/functions/manifest' // The deployed manifest endpoint
+      // Always use the static file path since it works in both dev and production
+      const manifestPath = '/layers/manifest.json'
 
-      // console.log(`Loading manifest from: ${manifestPath}`)
+      console.log(`Loading manifest from: ${manifestPath}`)
 
       const response = await fetch(manifestPath)
       if (!response.ok) {
