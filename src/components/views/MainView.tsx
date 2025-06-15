@@ -241,7 +241,7 @@ export const MainView: React.FC<MainViewProps> = ({
           <span>PLAYER: {character.name}</span>
           <span>ENERGY: {character.energy}/100</span>
           <span>HEALTH: {character.health}/100</span>
-          <span>RUST: {character.coins}</span>
+          <span>SHARD: {character.coins}</span>
         </div>
       </div>
 
@@ -321,7 +321,7 @@ export const MainView: React.FC<MainViewProps> = ({
                 <div>
                   <div>LISTINGS: {marketPreview.totalListings}</div>
                   {marketPreview.cheapestItem && (
-                    <div>FROM: {marketPreview.cheapestItem.price} RUST</div>
+                    <div>FROM: {marketPreview.cheapestItem.price} SHARD</div>
                   )}
                 </div>
               ) : (

@@ -119,7 +119,7 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                       </div>
 
                       <div className="mt-1 text-xs">
-                        <span className="text-muted-foreground">RUST: </span>
+                        <span className="text-muted-foreground">SHARD: </span>
                         <span className="text-yellow-500 font-bold">{character.coins}</span>
                       </div>
                     </div>

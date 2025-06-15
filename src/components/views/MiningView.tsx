@@ -31,7 +31,7 @@ export function MiningView({ character, loadingItems, onMine }: MiningViewProps)
     const locationName = character.currentLocation?.name || 'Unknown'
     switch (locationName.toLowerCase()) {
       case 'underland':
-        return ['RUST_ORE', 'SCRAP_METAL', 'COPPER_WIRE', 'ENERGY_CELL']
+        return ['SHARD_ORE', 'SCRAP_METAL', 'COPPER_WIRE', 'ENERGY_CELL']
       case 'wasteland':
         return ['STEEL_FRAGMENT', 'RADIOACTIVE_DUST', 'BATTERY_CORE']
       case 'city':

@@ -7,6 +7,7 @@ interface WorldMapViewProps {
   locations?: DatabaseLocation[]
   character?: Character | null
   onTravel?: (location_id: string) => void
+  onLocationUpdate?: (locationId: string, updates: Partial<DatabaseLocation>) => void // Add this
   isTravelingOnMap?: boolean
   mapTravelDestination?: string | null
 }
@@ -14,7 +15,8 @@ interface WorldMapViewProps {
 export function WorldMapView({
   locations = [],
   character,
-  onTravel, // <- Use the prop that's passed in
+  onTravel,
+  onLocationUpdate,
   isTravelingOnMap = false,
   mapTravelDestination = null
 }: WorldMapViewProps) {
@@ -38,6 +40,8 @@ export function WorldMapView({
         locations={locations}
         character={character || undefined}
         onTravel={onTravel} // <- Pass through the onTravel prop directly
+        onLocationUpdate={onLocationUpdate} // Pass it through
+
         isTravelingOnMap={isTravelingOnMap}
         mapTravelDestination={mapTravelDestination}
       />

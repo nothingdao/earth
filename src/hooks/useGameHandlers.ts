@@ -192,7 +192,7 @@ export function useGameHandlers({
           : ''
       }${
         destination?.entry_cost
-          ? `ENTRY_COST: ${destination.entry_cost} RUST`
+          ? `ENTRY_COST: ${destination.entry_cost} SHARD`
           : ''
       }`,
       duration: 4000,

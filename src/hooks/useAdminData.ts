@@ -1,4 +1,4 @@
-// hooks/useAdminData.ts - Custom hook for admin dashboard data
+// hooks/useAdminData.ts - Custom hook for admin actions
 
 import { useState, useEffect } from 'react'
 import supabase from '../utils/supabase'

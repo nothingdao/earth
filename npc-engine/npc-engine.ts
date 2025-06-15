@@ -84,7 +84,7 @@ interface LocationsResponse {
 // ===== CONFIGURATION =====
 const config = createNPCEngineConfig({
   // SUPER AGGRESSIVE EXCHANGE TESTING MODE
-  DEFAULT_NPC_COUNT: 6, // Default NPC count
+  DEFAULT_NPC_COUNT: 18, // Default NPC count
   BASE_ACTIVITY_INTERVAL: 45000, // 45 seconds base interval
   ACTIVITY_VARIANCE: 0.4, // 40% variance
   FUNDING_AMOUNT: 0.02, // SOL per NPC

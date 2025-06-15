@@ -4,26 +4,19 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { baseSVGData } from "../../data/baseMapSVG"
 import {
-  X,
   Plus,
   Minus,
   Home,
   Database,
   Activity,
-  Zap,
-  DollarSign,
-  Users,
-  Shield,
-  Pickaxe,
-  MessageSquare,
-  Store,
   Signal,
   Eye,
-  Navigation,
   AlertTriangle,
   Bookmark,
   MapPin
 } from 'lucide-react'
+import ZoneAnalysisModal from './ZoneAnalysisModal'
+import { useAdminLocations } from '@/hooks/useAdminData'
 
 import type { Tables } from '@/types'
 type Character = Tables<'characters'>
@@ -33,6 +26,7 @@ interface DatabaseLocation {
   name: string
   description: string
   biome?: string
+  territory?: string
   difficulty: number
   min_level?: number
   has_market: boolean
@@ -45,7 +39,7 @@ interface DatabaseLocation {
   player_count: number
   entry_cost?: number
   location_type: string
-  parentlocation_id?: string | null
+  parent_location_id?: string | null
   created_at: string
   updated_at: string
   is_private?: boolean
@@ -55,6 +49,7 @@ interface EarthProps {
   locations: DatabaseLocation[]
   character?: Character
   onTravel?: (location_id: string) => void
+  onLocationUpdate?: (locationId: string, updates: Partial<DatabaseLocation>) => void
   isTravelingOnMap?: boolean
   mapTravelDestination?: string | null
 }
@@ -63,6 +58,7 @@ export default function Earth({
   locations,
   character,
   onTravel,
+  onLocationUpdate,
   isTravelingOnMap = false,
   mapTravelDestination = null
 }: EarthProps) {
@@ -72,18 +68,24 @@ export default function Earth({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, translateX: 0, translateY: 0 })
 
+  console.log('🗺️ Earth component locations array length:', locations.length)
+  console.log('🗺️ First location:', locations[0])
+
   // Touch-specific state
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
   const [touchStartTransform, setTouchStartTransform] = useState({ scale: 1, translateX: 0, translateY: 0 })
   const [touchCenter, setTouchCenter] = useState({ x: 0, y: 0 })
+  const [isMultiTouch, setIsMultiTouch] = useState(false)
 
   // Saved position for testing
   const [savedPosition, setSavedPosition] = useState<{ scale: number, translateX: number, translateY: number } | null>(null)
 
   const svgRef = useRef<SVGSVGElement>(null)
-
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const [visualLocationId, setVisualLocationId] = useState<string | null>(null)
+
+  const { updateLocation } = useAdminLocations()
 
   useEffect(() => {
     console.log('🎯 VISUAL LOCATION DEBUG:', {
@@ -107,22 +109,7 @@ export default function Earth({
       console.log('🎯 Travel ended, updating visual location to:', character.current_location_id)
       setVisualLocationId(character.current_location_id)
     }
-  }, [character?.current_location_id, isTravelingOnMap]) // Remove visualLocationId from dependencies!
-
-  useEffect(() => {
-    if (!character?.current_location_id) return
-
-    if (isTravelingOnMap) {
-      // During travel, keep showing the old location
-      if (!visualLocationId) {
-        setVisualLocationId(character.current_location_id)
-      }
-    } else {
-      // When not traveling, update to show current location
-      setVisualLocationId(character.current_location_id)
-    }
-  }, [character?.current_location_id, isTravelingOnMap, visualLocationId])
-
+  }, [character?.current_location_id, isTravelingOnMap])
 
   // Location coordinates mapping
   const getLocationCoords = (pathId: string): { x: number, y: number } | null => {
@@ -136,13 +123,6 @@ export default function Earth({
       'solana-beach': { x: 345, y: 790 },
     }
     return coordinates[pathId] || null
-  }
-
-  const handleMapTravel = async (location_id: string) => {
-    setSelectedPath(null)
-    if (onTravel) {
-      await onTravel(location_id)
-    }
   }
 
   // Create lookup map for quick location finding
@@ -164,13 +144,10 @@ export default function Earth({
 
   // Calculate pan boundaries
   const calculatePanBounds = useCallback((scale: number) => {
-    if (!svgRef.current) return { minX: 0, maxX: 0, minY: 0, maxY: 0 }
+    if (!containerRef.current) return { minX: 0, maxX: 0, minY: 0, maxY: 0 }
 
-    const container = svgRef.current.parentElement
-    if (!container) return { minX: 0, maxX: 0, minY: 0, maxY: 0 }
-
-    const containerWidth = container.clientWidth
-    const containerHeight = container.clientHeight
+    const containerWidth = containerRef.current.clientWidth
+    const containerHeight = containerRef.current.clientHeight
 
     const scaledWidth = containerWidth * scale
     const scaledHeight = containerHeight * scale
@@ -299,15 +276,14 @@ export default function Earth({
     return { x: 0, y: 0 }
   }
 
-  // Touch event handlers
+  // FIXED: Touch event handlers with proper event handling
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    e.preventDefault()
+    // Don't prevent default to allow scrolling when not interacting with map
+    console.log('Touch start:', e.touches.length, 'touches')
 
     if (e.touches.length === 1) {
-      // Single touch - start panning
-      if (transform.scale <= 1) return
-
-      setIsDragging(true)
+      // Single touch - prepare for panning
+      setIsMultiTouch(false)
       const touch = e.touches[0]
       setDragStart({
         x: touch.clientX,
@@ -315,9 +291,13 @@ export default function Earth({
         translateX: transform.translateX,
         translateY: transform.translateY
       })
+      setIsDragging(false) // Don't start dragging immediately
     } else if (e.touches.length === 2) {
       // Multi-touch - start pinch zoom
+      e.preventDefault() // Prevent default only for multi-touch
+      setIsMultiTouch(true)
       setIsDragging(false)
+
       const distance = getTouchDistance(e.touches)
       const center = getTouchCenter(e.touches)
 
@@ -328,26 +308,37 @@ export default function Earth({
   }, [transform])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    e.preventDefault()
+    console.log('Touch move:', e.touches.length, 'touches, isDragging:', isDragging, 'isMultiTouch:', isMultiTouch)
 
-    if (e.touches.length === 1 && isDragging) {
-      // Single touch panning
+    if (e.touches.length === 1 && !isMultiTouch) {
+      // Single touch panning - only start dragging after significant movement
       const touch = e.touches[0]
       const deltaX = touch.clientX - dragStart.x
       const deltaY = touch.clientY - dragStart.y
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
 
-      const newTranslateX = dragStart.translateX + deltaX
-      const newTranslateY = dragStart.translateY + deltaY
+      // Start dragging only after significant movement (10px threshold)
+      if (!isDragging && distance > 10) {
+        e.preventDefault() // Prevent scrolling once we start dragging
+        setIsDragging(true)
+      }
 
-      const constrained = constrainTranslation(newTranslateX, newTranslateY, transform.scale)
+      if (isDragging) {
+        e.preventDefault()
+        const newTranslateX = dragStart.translateX + deltaX
+        const newTranslateY = dragStart.translateY + deltaY
 
-      setTransform(prev => ({
-        ...prev,
-        translateX: constrained.translateX,
-        translateY: constrained.translateY
-      }))
+        const constrained = constrainTranslation(newTranslateX, newTranslateY, transform.scale)
+
+        setTransform(prev => ({
+          ...prev,
+          translateX: constrained.translateX,
+          translateY: constrained.translateY
+        }))
+      }
     } else if (e.touches.length === 2 && lastTouchDistance !== null) {
       // Pinch zoom
+      e.preventDefault()
       const currentDistance = getTouchDistance(e.touches)
       const currentCenter = getTouchCenter(e.touches)
 
@@ -371,32 +362,32 @@ export default function Earth({
         })
       }
     }
-  }, [isDragging, dragStart, lastTouchDistance, touchStartTransform, touchCenter, constrainTranslation])
+  }, [isDragging, isMultiTouch, dragStart, lastTouchDistance, touchStartTransform, touchCenter, constrainTranslation, transform.scale])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    e.preventDefault()
+    console.log('Touch end:', e.touches.length, 'remaining touches')
 
     if (e.touches.length === 0) {
       // All touches ended
       setIsDragging(false)
+      setIsMultiTouch(false)
       setLastTouchDistance(null)
-    } else if (e.touches.length === 1) {
+    } else if (e.touches.length === 1 && isMultiTouch) {
       // Went from multi-touch to single touch
+      setIsMultiTouch(false)
       setLastTouchDistance(null)
 
-      // If we were zooming and now have one finger, prepare for panning
-      if (transform.scale > 1) {
-        const touch = e.touches[0]
-        setDragStart({
-          x: touch.clientX,
-          y: touch.clientY,
-          translateX: transform.translateX,
-          translateY: transform.translateY
-        })
-        setIsDragging(true)
-      }
+      // Prepare for potential single-touch panning
+      const touch = e.touches[0]
+      setDragStart({
+        x: touch.clientX,
+        y: touch.clientY,
+        translateX: transform.translateX,
+        translateY: transform.translateY
+      })
+      setIsDragging(false)
     }
-  }, [transform])
+  }, [isMultiTouch, transform])
 
   // Mouse event handlers (keep existing functionality)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -453,7 +444,6 @@ export default function Earth({
   }, [])
 
   // Get biome color from CSS custom properties
-  // Updated getBiomeColor function with state support
   const getBiomeColor = useCallback((biome?: string, state?: string) => {
     const style = getComputedStyle(document.documentElement)
 
@@ -472,8 +462,18 @@ export default function Earth({
     return colorValue || style.getPropertyValue('--map-default').trim()
   }, [])
 
-  // Path styling function using computed colors that work in SVG
-  // Replace your getPathStyle function with this:
+  // Add this new function alongside getBiomeColor
+  const getTerritoryColor = useCallback((territory?: string) => {
+    const style = getComputedStyle(document.documentElement)
+
+    const territoryColors: Record<string, string> = {
+      'underland': style.getPropertyValue('--map-territory-underland').trim() || '#22c55e',
+      'dingo_continenta': style.getPropertyValue('--map-territory-dingo').trim() || '#f59e0b',
+      'independent': style.getPropertyValue('--map-territory-independent').trim() || '#ef4444'
+    }
+
+    return territoryColors[territory || 'independent'] || territoryColors.independent
+  }, [])
 
   // KEEP: Path styling using visualLocationId
   const getPathStyle = useCallback((pathId: string) => {
@@ -560,6 +560,20 @@ export default function Earth({
   }, [selectedPath, isDragging])
 
   const selectedLocation = selectedPath ? getLocation(selectedPath) : null
+
+  // Add this function in Earth.tsx
+  const handleLocationSave = async (locationId: string, updates: Partial<DatabaseLocation>) => {
+    try {
+      await updateLocation(locationId, updates)
+      console.log('✅ Successfully saved location updates:', locationId, updates)
+
+      // Update the locations in the parent state
+      onLocationUpdate?.(locationId, updates)
+    } catch (error) {
+      console.error('❌ Failed to save location:', error)
+      throw error
+    }
+  }
 
   return (
     <div className="w-full h-full bg-background overflow-hidden font-mono relative">
@@ -665,8 +679,9 @@ export default function Earth({
 
       </div>
 
-      {/* Terminal SVG Map Container */}
+      {/* FIXED: Terminal SVG Map Container with proper touch handling */}
       <div
+        ref={containerRef}
         className="w-full select-none overflow-hidden bg-gradient-to-br from-background/50 via-muted/10 to-background/50"
         style={{
           cursor: transform.scale <= 1 ? 'default' : (isDragging ? 'grabbing' : 'grab'),
@@ -674,7 +689,7 @@ export default function Earth({
           transformOrigin: 'center center',
           height: 'calc(100vh - 48px)',
           marginTop: '48px',
-          touchAction: 'none'
+          // CRITICAL: Remove touchAction: 'none' to allow proper touch handling
         }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -719,7 +734,6 @@ export default function Earth({
             const isPlayerHere = location && visualLocationId === location.id
             const isTravelingFromHere = location && visualLocationId === location.id && isTravelingOnMap
             const isTravelingToHere = location && mapTravelDestination === location.id
-
 
             return (
               <g key={path.id}>
@@ -856,6 +870,19 @@ export default function Earth({
                   >
                     {location.biome?.toUpperCase()}
                   </Badge>
+                  {location.territory && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-mono px-1 py-0 border-current"
+                      style={{
+                        backgroundColor: getTerritoryColor(location.territory) + '20',
+                        borderColor: getTerritoryColor(location.territory),
+                        color: getTerritoryColor(location.territory)
+                      }}
+                    >
+                      {location.territory.toUpperCase()}
+                    </Badge>
+                  )}
                   <span>THREAT_LVL_{location.difficulty}</span>
                 </div>
               </div>
@@ -866,139 +893,18 @@ export default function Earth({
 
       {/* Terminal Location Analysis Panel */}
       {selectedLocation && (
-        <div className="absolute top-40 left-4 bg-background border border-border rounded shadow-lg max-w-sm z-40 font-mono">
-          {/* Panel Header */}
-          <div className="flex items-center justify-between p-3 border-b border-border">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-primary" />
-              <span className="text-primary font-bold text-sm">ZONE_ANALYSIS</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setSelectedPath(null)}
-              className="h-6 w-6 p-0"
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-
-          {/* Location Info */}
-          <div className="p-3 space-y-3">
-            <div>
-              <div className="font-bold text-primary text-sm mb-1">{selectedLocation.name.toUpperCase()}</div>
-              <div className="text-xs text-muted-foreground">{selectedLocation.description}</div>
-            </div>
-
-            {/* Technical Specs */}
-            <div className="bg-muted/30 border border-border rounded p-2">
-              <div className="text-xs text-muted-foreground mb-2">ZONE_SPECIFICATIONS</div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-1">
-                  <div
-                    className="w-2 h-2 rounded"
-                    style={{ backgroundColor: getBiomeColor(selectedLocation.biome) }}
-                  />
-                  <span>BIOME: {selectedLocation.biome?.toUpperCase() || 'UNKNOWN'}</span>
-                </div>
-                <div className="flex items-center gap-1 text-destructive">
-                  <Shield className="w-3 h-3" />
-                  <span>THREAT: {selectedLocation.difficulty}</span>
-                </div>
-                <div className="flex items-center gap-1 text-chart-1">
-                  <Users className="w-3 h-3" />
-                  <span>ACTIVE: {selectedLocation.player_count}</span>
-                </div>
-                <div className="flex items-center gap-1 text-chart-5">
-                  <Database className="w-3 h-3" />
-                  <span>TYPE: {selectedLocation.location_type}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Requirements */}
-            {(selectedLocation.min_level || selectedLocation.entry_cost) && (
-              <div className="bg-muted/30 border border-border rounded p-2">
-                <div className="text-xs text-muted-foreground mb-2">ACCESS_REQUIREMENTS</div>
-                <div className="space-y-1 text-xs">
-                  {selectedLocation.min_level && (
-                    <div className={`flex items-center gap-1 ${character && character.level < selectedLocation.min_level ? 'text-destructive' : 'text-chart-2'
-                      }`}>
-                      <Zap className="w-3 h-3" />
-                      <span>MIN_LEVEL: {selectedLocation.min_level}</span>
-                      {character && character.level < selectedLocation.min_level && <AlertTriangle className="w-3 h-3" />}
-                    </div>
-                  )}
-                  {selectedLocation.entry_cost && selectedLocation.entry_cost > 0 && (
-                    <div className={`flex items-center gap-1 ${character && (character.coins || 0) < selectedLocation.entry_cost ? 'text-destructive' : 'text-chart-2'
-                      }`}>
-                      <DollarSign className="w-3 h-3" />
-                      <span>ENTRY_FEE: {selectedLocation.entry_cost}_RUST</span>
-                      {character && (character.coins || 0) < selectedLocation.entry_cost && <AlertTriangle className="w-3 h-3" />}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Available Services */}
-            <div className="bg-muted/30 border border-border rounded p-2">
-              <div className="text-xs text-muted-foreground mb-2">AVAILABLE_SERVICES</div>
-              <div className="flex flex-wrap gap-1">
-                {selectedLocation.has_market && (
-                  <Badge variant="secondary" className="text-xs font-mono flex items-center gap-1">
-                    <Store className="w-3 h-3" />
-                    MARKET
-                  </Badge>
-                )}
-                {selectedLocation.has_mining && (
-                  <Badge variant="secondary" className="text-xs font-mono flex items-center gap-1">
-                    <Pickaxe className="w-3 h-3" />
-                    MINING
-                  </Badge>
-                )}
-                {selectedLocation.has_chat && (
-                  <Badge variant="secondary" className="text-xs font-mono flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3" />
-                    COMMS
-                  </Badge>
-                )}
-                {!selectedLocation.has_market && !selectedLocation.has_mining && !selectedLocation.has_chat && (
-                  <span className="text-xs text-muted-foreground">NO_SERVICES_AVAILABLE</span>
-                )}
-              </div>
-            </div>
-
-            {/* Travel Action */}
-            {onTravel && character && (
-              <Button
-                onClick={() => handleMapTravel(selectedLocation.id)}
-                disabled={
-                  character.current_location_id === selectedLocation.id ||
-                  (!!selectedLocation.min_level && character.level < selectedLocation.min_level) ||
-                  (!!selectedLocation.entry_cost && selectedLocation.entry_cost > (character.coins || 0)) ||
-                  !!selectedLocation.is_private
-                }
-                className={`w-full h-8 text-xs font-mono ${character.current_location_id === selectedLocation.id
-                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                  : (!!selectedLocation.min_level && character.level < selectedLocation.min_level) ||
-                    (!!selectedLocation.entry_cost && selectedLocation.entry_cost > (character.coins || 0))
-                    ? 'bg-destructive/20 text-destructive cursor-not-allowed border-destructive/30'
-                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  }`}
-              >
-                <Navigation className="w-3 h-3 mr-2" />
-                {character.current_location_id === selectedLocation.id
-                  ? 'CURRENT_LOCATION'
-                  : (!!selectedLocation.min_level && character.level < selectedLocation.min_level)
-                    ? `REQ_LVL_${selectedLocation.min_level}`
-                    : (!!selectedLocation.entry_cost && selectedLocation.entry_cost > (character.coins || 0))
-                      ? `INSUFFICIENT_RUST`
-                      : `TRAVEL_TO_${selectedLocation.name.toUpperCase()}`}
-              </Button>
-            )}
-          </div>
-        </div>
+        <ZoneAnalysisModal
+          location={selectedLocation}
+          character={character}
+          walletAddress={character?.wallet_address}
+          locations={locations}
+          onClose={() => setSelectedPath(null)}
+          onTravel={onTravel}
+          onSave={handleLocationSave}
+          onLocationUpdate={onLocationUpdate}
+          getBiomeColor={getBiomeColor}
+          getTerritoryColor={getTerritoryColor}
+        />
       )}
 
       {/* Terminal Status Indicators */}
@@ -1026,7 +932,7 @@ export default function Earth({
               <div>SCALE: {transform.scale.toFixed(2)}x</div>
               <div>TRANSLATE: X={transform.translateX.toFixed(1)}, Y={transform.translateY.toFixed(1)}</div>
               <div className="text-chart-3">
-                {isDragging ? 'DRAGGING' : lastTouchDistance !== null ? 'PINCHING' : 'IDLE'}
+                {isDragging ? 'DRAGGING' : isMultiTouch ? 'PINCHING' : 'IDLE'}
               </div>
               {savedPosition && (
                 <div className="text-chart-1 text-xs">

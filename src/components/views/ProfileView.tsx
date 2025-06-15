@@ -204,12 +204,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-2">
               <Coins className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground font-mono">RUST</span>
+              <span className="text-xs text-muted-foreground font-mono">SHARD</span>
             </div>
             <div className="text-primary font-bold text-lg font-mono">
               {character.coins.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">RUST_COIN</div>
+            <div className="text-xs text-muted-foreground mt-1">SHARD_COIN</div>
           </div>
 
           <div className="text-center">

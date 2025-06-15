@@ -64,7 +64,7 @@ export const EconomyTab: React.FC<EconomyTabProps> = ({
         <StatCard
           title="TOTAL_VALUE"
           value={marketStats.totalValue}
-          subtitle="RUST"
+          subtitle="SHARD"
           icon={TrendingUp}
           loading={loading}
         />

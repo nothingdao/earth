@@ -177,7 +177,7 @@ export function MarketView({
             <div className="text-muted-foreground mb-1">CREDIT_BALANCE</div>
             <div className="text-primary font-bold flex items-center gap-1">
               <Coins className="w-3 h-3" />
-              {character.coins.toLocaleString()}_RUST
+              {character.coins.toLocaleString()}_SHARD
             </div>
           </div>
           <div>

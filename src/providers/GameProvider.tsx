@@ -389,7 +389,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
         if (result.success) {
           toast.success('PURCHASE_SUCCESSFUL', {
-            description: `ITEM: ${itemName.toUpperCase()}\nCOST: ${cost} RUST\nBALANCE: ${result.newBalance || 0} RUST`,
+            description: `ITEM: ${itemName.toUpperCase()}\nCOST: ${cost} SHARD\nBALANCE: ${result.newBalance || 0} SHARD`,
             duration: 4000,
           })
           await refetchCharacter()

@@ -474,7 +474,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="mt-1 text-xs">
-                          <span className="text-muted-foreground">RUST: </span>
+                          <span className="text-muted-foreground">SHARD: </span>
                           <span className="text-yellow-500 font-bold">{character.coins}</span>
                         </div>
                       </div>
@@ -548,7 +548,7 @@ export default function AdminDashboard() {
           <StatCard
             title="TOTAL_VALUE"
             value={marketStats.totalValue}
-            subtitle="RUST"
+            subtitle="SHARD"
             icon={TrendingUp}
             loading={marketLoading}
           />
