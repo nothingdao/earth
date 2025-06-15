@@ -1,6 +1,6 @@
-# Wojak Earth NPC Engine
+# Earth 2089 NPC Engine
 
-A TypeScript-based NPC engine for managing autonomous characters in the Wojak Earth game.
+A TypeScript-based NPC engine for managing autonomous characters in the Earth 2089 game.
 
 ## Quick Start
 

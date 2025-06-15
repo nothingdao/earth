@@ -1,3 +1,4 @@
+// src/components/views/InventoryView.tsx
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -23,6 +24,8 @@ import {
 } from 'react-icons/gi'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Character } from '@/types'
+import EquipmentVisualizer from '@/components/EquipmentVisualizer'
+
 
 interface InventoryViewProps {
   character: Character
@@ -115,7 +118,7 @@ export function InventoryView({
   const handleEquipWithConflictCheck = (item: Character['inventory'][0], event?: React.MouseEvent) => {
     if (item.is_equipped) {
       // Simple unequip
-      onEquipItem(item.id, true, undefined, event)
+      onEquipItem(item.id, false, undefined, event)  // <-- false = unequip
       return
     }
 
@@ -139,7 +142,7 @@ export function InventoryView({
 
     if (availableSlot) {
       // Slot available, equip normally
-      onEquipItem(item.id, false, targetSlot, event)
+      onEquipItem(item.id, true, targetSlot, event)
     } else {
       // All slots full, show replacement dialog for slot 1 (primary)
       const conflictingItem = getEquippedBySlot(targetSlot, 1)
@@ -194,7 +197,7 @@ export function InventoryView({
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
       case 'COMMON': return 'text-muted-foreground'
-      case 'UNCOMMON': return 'text-success dark:text-green-400'
+      case 'UNCOMMON': return 'text-success dark:text-success'
       case 'RARE': return 'text-blue-500 dark:text-blue-400'
       case 'EPIC': return 'text-purple-500 dark:text-purple-400'
       case 'LEGENDARY': return 'text-yellow-500 dark:text-yellow-400'
@@ -248,6 +251,15 @@ export function InventoryView({
                 )
               })}
             </TabsList>
+          </div>
+
+          <div className="character-card">
+            <EquipmentVisualizer
+              character={character}
+              size="small"
+              showControls={false}
+            />
+            <div>{character.name}</div>
           </div>
 
           {Object.entries(EQUIPMENT_SLOTS).map(([categoryKey, slotConfig]) => {
@@ -384,7 +396,7 @@ export function InventoryView({
             <Button
               size="sm"
               variant="ghost"
-              onClick={(e) => onEquipItem(equippedItem.id, true, undefined, e)}
+              onClick={(e) => onEquipItem(equippedItem.id, false, undefined, e)}  // <-- false = unequip
               className="w-full h-5 text-xs px-1 py-0 font-mono"
               disabled={isLoading}
             >
@@ -547,6 +559,16 @@ export function InventoryView({
   return (
     <div className="w-full max-w-4xl mx-auto bg-background border border-primary/30 rounded-lg p-4 font-mono text-primary">
       {/* Terminal Header */}
+
+      {/* Character Visual Display */}
+      <div className="mb-4">
+        <EquipmentVisualizer
+          character={character}
+          size="medium"
+          showControls={true}
+        />
+      </div>
+
       <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4" />
@@ -736,7 +758,7 @@ export function InventoryView({
 
                 <div>
                   <h4 className="font-bold text-success mb-2 font-mono">INSTALLING:</h4>
-                  <div className="border border-success/50 rounded p-2 bg-green-950/20">
+                  <div className="border border-success/50 rounded p-2 bg-success/20">
                     <div className="font-bold font-mono">{equipCandidate.newItem.item.name.toUpperCase()}</div>
                     <div className="text-muted-foreground font-mono">
                       {equipCandidate.newItem.item.rarity}

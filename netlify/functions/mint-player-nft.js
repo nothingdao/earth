@@ -248,8 +248,8 @@ export const handler = async (event, context) => {
     }
 
     // 📝 PLAYER CREATION - Same as before but with payment signature
-    const wojakNumber = await getNextWojakNumber()
-    const characterName = `Wojak #${wojakNumber}`
+    const playerNumber = await getNextPlayerNumber()
+    const characterName = `Player #${playerNumber}`
     const characterData = await generateRandomCharacter(characterName, gender, wallet_address, isNPC)
 
     // Create character record with payment signature
@@ -412,11 +412,11 @@ export const handler = async (event, context) => {
 }
 
 // 🛠️ HELPER FUNCTIONS (Same as before)
-async function getNextWojakNumber() {
+async function getNextPlayerNumber() {
   const { data: characters, error } = await supabase
     .from('characters')
     .select('name')
-    .like('name', 'Wojak #%')
+    .like('name', 'Player #%')
 
   if (error) throw error
 
@@ -424,19 +424,19 @@ async function getNextWojakNumber() {
     return 1337
   }
 
-  const wojakNumbers = characters
+  const playerNumbers = characters
     .map(char => {
-      const match = char.name.match(/Wojak #(\d+)/)
+      const match = char.name.match(/Player #(\d+)/)
       return match ? parseInt(match[1]) : null
     })
     .filter(num => num !== null)
 
-  const highestNumber = Math.max(...wojakNumbers)
+  const highestNumber = Math.max(...playerNumbers)
   return highestNumber + 1
 }
 
 async function uploadCharacterImage(character_id, imageBlob) {
-  const fileName = `wojak-${character_id}.png`
+  const fileName = `player-${character_id}.png`
 
   let imageBuffer
   if (typeof imageBlob === 'string') {
@@ -447,7 +447,7 @@ async function uploadCharacterImage(character_id, imageBlob) {
   }
 
   const { data, error } = await supabase.storage
-    .from('wojaks')
+    .from('players')
     .upload(fileName, imageBuffer, {
       contentType: 'image/png',
       upsert: true
@@ -456,7 +456,7 @@ async function uploadCharacterImage(character_id, imageBlob) {
   if (error) throw error
 
   const { data: { publicUrl } } = supabase.storage
-    .from('wojaks')
+    .from('players')
     .getPublicUrl(fileName)
 
   return publicUrl
@@ -494,6 +494,18 @@ async function generateRandomCharacter(name, gender, wallet_address, isNPC = fal
   }
 }
 
+// Map layer types to equipment slots
+const LAYER_TO_SLOT_MAP = {
+  '1-base': { slot: 'base', slot_index: 1, is_primary: true },
+  '3-undergarments': { slot: 'clothing', slot_index: 1, is_primary: true },  // Base clothing layer
+  '4-clothing': { slot: 'clothing', slot_index: 1, is_primary: true },
+  '5-outerwear': { slot: 'outerwear', slot_index: 1, is_primary: true },
+  '6-hair': { slot: 'hair', slot_index: 1, is_primary: true },
+  '7-face-accessories': { slot: 'face_accessory', slot_index: 1, is_primary: true },
+  '8-headwear': { slot: 'headwear', slot_index: 1, is_primary: true },
+  '9-misc-accessories': { slot: 'misc_accessory', slot_index: 1, is_primary: true }
+}
+
 async function createStartingInventoryWithLayers(character_id, selectedLayers = null) {
   console.log('🎒 Creating starting inventory...')
 
@@ -504,7 +516,8 @@ async function createStartingInventoryWithLayers(character_id, selectedLayers = 
   if (selectedLayers) {
     console.log('👕 Processing layer-based items...')
 
-    const ITEM_LAYER_TYPES = ['3-undergarments', '4-clothing', '5-outerwear', '7-face-accessories', '8-headwear', '9-misc-accessories']
+    // Include base and hair layers for auto-equipping
+    const ITEM_LAYER_TYPES = ['1-base', '3-undergarments', '4-clothing', '5-outerwear', '6-hair', '7-face-accessories', '8-headwear', '9-misc-accessories']
 
     for (const layer_type of ITEM_LAYER_TYPES) {
       const selectedFile = selectedLayers[layer_type]
@@ -554,24 +567,35 @@ async function createStartingInventoryWithLayers(character_id, selectedLayers = 
         selectedItem = layerItems[0]
       }
 
-      // Add to starting inventory as equipped
+      // Get slot mapping for this layer type
+      const slotConfig = LAYER_TO_SLOT_MAP[layer_type]
+      const isEquippable = !!slotConfig
+
+      // Add to starting inventory as equipped (if equippable)
       startingItems.push({
         id: randomUUID(),
         character_id: character_id,
         item_id: selectedItem.id,
         quantity: 1,
-        is_equipped: true,
+        is_equipped: isEquippable,
+        equipped_slot: isEquippable ? slotConfig.slot : null,
+        slot_index: isEquippable ? slotConfig.slot_index : null,
+        is_primary: isEquippable ? slotConfig.is_primary : false,
         created_at: now,
         updated_at: now
       })
 
-      console.log(`  ✅ Added equipped ${selectedItem.category}: ${selectedItem.name}`)
+      if (isEquippable) {
+        console.log(`  ✅ Auto-equipped ${selectedItem.category}: ${selectedItem.name} in ${slotConfig.slot} slot`)
+      } else {
+        console.log(`  ✅ Added unequipped ${selectedItem.category}: ${selectedItem.name}`)
+      }
     }
   } else {
     console.log('⚠️ No selectedLayers provided')
   }
 
-  // BASIC ITEMS
+  // BASIC ITEMS (unchanged)
   console.log('🔧 Adding basic starter items...')
   const { data: basicItems, error: basicError } = await supabase
     .from('items')

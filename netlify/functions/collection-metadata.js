@@ -1,3 +1,4 @@
+// netlify/functions/collection-metadata.js
 export const handler = async (event, context) => {
   const headers = {
     'Content-Type': 'application/json',

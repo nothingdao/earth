@@ -410,15 +410,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
     }, [character, characterActions, refetchCharacter, gameData.actions, isMainnet]),
 
-    handleEquipItem: useCallback(async (inventoryId: string, isCurrentlyEquipped: boolean) => {
+    handleEquipItem: useCallback(async (inventoryId: string, shouldEquip: boolean) => {
       if (!character || isMainnet) return
 
       try {
         dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: true })
-        const result = await characterActions.equipItem(inventoryId, !isCurrentlyEquipped)
+        const result = await characterActions.equipItem(inventoryId, shouldEquip)  // Remove the !
 
         if (result.success) {
-          const action = isCurrentlyEquipped ? 'UNEQUIPPED' : 'EQUIPPED'
+          const action = shouldEquip ? 'EQUIPPED' : 'UNEQUIPPED'  // Fix the logic here too
           toast.success('EQUIPMENT_UPDATE', {
             description: `ITEM: ${result.item.name.toUpperCase()}\nSTATUS: ${action}\nCATEGORY: ${result.item.category}\nRARITY: ${result.item.rarity}`,
             duration: 4000,

@@ -248,8 +248,8 @@ export const handler = async (event, context) => {
     }
 
     // 📝 PLAYER CREATION - Same as before but with payment signature
-    const wojakNumber = await getNextWojakNumber()
-    const characterName = `Wojak #${wojakNumber}`
+    const playerNumber = await getNextPlayerNumber()
+    const characterName = `Player #${playerNumber}`
     const characterData = await generateRandomCharacter(characterName, gender, wallet_address, isNPC)
 
     // Create character record with payment signature
@@ -412,11 +412,11 @@ export const handler = async (event, context) => {
 }
 
 // 🛠️ HELPER FUNCTIONS (Same as before)
-async function getNextWojakNumber() {
+async function getNextPlayerNumber() {
   const { data: characters, error } = await supabase
     .from('characters')
     .select('name')
-    .like('name', 'Wojak #%')
+    .like('name', 'Player #%')
 
   if (error) throw error
 
@@ -424,19 +424,19 @@ async function getNextWojakNumber() {
     return 1337
   }
 
-  const wojakNumbers = characters
+  const playerNumbers = characters
     .map(char => {
-      const match = char.name.match(/Wojak #(\d+)/)
+      const match = char.name.match(/Player #(\d+)/)
       return match ? parseInt(match[1]) : null
     })
     .filter(num => num !== null)
 
-  const highestNumber = Math.max(...wojakNumbers)
+  const highestNumber = Math.max(...playerNumbers)
   return highestNumber + 1
 }
 
 async function uploadCharacterImage(character_id, imageBlob) {
-  const fileName = `wojak-${character_id}.png`
+  const fileName = `player-${character_id}.png`
 
   let imageBuffer
   if (typeof imageBlob === 'string') {
@@ -447,7 +447,7 @@ async function uploadCharacterImage(character_id, imageBlob) {
   }
 
   const { data, error } = await supabase.storage
-    .from('wojaks')
+    .from('players')
     .upload(fileName, imageBuffer, {
       contentType: 'image/png',
       upsert: true
@@ -456,7 +456,7 @@ async function uploadCharacterImage(character_id, imageBlob) {
   if (error) throw error
 
   const { data: { publicUrl } } = supabase.storage
-    .from('wojaks')
+    .from('players')
     .getPublicUrl(fileName)
 
   return publicUrl

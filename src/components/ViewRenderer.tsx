@@ -159,12 +159,8 @@ export function ViewRenderer({
     actions.handlePurchase(item_id, cost, itemName)
   }
 
-  const handleEquipItemAdapter = (inventoryId: string) => {
-    const isCurrentlyEquipped = character?.equippedItems?.some(
-      (equipped: any) => equipped.inventoryId === inventoryId
-    ) || false
-    // Use existing equip action from GameProvider
-    actions.handleEquipItem(inventoryId, isCurrentlyEquipped)
+  const handleEquipItemAdapter = (inventoryId: string, shouldEquip: boolean, targetSlot?: string) => {
+    actions.handleEquipItem(inventoryId, shouldEquip, targetSlot)
   }
 
   const handleUseItemAdapter = (inventoryId: string) => {

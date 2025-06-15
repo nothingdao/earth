@@ -522,9 +522,9 @@ export class NPCEngine {
       }
 
       // Upload to Supabase storage
-      const fileName = `wojak-${characterId}.png`
+      const fileName = `player-${characterId}.png`
       const { error } = await this.walletManager.supabase.storage
-        .from('wojaks')
+        .from('players')
         .upload(fileName, blob, {
           cacheControl: '3600',
           upsert: true,
@@ -536,14 +536,14 @@ export class NPCEngine {
       const {
         data: { publicUrl },
       } = this.walletManager.supabase.storage
-        .from('wojaks')
+        .from('players')
         .getPublicUrl(fileName)
 
       return publicUrl
     } catch (error) {
       console.error('Failed to upload image:', error)
       // Return a fallback URL or throw depending on your needs
-      return `https://sudufmmkfuawomvlrkha.supabase.co/storage/v1/object/public/wojaks/wojak-${characterId}.png`
+      return `https://sudufmmkfuawomvlrkha.supabase.co/storage/v1/object/public/players/player-${characterId}.png`
     }
   }
 
