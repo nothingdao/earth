@@ -1,4 +1,4 @@
-// src/components/views/ChatView.tsx
+// src/components/views/ChatView.tsx - Fixed to handle empty message state
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -58,7 +58,7 @@ export function ChatView({
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const lastMessageCountRef = useRef(0)
 
-  const location_id = selectedLocation?.id || character.currentLocation.id
+  const location_id = selectedLocation?.id || character.current_location_id
 
   // Handle ESC key to exit chat
   useEffect(() => {
@@ -131,11 +131,25 @@ export function ChatView({
     }
   }, [chatMessages, isSending, lastSentMessage, character.id])
 
+  // ✅ FIX: Mark as loaded regardless of message count after a short delay
+  useEffect(() => {
+    if (!hasLoadedMessages) {
+      // Give it a moment to try loading messages, then mark as loaded regardless
+      const loadTimer = setTimeout(() => {
+        console.log('🔄 Marking chat as loaded (empty state OK)')
+        setHasLoadedMessages(true)
+      }, 1000) // 1 second timeout
+
+      return () => clearTimeout(loadTimer)
+    }
+  }, [hasLoadedMessages])
+
   // Handle new messages for scrolling
   useEffect(() => {
     const newMessageCount = chatMessages.length
     const wasEmpty = lastMessageCountRef.current === 0
 
+    // ✅ FIX: If we receive any messages, immediately mark as loaded
     if (!hasLoadedMessages && newMessageCount > 0) {
       setHasLoadedMessages(true)
     }
@@ -167,15 +181,8 @@ export function ChatView({
     setUnreadCount(0)
     setIsSending(false)
     setLastSentMessage(null)
-    setHasLoadedMessages(false)
+    setHasLoadedMessages(false) // ✅ Reset on location change
   }, [location_id])
-
-  useEffect(() => {
-    if (chatMessages.length === 0) {
-      setHasLoadedMessages(false)
-      lastMessageCountRef.current = 0
-    }
-  }, [chatMessages.length])
 
   const scrollToBottom = () => {
     setUnreadCount(0)
@@ -221,7 +228,7 @@ export function ChatView({
     }
   }
 
-  const currentLocationName = selectedLocation ? selectedLocation.name : character.currentLocation.name
+  const currentLocationName = selectedLocation ? selectedLocation.name : character.currentLocation?.name || 'Unknown Location'
 
   return (
     // Fullscreen overlay that breaks out of parent containers

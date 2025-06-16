@@ -1,4 +1,4 @@
-// netlify/functions/send-message.js - UPDATED
+// netlify/functions/send-message.js - FIXED
 import supabaseAdmin from '../../src/utils/supabase-admin'
 import { randomUUID } from 'crypto'
 
@@ -22,7 +22,7 @@ export const handler = async (event, context) => {
   }
 
   try {
-    const { wallet_address, location_id, content } = JSON.parse(event.body || '{}')
+    const { wallet_address, location_id, content, message_type = 'CHAT' } = JSON.parse(event.body || '{}')
 
     if (!wallet_address || !location_id || !content) {
       return {
@@ -40,7 +40,6 @@ export const handler = async (event, context) => {
       .from('characters')
       .select('*')
       .eq('wallet_address', wallet_address)
-      .eq('status', 'ACTIVE')
       .single()
 
     if (characterError) {
@@ -57,53 +56,84 @@ export const handler = async (event, context) => {
       throw characterError
     }
 
-    // Verify character is at the specified location
-    if (character.location_id !== location_id) {
+    // ✅ FIX: Use current_location_id (matches your database schema)
+    if (character.current_location_id !== location_id) {
+      console.log('❌ Location mismatch:', {
+        character_name: character.name,
+        character_current_location_id: character.current_location_id,
+        requested_location_id: location_id
+      })
+
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           error: 'Invalid location',
-          message: 'You must be at the location to send messages there'
+          message: 'You must be at the location to send messages there',
+          debug: {
+            character_location: character.current_location_id,
+            requested_location: location_id
+          }
         })
       }
     }
 
-    // Create the message
+    console.log('✅ Location check passed:', {
+      character_name: character.name,
+      location_id: location_id
+    })
+
+    // Create the message using the correct table name
     const messageId = randomUUID()
     const { data: message, error: messageError } = await supabaseAdmin
-      .from('messages')
+      .from('chat_messages') // ✅ FIX: Use correct table name from your schema
       .insert({
         id: messageId,
         character_id: character.id,
         location_id: location_id,
-        content: content
+        message: content, // ✅ FIX: Use 'message' field (matches your schema)
+        message_type: message_type,
+        is_system: false
       })
       .select(`
         id,
-        content,
+        message,
+        message_type,
+        is_system,
         created_at,
         character:characters(
           id,
           name,
           level,
-          character_type
+          character_type,
+          current_image_url
         )
       `)
       .single()
 
-    if (messageError) throw messageError
+    if (messageError) {
+      console.error('Message insert error:', messageError)
+      throw messageError
+    }
+
+    console.log('✅ Message created successfully:', {
+      message_id: message.id,
+      character_name: message.character?.name
+    })
 
     // Transform the data for the frontend
     const transformedMessage = {
       id: message.id,
-      content: message.content,
+      message: message.message, // ✅ Use 'message' field
+      message_type: message.message_type,
+      is_system: message.is_system,
       created_at: message.created_at,
       character: message.character ? {
         id: message.character.id,
         name: message.character.name,
         level: message.character.level,
-        type: message.character.character_type
+        character_type: message.character.character_type,
+        image_url: message.character.current_image_url
       } : null
     }
 

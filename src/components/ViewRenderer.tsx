@@ -1,4 +1,4 @@
-// src/components/ViewRenderer.tsx - Fixed with game handlers
+// src/components/ViewRenderer.tsx - Fixed with chat handlers
 import { useState } from 'react'
 import { toast } from '@/components/ui/use-toast'
 import {
@@ -172,6 +172,16 @@ export function ViewRenderer({
     actions.handleUseItem(inventoryId, itemName, energy_effect, health_effect)
   }
 
+  // ✅ ADD THIS: Chat message handler using GameProvider action
+  const handleSendMessage = async (message: string) => {
+    if (actions.handleSendMessage) {
+      await actions.handleSendMessage(message)
+    } else {
+      console.error('❌ handleSendMessage action not available')
+      toast.error('Chat not available')
+    }
+  }
+
   // Chat handlers
   const openFullscreenChat = () => setIsFullscreenChat(true)
   const closeFullscreenChat = () => setIsFullscreenChat(false)
@@ -277,7 +287,7 @@ export function ViewRenderer({
           character={character}
           selectedLocation={gameData.selectedLocation}
           chatMessages={gameData.chatMessages || []}
-          onSendMessage={handleSendMessage}
+          onSendMessage={handleSendMessage} // ✅ Now properly defined
           onAddPresenceMessage={gameData.actions?.addPresenceMessage}
           onExitChat={closeFullscreenChat}
           loading={gameData.loading}

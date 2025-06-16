@@ -1,4 +1,4 @@
-// netlify/functions/get-chat.js - UPDATED
+// netlify/functions/get-chat.js - FIXED to match your schema
 import supabaseAdmin from '../../src/utils/supabase-admin'
 
 export const handler = async (event, context) => {
@@ -34,36 +34,48 @@ export const handler = async (event, context) => {
       }
     }
 
-    // Get recent messages for the location
-    const { data: messages, error: messagesError } = await supabaseAdmin
-      .from('messages')
+    console.log(`🔍 Loading chat messages for location: ${location_id}`)
+
+    // ✅ FIX: Use correct table name and field names from your schema
+    const { data: messages, error } = await supabaseAdmin
+      .from('chat_messages') // ✅ Correct table name
       .select(`
         id,
-        content,
+        message,
+        message_type,
+        is_system,
         created_at,
         character:characters(
           id,
           name,
-          level,
-          character_type
+          character_type,
+          current_image_url
         )
       `)
       .eq('location_id', location_id)
       .order('created_at', { ascending: false })
       .limit(parseInt(limit))
 
-    if (messagesError) throw messagesError
+    if (error) {
+      console.error('❌ Error loading chat messages:', error)
+      throw error
+    }
 
-    // Transform the data for the frontend
-    const transformedMessages = messages.map(message => ({
-      id: message.id,
-      content: message.content,
-      created_at: message.created_at,
-      character: message.character ? {
-        id: message.character.id,
-        name: message.character.name,
-        level: message.character.level,
-        type: message.character.character_type
+    console.log(`✅ Loaded ${messages?.length || 0} messages`)
+
+    // Transform messages for frontend (reverse to get chronological order)
+    const transformedMessages = (messages || []).reverse().map(msg => ({
+      id: msg.id,
+      message: msg.message, // ✅ Use 'message' field from schema
+      message_type: msg.message_type,
+      is_system: msg.is_system,
+      created_at: msg.created_at,
+      timeAgo: getTimeAgo(msg.created_at), // Helper function
+      character: msg.character ? {
+        id: msg.character.id,
+        name: msg.character.name,
+        character_type: msg.character.character_type,
+        image_url: msg.character.current_image_url
       } : null
     }))
 
@@ -72,7 +84,8 @@ export const handler = async (event, context) => {
       headers,
       body: JSON.stringify({
         success: true,
-        messages: transformedMessages
+        messages: transformedMessages,
+        count: transformedMessages.length
       })
     }
 
@@ -83,8 +96,21 @@ export const handler = async (event, context) => {
       headers,
       body: JSON.stringify({
         error: 'Internal server error',
-        message: error.message
+        message: error.message,
+        details: error.details || null
       })
     }
   }
+}
+
+// Helper function to calculate time ago
+function getTimeAgo(dateString) {
+  const now = new Date()
+  const past = new Date(dateString)
+  const diffInSeconds = Math.floor((now - past) / 1000)
+
+  if (diffInSeconds < 60) return 'now'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+  return `${Math.floor(diffInSeconds / 86400)}d ago`
 }

@@ -477,8 +477,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (!character || !message.trim() || isMainnet) return
 
       try {
-        const location_id = state.selectedLocation?.id || character.currentLocation.id
-        const result = await characterActions.sendMessage(location_id, message.trim())
+        // ✅ FIX: Always use character's current location, ignore selectedLocation for chat
+        const location_id = character.current_location_id
+
+        // 🔍 DEBUG: Log what we're sending
+        console.log('💬 Sending message debug info:', {
+          character_name: character.name,
+          character_current_location_id: character.current_location_id,
+          selectedLocation_id: state.selectedLocation?.id,
+          using_location_id: location_id,
+          message_preview: message.trim().substring(0, 20) + '...'
+        })
+
+        // ✅ FIX: Use current_location_id and add the missing third parameter 'CHAT'
+        const result = await characterActions.sendMessage(location_id, message.trim(), 'CHAT')
 
         if (result.success) {
           await gameData.actions.loadChatMessages(location_id)
@@ -486,6 +498,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           toast.error(result.message || 'Failed to send message')
         }
       } catch (error) {
+        console.error('Failed to send message:', error)
         toast.error('Failed to send message. Please try again.')
       }
     }, [character, characterActions, gameData.actions, state.selectedLocation, isMainnet]),

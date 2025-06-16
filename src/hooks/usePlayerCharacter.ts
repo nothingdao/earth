@@ -465,7 +465,11 @@ export function useCharacterActions(shouldLoad: boolean = true) {
 
     sendMessage: useCallback(
       (location_id: string, message: string, message_type = 'CHAT') =>
-        performAction('send-message', { location_id, message, message_type }),
+        performAction('send-message', {
+          location_id,
+          content: message.trim(), // Changed from 'message' to 'content'
+          message_type,
+        }),
       [performAction]
     ),
   }
