@@ -268,7 +268,7 @@ const EconomyView: React.FC = () => {
             <button
               onClick={() => setIncludeNPCs(!includeNPCs)}
               className={`px-2 py-1 text-xs font-mono border rounded transition-colors ${includeNPCs
-                ? 'bg-primary text-primary-foreground border-primary'
+                ? 'bg-action text-primary-foreground border-action'
                 : 'bg-background text-muted-foreground border-border hover:border-primary/50'
                 }`}
             >

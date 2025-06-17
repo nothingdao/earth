@@ -11,10 +11,12 @@ const getSlotForItem = (item) => {
   if (item.category === 'TOOL') return 'tool'
 
   switch (item.layer_type) {
+    case 'HAIR': return 'hair'
+    case 'HAT': return 'headwear'
+    case 'FACE_COVERING': return 'face_covering'
+    case 'FACE_ACCESSORY': return 'face_accessory'
     case 'CLOTHING': return 'clothing'
     case 'OUTERWEAR': return 'outerwear'
-    case 'FACE_ACCESSORY': return 'face_accessory'
-    case 'HAT': return 'headwear'
     case 'ACCESSORY': return 'misc_accessory'
     default: return null
   }

@@ -418,7 +418,7 @@ export default function ZoneAnalysisModal({
               : (!!location.min_level && character.level < location.min_level) ||
                 (!!location.entry_cost && location.entry_cost > (character.earth || 0))
                 ? 'bg-destructive/20 text-destructive cursor-not-allowed border-destructive/30'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-action text-primary-foreground hover:bg-action/90'
               }`}
           >
             <Navigation className="w-3 h-3 mr-2" />

@@ -723,7 +723,7 @@ Solana transaction succeeded but backend failed!
             !EARTH_MINT_ADDRESS ||
             !TREASURY_WALLET_ADDRESS
           }
-          className="w-full bg-primary/10 border border-primary text-primary p-3 rounded font-bold hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-action/10 border border-primary text-primary p-3 rounded font-bold hover:bg-action/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isProcessing ? (
             <div className="flex items-center justify-center gap-2">

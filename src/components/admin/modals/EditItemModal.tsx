@@ -11,7 +11,7 @@ import { Constants } from '@/types/supabase'
 import type { Item, ItemCategory } from '@/types'
 
 // Get the LayerType and Rarity types from Supabase
-type LayerType = 'BACKGROUND' | 'BASE' | 'CLOTHING' | 'HAT' | 'FACE_COVERING' | 'ACCESSORY' | 'OUTERWEAR' | 'FACE_ACCESSORY'
+type LayerType = 'BACKGROUND' | 'BASE' | 'CLOTHING' | 'HAT' | 'FACE_COVERING' | 'ACCESSORY' | 'OUTERWEAR' | 'FACE_ACCESSORY' | 'HAIR'
 type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY'
 
 interface EditItemModalProps {

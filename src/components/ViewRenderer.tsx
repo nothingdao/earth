@@ -104,19 +104,37 @@ export function ViewRenderer({
   const handleSetPrimary = async (inventoryId: string, category: string) => {
     if (!character) return
 
+    console.log('Setting primary for:', inventoryId, 'category:', category, 'wallet:', character.wallet_address)
+
     try {
-      const response = await fetch('/netlify/functions/equip-item', {
+      const requestBody = {
+        wallet_address: character.wallet_address,
+        inventoryId: inventoryId,
+        equip: true,
+        setPrimary: true
+      }
+      
+      console.log('Request body:', requestBody)
+      
+      const response = await fetch('/.netlify/functions/equip-item', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wallet_address: character.wallet_address,
-          inventoryId: inventoryId,
-          equip: true,
-          setPrimary: true
-        })
+        body: JSON.stringify(requestBody)
       })
+      
+      console.log('Response status:', response.status, 'URL:', response.url)
 
-      if (!response.ok) throw new Error('Failed to set primary')
+      if (!response.ok) {
+        let errorData = null
+        try {
+          errorData = await response.json()
+        } catch (e) {
+          // Handle empty or invalid JSON response
+          errorData = { error: response.statusText }
+        }
+        console.error('Set primary failed:', response.status, response.url, errorData)
+        throw new Error(`Failed to set primary: ${errorData.error || response.statusText}`)
+      }
 
       const result = await response.json()
       toast.success(`${result.item.name} set as primary for visual display!`)

@@ -890,6 +890,7 @@ export type Database = {
         | "ACCESSORY"
         | "OUTERWEAR"
         | "FACE_ACCESSORY"
+        | "HAIR"
       LocationType:
         | "REGION"
         | "CITY"
@@ -1083,6 +1084,7 @@ export const Constants = {
         "ACCESSORY",
         "OUTERWEAR",
         "FACE_ACCESSORY",
+        "HAIR",
       ],
       LocationType: [
         "REGION",

@@ -31,7 +31,9 @@ import {
   GiMining,
   GiRock,
   GiSunglasses,
-  GiCloak
+  GiCloak,
+  GiCyborgFace,
+  GiHairStrands
 } from 'react-icons/gi'
 import type { Character } from '@/types'
 import EquipmentVisualizer from '@/components/EquipmentVisualizer'
@@ -46,10 +48,12 @@ interface InventoryViewProps {
 }
 
 const EQUIPMENT_SLOTS = {
+  hair: { name: 'HAIR', icon: GiHairStrands, layer_type: 'HAIR' },
+  headwear: { name: 'HEADGEAR', icon: GiCrown, layer_type: 'HAT' },
+  face_covering: { name: 'FACE_COVER', icon: GiCyborgFace, layer_type: 'FACE_COVERING' },
+  face_accessory: { name: 'FACE_GEAR', icon: GiSunglasses, layer_type: 'FACE_ACCESSORY' },
   clothing: { name: 'CLOTHING', icon: GiShirt, layer_type: 'CLOTHING' },
   outerwear: { name: 'OUTERWEAR', icon: GiCloak, layer_type: 'OUTERWEAR' },
-  face_accessory: { name: 'FACE_GEAR', icon: GiSunglasses, layer_type: 'FACE_ACCESSORY' },
-  headwear: { name: 'HEADGEAR', icon: GiCrown, layer_type: 'HAT' },
   misc_accessory: { name: 'ACCESSORY', icon: GiGemNecklace, layer_type: 'ACCESSORY' },
   tool: { name: 'TOOL', icon: GiSpade, category: 'TOOL' },
 } as const
@@ -66,10 +70,12 @@ const getSlotForItem = (item: Character['inventory'][0]['item']) => {
   if (item.category === 'TOOL') return 'tool'
 
   switch (item.layer_type) {
+    case 'HAIR': return 'hair'
+    case 'HAT': return 'headwear'
+    case 'FACE_COVERING': return 'face_covering'
+    case 'FACE_ACCESSORY': return 'face_accessory'
     case 'CLOTHING': return 'clothing'
     case 'OUTERWEAR': return 'outerwear'
-    case 'FACE_ACCESSORY': return 'face_accessory'
-    case 'HAT': return 'headwear'
     case 'ACCESSORY': return 'misc_accessory'
     default: return null
   }
@@ -539,7 +545,7 @@ export function InventoryView({
     if (category === 'equipped') return character.inventory?.filter(i => i.is_equipped) || []
     if (category === 'equipment') return character.inventory?.filter(inv =>
       ['HAT', 'CLOTHING', 'ACCESSORY', 'TOOL'].includes(inv.item.category) ||
-      ['CLOTHING', 'OUTERWEAR', 'FACE_ACCESSORY', 'HAT', 'ACCESSORY'].includes(inv.item.layer_type)
+      ['HAIR', 'CLOTHING', 'OUTERWEAR', 'FACE_COVERING', 'FACE_ACCESSORY', 'HAT', 'ACCESSORY'].includes(inv.item.layer_type)
     ) || []
     if (category === 'consumables') return character.inventory?.filter(i => i.item.category === 'CONSUMABLE') || []
     if (category === 'materials') return character.inventory?.filter(i => i.item.category === 'MATERIAL') || []
@@ -606,13 +612,15 @@ export function InventoryView({
               {/* Quick Equipment */}
               <div className="bg-muted/20 border border-primary/20 rounded-lg p-3">
                 <div className="text-xs text-muted-foreground mb-2">EQUIPMENT</div>
-                <div className="grid grid-cols-3 gap-2 relative">
+                <div className="grid grid-cols-4 gap-2 relative">
                   {Object.keys(EQUIPMENT_SLOTS).map((slotKey) => (
                     <div key={slotKey} className="relative">
                       <QuickEquipmentSlot slotKey={slotKey} />
-                      {/* Desktop popover menu */}
+                      {/* Desktop popover menu - only show on desktop */}
                       {showSlotMenu === slotKey && (
-                        <SlotMenu slotKey={slotKey} />
+                        <div className="hidden md:block">
+                          <SlotMenu slotKey={slotKey} />
+                        </div>
                       )}
                     </div>
                   ))}
@@ -694,7 +702,9 @@ export function InventoryView({
 
         {/* Slot Menu (mobile bottom sheet) */}
         {showSlotMenu && (
-          <SlotMenu slotKey={showSlotMenu} />
+          <div className="md:hidden">
+            <SlotMenu slotKey={showSlotMenu} />
+          </div>
         )}
 
         {/* Consumable Menu */}

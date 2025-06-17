@@ -41,10 +41,12 @@ const LAYER_ORDER = [
 
 // Map equipment slots to layer types
 const SLOT_TO_LAYER_MAP = {
+  'hair': '6-hair',
+  'headwear': '8-headwear',
+  'face_covering': '6-hair', // Face coverings can use hair layer for now
+  'face_accessory': '7-face-accessories',
   'clothing': '4-clothing',
   'outerwear': '5-outerwear',
-  'face_accessory': '7-face-accessories',
-  'headwear': '8-headwear',
   'misc_accessory': '9-misc-accessories',
   'tool': '9-misc-accessories' // Tools can be visual accessories
 }

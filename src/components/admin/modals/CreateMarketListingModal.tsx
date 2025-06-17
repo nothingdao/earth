@@ -29,11 +29,11 @@ export const CreateMarketListingModal: React.FC<CreateMarketListingModalProps> =
 }) => {
   const [formData, setFormData] = useState({
     item_id: '',
-    seller_id: '',
+    seller_id: null,
     location_id: '',
     price: 1,
     quantity: 1,
-    is_active: true
+    is_system_item: true
   })
 
   // Reset form when modal opens
@@ -41,17 +41,17 @@ export const CreateMarketListingModal: React.FC<CreateMarketListingModalProps> =
     if (open) {
       setFormData({
         item_id: '',
-        seller_id: '',
+        seller_id: null,
         location_id: '',
         price: 1,
         quantity: 1,
-        is_active: true
+        is_system_item: true
       })
     }
   }, [open])
 
   const handleCreate = async () => {
-    if (!formData.item_id || !formData.seller_id || !formData.location_id) {
+    if (!formData.item_id || !formData.location_id) {
       return // Basic validation
     }
     await onCreate(formData)
@@ -62,13 +62,12 @@ export const CreateMarketListingModal: React.FC<CreateMarketListingModalProps> =
   }
 
   const selectedItem = items.find(item => item.id === formData.item_id)
-  const selectedSeller = characters.find(char => char.id === formData.seller_id)
   const selectedLocation = locations.find(loc => loc.id === formData.location_id)
 
   // Filter locations that have markets
   const marketLocations = locations.filter(loc => loc.has_market)
 
-  const isFormValid = formData.item_id && formData.seller_id && formData.location_id && formData.price > 0 && formData.quantity > 0
+  const isFormValid = formData.item_id && formData.location_id && formData.price > 0 && formData.quantity > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -102,25 +101,6 @@ export const CreateMarketListingModal: React.FC<CreateMarketListingModalProps> =
                 {selectedItem.description}
               </div>
             )}
-          </div>
-
-          <div>
-            <Label className="text-xs font-mono">SELLER *</Label>
-            <Select
-              value={formData.seller_id}
-              onValueChange={(value) => handleInputChange('seller_id', value)}
-            >
-              <SelectTrigger className="font-mono text-xs">
-                <SelectValue placeholder="SELECT_SELLER" />
-              </SelectTrigger>
-              <SelectContent>
-                {characters.map((character) => (
-                  <SelectItem key={character.id} value={character.id} className="font-mono text-xs">
-                    {character.name.toUpperCase()} (LVL {character.level})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div>
@@ -171,13 +151,30 @@ export const CreateMarketListingModal: React.FC<CreateMarketListingModalProps> =
             </div>
           </div>
 
+          <div>
+            <Label className="text-xs font-mono">ITEM_TYPE</Label>
+            <Select
+              value={formData.is_system_item ? 'system' : 'player'}
+              onValueChange={(value) => handleInputChange('is_system_item', value === 'system')}
+            >
+              <SelectTrigger className="font-mono text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="player" className="font-mono text-xs">PLAYER_ITEM</SelectItem>
+                <SelectItem value="system" className="font-mono text-xs">SYSTEM_ITEM</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {selectedItem && isFormValid && (
             <div className="bg-muted/30 border border-primary/20 rounded p-2">
               <div className="text-xs font-mono text-muted-foreground">PREVIEW</div>
               <div className="text-xs font-mono">
                 <div className="text-primary font-bold">{selectedItem.name.toUpperCase()}</div>
-                <div>SELLER: {selectedSeller?.name.toUpperCase()}</div>
+                <div>SELLER: <span className="text-green-500">SYSTEM</span></div>
                 <div>LOCATION: {selectedLocation?.name.toUpperCase()}</div>
+                <div>TYPE: {formData.is_system_item ? 'SYSTEM' : 'PLAYER'}</div>
                 <div>PRICE: <span className="text-yellow-500">{formData.price}</span> EARTH EACH</div>
                 <div>QTY: {formData.quantity}</div>
                 <div className="border-t border-primary/20 mt-1 pt-1">
