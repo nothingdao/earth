@@ -1,4 +1,4 @@
-// netlify/functions/generate-character-image.js - RESTORED WORKING VERSION
+// netlify/functions/generate-character-image.js
 import { createCanvas, loadImage } from 'canvas'
 import fs from 'fs'
 import path from 'path'

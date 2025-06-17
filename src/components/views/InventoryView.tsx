@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -11,10 +11,8 @@ import {
   Heart,
   AlertTriangle,
   Star,
-  Lock,
   Crown,
   Database,
-  Activity,
   Package,
   ChevronUp,
   ChevronDown,
@@ -32,7 +30,6 @@ import {
   GiNecklace,
   GiMining,
   GiRock,
-  GiWaterBottle,
   GiSunglasses,
   GiCloak
 } from 'react-icons/gi'
@@ -605,35 +602,6 @@ export function InventoryView({
             {/* Controls Sidebar */}
             <div className="space-y-4">
 
-              {/* Character Stats */}
-              <div className="bg-muted/20 border border-primary/20 rounded-lg p-3">
-                <div className="text-center mb-3">
-                  <div className="font-bold text-primary">{character.name.toUpperCase()}</div>
-                  <div className="text-xs text-muted-foreground">{character.gender} • LVL_{character.level}</div>
-                </div>
-
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">HEALTH</span>
-                      <span className="text-primary">{character.health}/100</span>
-                    </div>
-                    <div className="w-full bg-muted h-2 rounded">
-                      <div className="bg-red-500 h-2 rounded transition-all" style={{ width: `${character.health}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">ENERGY</span>
-                      <span className="text-primary">{character.energy}/100</span>
-                    </div>
-                    <div className="w-full bg-muted h-2 rounded">
-                      <div className="bg-blue-500 h-2 rounded transition-all" style={{ width: `${character.energy}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* Quick Equipment */}
               <div className="bg-muted/20 border border-primary/20 rounded-lg p-3">

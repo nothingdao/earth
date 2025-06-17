@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/components/EarthBridge.tsx
-// Fixed EarthBridge.tsx - Deposit Flow Only
+// src/components/EarthBridge.tsx - Fixed and accurate
 import React, { useState, useEffect } from 'react';
 import { ArrowUpDown, X, Zap, AlertTriangle, Database, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import {
-  createTransferInstruction,
+  createTransferInstruction, // for swaps later
   getAssociatedTokenAddress,
   getAccount,
   createAssociatedTokenAccountInstruction,
@@ -17,7 +16,7 @@ import { useGame } from '@/providers/GameProvider';
 interface EarthBridgeProps {
   isOpen: boolean;
   onClose: () => void;
-  onCharacterUpdate?: () => Promise<void>; // ✅ ADD THIS PROP
+  onCharacterUpdate?: () => Promise<void>;
 }
 
 interface BridgeStatus {
@@ -61,12 +60,16 @@ const EarthBridge: React.FC<EarthBridgeProps> = ({ isOpen, onClose, onCharacterU
     if (direction === 'DEPOSIT') {
       return userEarthBalance;
     } else {
-      return Math.min(character?.earth || 0, bridgeStatus?.maxWithdrawal || 1000);
+      return character?.earth || 0;
     }
   };
 
   const setMaxAmount = () => {
     setAmount(getMaxAmount().toString());
+  };
+
+  const getAvailableBalance = () => {
+    return direction === 'DEPOSIT' ? userEarthBalance : (character?.earth || 0);
   };
 
   const executeWithdraw = async (bridgeAmount: number) => {
@@ -144,7 +147,6 @@ const EarthBridge: React.FC<EarthBridgeProps> = ({ isOpen, onClose, onCharacterU
         setBridgeStatus(data.bridgeStatus);
         addDebugLog(`Bridge status: ${data.bridgeStatus.healthStatus}`);
 
-        // ✅ ADD DETAILED TREASURY DEBUGGING
         addDebugLog('=== TREASURY ANALYSIS ===');
         addDebugLog(`Treasury EARTH balance: ${data.bridgeStatus.treasuryEarthBalance}`);
         addDebugLog(`Total in-game EARTH: ${data.bridgeStatus.inGameCirculation}`);
@@ -158,12 +160,11 @@ const EarthBridge: React.FC<EarthBridgeProps> = ({ isOpen, onClose, onCharacterU
           });
         }
 
-        // ✅ CALCULATE MISSING EARTH
         const expectedTreasuryBalance = data.bridgeStatus.inGameCirculation;
         const actualTreasuryBalance = data.bridgeStatus.treasuryEarthBalance;
         const difference = actualTreasuryBalance - expectedTreasuryBalance;
 
-        if (Math.abs(difference) > 0.01) { // More than 1 cent difference
+        if (Math.abs(difference) > 0.01) {
           addDebugLog('🚨 TREASURY MISMATCH DETECTED!');
           addDebugLog(`Expected treasury: ${expectedTreasuryBalance} EARTH`);
           addDebugLog(`Actual treasury: ${actualTreasuryBalance} EARTH`);
@@ -206,38 +207,12 @@ const EarthBridge: React.FC<EarthBridgeProps> = ({ isOpen, onClose, onCharacterU
       addDebugLog(`User wallet: ${publicKey.toString()}`);
 
       try {
-        // Get detailed account info
-        const accountInfo = await connection.getAccountInfo(userTokenAccount);
-        addDebugLog(`Account exists: ${accountInfo !== null}`);
-
-        if (accountInfo) {
-          addDebugLog(`Account owner: ${accountInfo.owner.toString()}`);
-          addDebugLog(`Account data length: ${accountInfo.data.length}`);
-        }
-
-        // Get balance using different methods
         const balance = await connection.getTokenAccountBalance(userTokenAccount);
         addDebugLog(`Raw balance response: ${JSON.stringify(balance)}`);
-        addDebugLog(`Balance value: ${JSON.stringify(balance.value)}`);
-        addDebugLog(`UI Amount: ${balance.value.uiAmount}`);
-        addDebugLog(`Amount (raw): ${balance.value.amount}`);
-        addDebugLog(`Decimals: ${balance.value.decimals}`);
 
         const earthBalance = parseFloat(balance.value.uiAmount || '0');
         setUserEarthBalance(earthBalance);
         addDebugLog(`Final user EARTH balance: ${earthBalance}`);
-
-        // Double-check with parsed account info
-        try {
-          const parsedAccountInfo = await connection.getParsedAccountInfo(userTokenAccount);
-          if (parsedAccountInfo.value && 'parsed' in parsedAccountInfo.value.data) {
-            const parsed = parsedAccountInfo.value.data.parsed;
-            addDebugLog(`Parsed account info: ${JSON.stringify(parsed)}`);
-            addDebugLog(`Parsed balance: ${parsed.info.tokenAmount.uiAmount}`);
-          }
-        } catch (parseError) {
-          addDebugLog(`Parsed account info failed: ${parseError.message}`);
-        }
 
       } catch (error) {
         addDebugLog(`Balance fetch error: ${error.message}`);
@@ -481,7 +456,7 @@ Solana transaction succeeded but backend failed!
         fetchUserEarthBalance(),
       ]);
 
-      // ✅ FIXED: Use the passed-in character refresh function
+      // Use the passed-in character refresh function
       if (onCharacterUpdate) {
         addDebugLog('Refreshing character data via prop...');
         await onCharacterUpdate();
@@ -499,12 +474,6 @@ Solana transaction succeeded but backend failed!
         }
       }
 
-      // Also try direct character update if we have the new balance from API
-      if (result.newBalance !== undefined && character) {
-        addDebugLog(`Updating character EARTH: ${character.earth} → ${result.newBalance}`);
-        // This should trigger the real-time subscription to update
-      }
-
       // Reset form
       setAmount('');
 
@@ -518,6 +487,17 @@ Solana transaction succeeded but backend failed!
     setIsProcessing(false);
   };
 
+  // Check if amount exceeds available balance
+  const amountExceedsBalance = () => {
+    if (!amount) return false;
+    const inputAmount = parseFloat(amount);
+    const availableBalance = getAvailableBalance();
+    return inputAmount > availableBalance;
+  };
+
+  // Check if amount exceeds withdrawal limit (removed - no artificial limits)
+  // Only check user's actual in-game balance
+
   if (!isOpen) return null;
 
   return (
@@ -528,7 +508,7 @@ Solana transaction succeeded but backend failed!
         <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4" />
-            <span className="text-primary font-bold">EARTH_DEPOSIT_BRIDGE v2.089</span>
+            <span className="text-primary font-bold">EARTH_BRIDGE v2.089</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -625,8 +605,8 @@ Solana transaction succeeded but backend failed!
               <div className={`text-xs ${character ? 'text-success' : 'text-destructive'}`}>
                 CHARACTER: {character ? 'LOADED' : 'MISSING'}
               </div>
-              <div className={`text-xs ${userEarthBalance > 0 ? 'text-success' : 'text-warning'}`}>
-                EARTH: {userEarthBalance > 0 ? 'AVAILABLE' : 'NONE'}
+              <div className={`text-xs ${getAvailableBalance() > 0 ? 'text-success' : 'text-warning'}`}>
+                {direction === 'DEPOSIT' ? 'WALLET_EARTH' : 'GAME_EARTH'}: {getAvailableBalance() > 0 ? 'AVAILABLE' : 'NONE'}
               </div>
             </div>
           </div>
@@ -654,8 +634,8 @@ Solana transaction succeeded but backend failed!
             </div>
             <div className="text-xs text-muted-foreground">
               {direction === 'DEPOSIT'
-                ? 'Send EARTH from wallet → Treasury, receive in-game EARTH'
-                : 'Convert in-game EARTH → Send EARTH to wallet'
+                ? 'Transfer EARTH from your wallet to treasury, receive equal in-game EARTH'
+                : 'Convert in-game EARTH to wallet EARTH via treasury transfer'
               }
             </div>
           </div>
@@ -663,14 +643,16 @@ Solana transaction succeeded but backend failed!
 
         {/* Amount Input */}
         <div className="mb-4">
-          <div className="text-muted-foreground text-xs mb-2">DEPOSIT_AMOUNT:</div>
+          <div className="text-muted-foreground text-xs mb-2">{direction === 'DEPOSIT' ? 'DEPOSIT_AMOUNT' : 'WITHDRAWAL_AMOUNT'}:</div>
           <div className="bg-muted/30 border border-primary/20 p-3 rounded">
             <div className="flex items-center justify-between mb-2">
               <span className="text-primary font-bold">EARTH</span>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">MAX: {userEarthBalance.toFixed(2)}</span>
+                <span className="text-muted-foreground text-xs">
+                  MAX: {getMaxAmount().toFixed(2)}
+                </span>
                 <button
-                  onClick={() => setAmount(userEarthBalance.toString())}
+                  onClick={setMaxAmount}
                   className="text-primary text-xs hover:underline"
                 >
                   MAX
@@ -682,7 +664,7 @@ Solana transaction succeeded but backend failed!
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              max={userEarthBalance}
+              max={getMaxAmount()}
               step="0.01"
               className="w-full bg-transparent text-primary text-lg font-bold outline-none placeholder-muted-foreground/50"
             />
@@ -690,11 +672,16 @@ Solana transaction succeeded but backend failed!
         </div>
 
         {/* Warnings */}
-        {amount && parseFloat(amount) > userEarthBalance && (
+        {amountExceedsBalance() && (
           <div className="bg-destructive/10 border border-destructive/50 p-3 rounded mb-4">
             <div className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-4 h-4" />
-              <span className="text-xs">INSUFFICIENT_EARTH_BALANCE</span>
+              <span className="text-xs">
+                INSUFFICIENT_{direction === 'DEPOSIT' ? 'WALLET' : 'GAME'}_EARTH_BALANCE
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Available: {getAvailableBalance().toFixed(2)} EARTH, Requested: {amount || '0'} EARTH
             </div>
           </div>
         )}
@@ -729,7 +716,7 @@ Solana transaction succeeded but backend failed!
           disabled={
             !amount ||
             parseFloat(amount) <= 0 ||
-            parseFloat(amount) > userEarthBalance ||
+            amountExceedsBalance() ||
             isProcessing ||
             !publicKey ||
             !character ||
@@ -741,7 +728,7 @@ Solana transaction succeeded but backend failed!
           {isProcessing ? (
             <div className="flex items-center justify-center gap-2">
               <Zap className="w-4 h-4 animate-pulse" />
-              PROCESSING_DEPOSIT...
+              PROCESSING_{direction}...
             </div>
           ) : !publicKey ? (
             `CONNECT_WALLET`
@@ -749,10 +736,10 @@ Solana transaction succeeded but backend failed!
             `CREATE_CHARACTER_FIRST`
           ) : !EARTH_MINT_ADDRESS || !TREASURY_WALLET_ADDRESS ? (
             `MISSING_ENV_VARS`
-          ) : userEarthBalance === 0 && direction === 'DEPOSIT' ? (
-            `NO_EARTH_TOKENS`
-          ) : character?.earth === 0 && direction === 'WITHDRAW' ? (
-            `NO_IN_GAME_EARTH`
+          ) : getAvailableBalance() === 0 ? (
+            direction === 'DEPOSIT' ? `NO_WALLET_EARTH` : `NO_GAME_EARTH`
+          ) : amountExceedsBalance() ? (
+            `INSUFFICIENT_BALANCE`
           ) : (
             `${direction}_${amount || '0'}_EARTH`
           )}
@@ -760,7 +747,7 @@ Solana transaction succeeded but backend failed!
 
         {/* Footer */}
         <div className="mt-4 pt-2 border-t border-primary/20 text-muted-foreground/60 text-xs text-center">
-          {'>'} DEVNET_BRIDGE_v2.089
+          {'>'} DEVNET_BRIDGE_v2.089 | DEPOSIT_WITHDRAW_ENABLED
         </div>
       </div>
     </div>

@@ -1,72 +1,91 @@
-// src/components/EarthMarket.tsx - Fixed with refetchCharacter prop
+// src/components/EarthMarket.tsx - Updated to use GameProvider balances
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { LineChart, Line, XAxis, YAxis, ReferenceLine } from 'recharts';
-import { TrendingUp, TrendingDown, Zap, Database, Activity, X, Search, BarChart3, Settings, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Zap, Database, Activity, X, Search, Settings, Info, ArrowUpRight, ArrowDownLeft, ArrowLeftRight } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import supabase from '../../utils/supabase';
 import EarthBridge from '@/components/EarthBridge';
+import { useGame } from '@/providers/GameProvider';
+import type { Transaction } from '@/types';
 
-import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-
-const chartConfig = {
-  rate: {
-    label: "EARTH/SOL Rate",
-    color: "hsl(var(--chart-1))",
-  },
-  volume: {
-    label: "Volume",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig
-
-interface Transaction {
-  created_at: string;
-  from_vault: string;
-  to_vault: string;
-  from_units: number;
-  to_units: number;
-  exchange_flux: number;
-  wasteland_block: number;
-  txn_earth: string;
-  sender_earth: string;
-}
-
-interface MarketData {
-  block: number;
-  rate: number;
-  volume: number;
-  trades: number;
-  time: string;
-}
-
-// ✅ ADD PROPS INTERFACE
 interface EarthMarketProps {
   onCharacterUpdate?: () => Promise<void>;
 }
 
 const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
-  const [marketData, setMarketData] = useState<MarketData[]>([]);
-  const [currentRate, setCurrentRate] = useState<number>(0);
-  const [change24h, setChange24h] = useState<number>(0);
-  const [volume24h, setVolume24h] = useState<number>(0);
-  const [totalTrades, setTotalTrades] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showBridge, setShowBridge] = useState(false);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showCharacterLookup, setShowCharacterLookup] = useState(false);
   const [lookupCharacter, setLookupCharacter] = useState('');
   const [characterHistory, setCharacterHistory] = useState<Transaction[]>([]);
   const [showDocumentation, setShowDocumentation] = useState(false);
   const [newTransactionIds, setNewTransactionIds] = useState<Set<string>>(new Set());
+  const [systemStatus, setSystemStatus] = useState<'ONLINE' | 'MAINTENANCE' | 'OFFLINE'>('ONLINE');
 
-  // Add ref to track documentation scroll position
+  const { state, actions } = useGame();
+  const { publicKey } = useWallet();
+  const character = state.character;
+
+  // Get all balances from GameProvider
+  const solBalance = state.solBalance;
+  const walletEarthBalance = state.walletEarthBalance;
+  const gameEarthBalance = character?.earth || 0;
+
   const documentationScrollRef = useRef<HTMLDivElement>(null);
+
+  // Enhanced character update using GameProvider's refetch (includes balances)
+  const handleCharacterUpdate = async () => {
+    if (onCharacterUpdate) {
+      await onCharacterUpdate();
+    }
+    // Use GameProvider's enhanced refetch that includes balances
+    await actions.refetchCharacter();
+  };
+
+  const formatAmount = (amount: number | null) => (amount || 0).toFixed(3);
+
+  const getTransactionTypeDisplay = (tx: Transaction) => {
+    // Handle bridge transactions
+    if (tx.description?.includes('BRIDGE_DEPOSIT')) {
+      return { type: 'DEPOSIT', icon: ArrowDownLeft, color: 'text-success' };
+    }
+    if (tx.description?.includes('BRIDGE_WITHDRAW')) {
+      return { type: 'WITHDRAW', icon: ArrowUpRight, color: 'text-warning' };
+    }
+
+    // Handle exchange transactions (legacy market trades)
+    if (tx.type === 'EXCHANGE') {
+      const isBuy = tx.from_vault === 'SCRAP_SOL';
+      return {
+        type: isBuy ? 'BUY_EARTH' : 'SELL_EARTH',
+        icon: isBuy ? TrendingUp : TrendingDown,
+        color: isBuy ? 'text-success' : 'text-warning'
+      };
+    }
+
+    // Handle other transaction types
+    switch (tx.type) {
+      case 'BUY':
+        return { type: 'PURCHASE', icon: TrendingUp, color: 'text-success' };
+      case 'SELL':
+        return { type: 'SALE', icon: TrendingDown, color: 'text-warning' };
+      case 'TRAVEL':
+        return { type: 'TRAVEL', icon: ArrowLeftRight, color: 'text-primary' };
+      default:
+        return { type: tx.type || 'UNKNOWN', icon: Activity, color: 'text-muted-foreground' };
+    }
+  };
+
+  const getSystemStatusColor = (status: string) => {
+    switch (status) {
+      case 'ONLINE': return 'text-success';
+      case 'MAINTENANCE': return 'text-warning';
+      case 'OFFLINE': return 'text-destructive';
+      default: return 'text-muted-foreground';
+    }
+  };
 
   // Add keyboard event listener for ESC key
   useEffect(() => {
@@ -78,7 +97,6 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
 
     if (showDocumentation) {
       document.addEventListener('keydown', handleKeyDown);
-      // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
     }
 
@@ -89,26 +107,27 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
   }, [showDocumentation]);
 
   useEffect(() => {
-    fetchMarketData();
+    fetchTransactionData();
 
-    // Set up realtime subscription for new transactions (both EXCHANGE and BRIDGE)
+    // Set up realtime subscription for all SOL/EARTH transactions
     const subscription = supabase
-      .channel('earth-market-updates')
+      .channel('terminal-updates')
       .on('postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'transactions',
-          filter: 'type=in.(EXCHANGE,BRIDGE_DEPOSIT,BRIDGE_WITHDRAW)'
+          // Listen for bridge, exchange, buy, sell, travel transactions
+          filter: 'type=in.(BRIDGE,EXCHANGE,BUY,SELL,TRAVEL)'
         },
         (payload) => {
-          console.log('📊 New transaction detected!', payload.new);
-          fetchMarketData();
+          console.log('💰 New transaction detected!', payload.new);
+          fetchTransactionData();
         }
       )
       .subscribe();
 
-    const interval = setInterval(fetchMarketData, 30000);
+    const interval = setInterval(fetchTransactionData, 30000);
 
     return () => {
       subscription.unsubscribe();
@@ -116,136 +135,62 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
     };
   }, []);
 
-  const fetchMarketData = async () => {
+  const fetchTransactionData = async () => {
     try {
-      const response = await fetch('/api/earth-market');
-      const data = await response.json();
+      setIsLoading(true);
 
-      if (data.success) {
-        console.log('📊 Market Data:', data);
+      // Fetch recent transactions involving SOL or EARTH
+      const { data: transactionData, error: txError } = await supabase
+        .from('transactions')
+        .select('*')
+        .or('from_vault.in.(SOL,EARTH,SCRAP_SOL,IN_GAME,ON_CHAIN),to_vault.in.(SOL,EARTH,SCRAP_SOL,IN_GAME,ON_CHAIN)')
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-        // Updated to use new API structure
-        if (data.market) {
-          setCurrentRate(data.market.earthSolRate || data.market.solUsdPrice || 0);
-          setChange24h(data.market.priceChange24h || 0);
-          setVolume24h(data.market.volume24h || 0);
-        }
+      if (txError) {
+        console.error('Error fetching transactions:', txError);
+      } else if (transactionData) {
+        // Track new transactions for animation
+        if (transactions.length > 0) {
+          const existingIds = new Set(transactions.map(tx => tx.id));
+          const newIds = new Set<string>();
 
-        // Process exchange transactions if available
-        if (data.transactions && data.transactions.length > 0) {
-          const processedData = processTransactionData(data.transactions);
-          setMarketData(processedData);
-
-          // Set recent individual transactions for detailed view
-          const newTransactions = data.transactions.slice(0, 10);
-
-          // Only update recent transactions if they're actually different
-          const hasNewTransactions = !arraysEqual(
-            recentTransactions.map((tx: Transaction) => tx.txn_earth || tx.wasteland_block),
-            newTransactions.map((tx: Transaction) => tx.txn_earth || tx.wasteland_block)
-          );
-
-          if (hasNewTransactions) {
-            // Track new transactions for animation
-            if (recentTransactions.length > 0) {
-              const existingIds = new Set(recentTransactions.map((tx: Transaction) => tx.txn_earth || tx.wasteland_block));
-              const newIds = new Set<string>();
-
-              newTransactions.forEach((tx: Transaction) => {
-                const txId = tx.txn_earth || tx.wasteland_block;
-                if (txId && !existingIds.has(txId)) {
-                  newIds.add(String(txId));
-                }
-              });
-
-              if (newIds.size > 0) {
-                setNewTransactionIds(newIds);
-                // Clear the animation after 3 seconds
-                setTimeout(() => setNewTransactionIds(new Set()), 3000);
-              }
+          transactionData.forEach(tx => {
+            if (!existingIds.has(tx.id)) {
+              newIds.add(tx.id);
             }
+          });
 
-            setRecentTransactions(newTransactions);
-          }
-
-          // Calculate simple stats
-          const totalVol = processedData.reduce((sum, d) => sum + d.volume, 0);
-          const totalTx = processedData.reduce((sum, d) => sum + d.trades, 0);
-          setVolume24h(totalVol);
-          setTotalTrades(totalTx);
-
-          // Calculate 24h change from first to last
-          if (processedData.length > 1) {
-            const firstRate = processedData[0].rate;
-            const lastRate = processedData[processedData.length - 1].rate;
-            const change = ((lastRate - firstRate) / firstRate) * 100;
-            setChange24h(change);
+          if (newIds.size > 0) {
+            setNewTransactionIds(newIds);
+            setTimeout(() => setNewTransactionIds(new Set()), 3000);
           }
         }
+
+        setTransactions(transactionData);
       }
 
-      setIsLoading(false);
+      // All balances come from GameProvider now
+      setSystemStatus('ONLINE');
 
+      setIsLoading(false);
     } catch (error) {
-      console.error('Failed to fetch market data:', error);
+      console.error('Failed to fetch transaction data:', error);
       setIsLoading(false);
     }
   };
 
-  // Helper function to compare arrays
-  const arraysEqual = (a: (string | number | undefined)[], b: (string | number | undefined)[]) => {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      if (a[i] !== b[i]) return false;
-    }
-    return true;
-  };
-
-  const processTransactionData = (transactions: Transaction[]): MarketData[] => {
-    const blockGroups: { [key: number]: { rates: number[], volume: number, trades: number, time: string } } = {};
-
-    transactions.forEach(tx => {
-      if (!blockGroups[tx.wasteland_block]) {
-        blockGroups[tx.wasteland_block] = {
-          rates: [],
-          volume: 0,
-          trades: 0,
-          time: tx.created_at
-        };
-      }
-
-      blockGroups[tx.wasteland_block].rates.push(tx.exchange_flux);
-      blockGroups[tx.wasteland_block].volume += tx.from_vault === 'SCRAP_SOL' ? tx.from_units : tx.to_units;
-      blockGroups[tx.wasteland_block].trades += 1;
-    });
-
-    return Object.entries(blockGroups)
-      .map(([block, data]) => ({
-        block: parseInt(block),
-        rate: data.rates.reduce((sum, r) => sum + r, 0) / data.rates.length,
-        volume: data.volume,
-        trades: data.trades,
-        time: new Date(data.time).toLocaleTimeString()
-      }))
-      .sort((a, b) => a.block - b.block);
-  };
-
-  const formatRate = (rate: number | null) => (rate ?? 0).toFixed(2);
-  const formatVolume = (vol: number | null) => (vol ?? 0).toFixed(3);
-  const formatChange = (change: number) => `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-
-  // Documentation Modal (keeping existing implementation)
+  // Documentation Modal
   const DocumentationModal = () => {
     if (!showDocumentation) return null;
 
     const modalContent = (
       <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-0">
         <div className="w-full h-full bg-background border-0 rounded-none p-6 font-mono text-xs text-primary flex flex-col">
-          {/* Header - Fixed */}
           <div className="flex items-center justify-between mb-6 border-b border-primary/20 pb-4 flex-shrink-0">
             <div className="flex items-center gap-2">
               <Info className="w-5 h-5" />
-              <span className="text-primary font-bold text-sm">EARTH_BRIDGE_DOCUMENTATION v2.089</span>
+              <span className="text-primary font-bold text-sm">SOL/EARTH TERMINAL DOCUMENTATION v2.089</span>
             </div>
             <button
               onClick={() => setShowDocumentation(false)}
@@ -255,111 +200,30 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
             </button>
           </div>
 
-          {/* Scrollable Content Container */}
           <div className="flex-1 overflow-y-auto documentation-modal-scroll" ref={documentationScrollRef}>
-            {/* Updated Documentation Content for Bridge */}
             <div className="max-w-6xl mx-auto space-y-8">
-
-              {/* Overview - Updated */}
               <section className="bg-muted/30 border border-primary/20 rounded p-6">
                 <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
                   <Database className="w-5 h-5" />
-                  EARTH_BRIDGE_OVERVIEW
+                  TERMINAL_OVERVIEW
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-3 text-sm">
-                  The EARTH Bridge is a virtual bridge system that enables seamless transfers between on-chain EARTH tokens
-                  and in-game EARTH balances. Built for the Earth gaming ecosystem, it provides 100% backing with
-                  zero gas fees for in-game transactions.
+                  The SOL/EARTH Terminal is your central hub for managing all SOL and EARTH transactions within
+                  the Earth gaming ecosystem. Bridge between on-chain and in-game assets, view transaction history,
+                  and access swap functionality (coming soon).
                 </p>
                 <div className="bg-primary/10 border border-primary/30 p-3 rounded mt-3">
-                  <span className="text-primary font-bold">KEY PRINCIPLE:</span>
-                  <span className="text-muted-foreground ml-2">100% Treasury Backing - No Fractional Reserve</span>
+                  <span className="text-primary font-bold">SUPPORTED OPERATIONS:</span>
+                  <span className="text-muted-foreground ml-2">Bridge, Market Trades, Travel, Equipment</span>
                 </div>
               </section>
 
-              {/* Bridge Operations */}
-              <section className="bg-muted/30 border border-primary/20 rounded p-6">
-                <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
-                  <Zap className="w-5 h-5" />
-                  BRIDGE_OPERATIONS
-                </h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-success font-bold mb-2 text-sm">DEPOSIT</div>
-                    <div className="text-muted-foreground text-sm leading-relaxed">
-                      Transfer EARTH tokens from your wallet to the treasury, receive equivalent in-game EARTH.
-                      1:1 ratio, instant credit to character balance.
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-warning font-bold mb-2 text-sm">WITHDRAW</div>
-                    <div className="text-muted-foreground text-sm leading-relaxed">
-                      Convert in-game EARTH back to on-chain tokens. Treasury sends EARTH tokens to your wallet,
-                      deducts from in-game balance.
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Treasury Backing */}
-              <section className="bg-muted/30 border border-primary/20 rounded p-6">
-                <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
-                  <TrendingUp className="w-5 h-5" />
-                  TREASURY_BACKING
-                </h2>
-                <div className="space-y-4">
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">BACKING_FORMULA:</div>
-                    <code className="text-success text-sm">TREASURY_EARTH ≥ IN_GAME_EARTH</code>
-                    <div className="text-muted-foreground text-sm mt-2">
-                      Every in-game EARTH is backed 1:1 by treasury EARTH tokens.
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">SAFETY_MECHANISM:</div>
-                    <code className="text-success text-sm">WITHDRAWALS_BLOCKED if TREASURY_EARTH &lt; REQUESTED_AMOUNT</code>
-                    <div className="text-muted-foreground text-sm mt-2">
-                      Bridge automatically prevents over-withdrawals to maintain 100% backing.
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Testing Instructions */}
-              <section className="bg-muted/30 border border-primary/20 rounded p-6">
-                <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
-                  <BarChart3 className="w-5 h-5" />
-                  TESTING_INSTRUCTIONS
-                </h2>
-                <div className="space-y-4">
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">1. CONNECT_WALLET:</div>
-                    <div className="text-muted-foreground text-sm">
-                      Connect your Solana wallet (Phantom, Solflare, etc.) to interact with the bridge.
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">2. CHECK_STATUS:</div>
-                    <div className="text-muted-foreground text-sm">
-                      Review bridge health, treasury balances, and your current EARTH holdings.
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">3. TEST_OPERATIONS:</div>
-                    <div className="text-muted-foreground text-sm">
-                      Try deposits (uses mock signatures) and withdrawals to verify functionality.
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Footer */}
               <div className="text-center py-8">
                 <div className="text-muted-foreground/60 text-sm">
-                  {'>'} EARTH_BRIDGE_DOCUMENTATION_v2.089
+                  {'>'} SOL_EARTH_TERMINAL_v2.089
                 </div>
                 <div className="text-muted-foreground/60 text-sm mt-2">
-                  VIRTUAL_BRIDGE_100%_BACKED
+                  UNIFIED_ASSET_MANAGEMENT
                 </div>
                 <div className="text-muted-foreground/40 text-xs mt-4">
                   Press ESC to close
@@ -371,7 +235,6 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
       </div>
     );
 
-    // Render modal as a portal to document.body
     return createPortal(modalContent, document.body);
   };
 
@@ -383,19 +246,24 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
 
       setIsSearching(true);
       try {
-        // Simulate API call - replace with actual lookup
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const { data: history, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .or(`character_id.eq.${lookupCharacter},sender_earth.eq.${lookupCharacter},receiver_earth.eq.${lookupCharacter}`)
+          .order('created_at', { ascending: false })
+          .limit(50);
 
-        // Mock data - replace with actual character transaction lookup
-        const mockHistory = recentTransactions.filter((tx: Transaction) =>
-          tx.sender_earth === lookupCharacter ||
-          tx.txn_earth === lookupCharacter
-        );
+        if (error) {
+          console.error('Character lookup error:', error);
+          setCharacterHistory([]);
+        } else {
+          setCharacterHistory(history || []);
+        }
 
-        setCharacterHistory(mockHistory);
         console.log(`🔍 Looking up history for: ${lookupCharacter}`);
       } catch (error) {
         console.error('Character lookup failed:', error);
+        setCharacterHistory([]);
       }
       setIsSearching(false);
     };
@@ -405,7 +273,6 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div className="w-full max-w-2xl bg-background border border-primary/30 rounded-lg p-4 font-mono text-xs text-primary">
-          {/* Header */}
           <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
             <div className="flex items-center gap-2">
               <Search className="w-4 h-4" />
@@ -423,15 +290,14 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
             </button>
           </div>
 
-          {/* Search Input */}
           <div className="mb-4">
-            <div className="text-muted-foreground text-xs mb-2">ENTER_PLAYER_ID_OR_EARTH:</div>
+            <div className="text-muted-foreground text-xs mb-2">ENTER_PLAYER_ID_OR_CHARACTER_NAME:</div>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={lookupCharacter}
                 onChange={(e) => setLookupCharacter(e.target.value)}
-                placeholder="player_123 or earth_abc..."
+                placeholder="player_123 or character name..."
                 className="flex-1 bg-muted/30 border border-primary/20 p-2 rounded text-primary outline-none focus:border-primary/50"
                 onKeyPress={(e) => e.key === 'Enter' && searchCharacterHistory()}
               />
@@ -445,18 +311,17 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
             </div>
           </div>
 
-          {/* Results */}
           {characterHistory.length > 0 && (
             <div>
               <div className="text-muted-foreground text-xs mb-2">
                 TRANSACTION_HISTORY ({characterHistory.length} found):
               </div>
               <div className="bg-muted/30 border border-primary/20 rounded p-2 max-h-64 overflow-y-auto lookup-history-scroll">
-                {characterHistory.map((tx, idx) => {
-                  const isBuy = tx.from_vault === 'SCRAP_SOL';
+                {characterHistory.map((tx) => {
+                  const { type, icon: Icon, color } = getTransactionTypeDisplay(tx);
                   return (
                     <div
-                      key={idx}
+                      key={tx.id}
                       className="py-2 border-b border-border/30 last:border-b-0 cursor-pointer hover:bg-muted/20 transition-colors"
                       onClick={() => {
                         setSelectedTransaction(tx);
@@ -465,21 +330,20 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className={`font-bold flex items-center gap-1 ${isBuy ? 'text-success' : 'text-warning'}`}>
-                            {isBuy ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            {isBuy ? 'BUY_EARTH' : 'SELL_EARTH'}
+                          <span className={`font-bold flex items-center gap-1 ${color}`}>
+                            <Icon className="w-3 h-3" />
+                            {type}
                           </span>
-                          <span className="text-muted-foreground text-xs">BLK{tx.wasteland_block % 10000}</span>
                         </div>
                         <span className="text-muted-foreground/60 text-xs">{new Date(tx.created_at).toLocaleTimeString()}</span>
                       </div>
                       <div className="flex items-center gap-1 text-xs">
-                        <span className="text-primary">{tx.from_units}</span>
-                        <span className="text-muted-foreground">{tx.from_vault?.split('_')[1] || tx.from_vault}</span>
+                        <span className="text-primary">{formatAmount(tx.from_units || 0)}</span>
+                        <span className="text-muted-foreground">{tx.from_vault}</span>
                         <span className="text-muted-foreground">→</span>
-                        <span className="text-primary">{formatVolume(tx.to_units)}</span>
-                        <span className="text-muted-foreground">{tx.to_vault?.split('_')[1] || tx.to_vault}</span>
-                        <span className="text-muted-foreground ml-2">@{formatRate(tx.exchange_flux)}</span>
+                        <span className="text-primary">{formatAmount(tx.to_units || 0)}</span>
+                        <span className="text-muted-foreground">{tx.to_vault}</span>
+                        <span className="text-muted-foreground/50 ml-auto text-xs">CLICK_TO_EXPLORE</span>
                       </div>
                     </div>
                   );
@@ -488,19 +352,17 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
             </div>
           )}
 
-          {/* No Results */}
           {lookupCharacter && characterHistory.length === 0 && !isSearching && (
             <div className="bg-muted/30 border border-primary/20 rounded p-4 text-center">
               <div className="text-muted-foreground">NO_TRANSACTIONS_FOUND</div>
               <div className="text-muted-foreground/60 text-xs mt-1">
-                Character "{lookupCharacter}" has no exchange history
+                Character "{lookupCharacter}" has no transaction history
               </div>
             </div>
           )}
 
-          {/* Footer */}
           <div className="mt-4 pt-2 border-t border-primary/20 text-muted-foreground/60 text-xs text-center">
-            {'>'} WASTELAND_PLAYER_TRACKER_v2.089
+            {'>'} TERMINAL_PLAYER_TRACKER_v2.089
           </div>
         </div>
       </div>
@@ -511,16 +373,15 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
     if (!selectedTransaction) return null;
 
     const tx = selectedTransaction;
-    const isBuy = tx.from_vault === 'SCRAP_SOL';
+    const { type, icon: Icon, color } = getTransactionTypeDisplay(tx);
 
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div className="w-full max-w-2xl bg-background border border-primary/30 rounded-lg p-4 font-mono text-xs text-primary">
-          {/* Header */}
           <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
             <div className="flex items-center gap-2">
               <Database className="w-4 h-4" />
-              <span className="text-primary font-bold">EARTH_BLOCK_EXPLORER v2.089</span>
+              <span className="text-primary font-bold">TRANSACTION_EXPLORER v2.089</span>
             </div>
             <button
               onClick={() => setSelectedTransaction(null)}
@@ -530,23 +391,17 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
             </button>
           </div>
 
-          {/* Transaction Details Grid */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="bg-muted/50 border border-primary/20 p-3 rounded">
               <div className="text-muted-foreground text-xs mb-1">TRANSACTION_ID</div>
-              <div className="text-primary font-bold break-all">{tx.txn_earth || tx.wasteland_block || 'N/A'}</div>
-            </div>
-
-            <div className="bg-muted/50 border border-primary/20 p-3 rounded">
-              <div className="text-muted-foreground text-xs mb-1">WASTELAND_BLOCK</div>
-              <div className="text-primary font-bold">{tx.wasteland_block}</div>
+              <div className="text-primary font-bold break-all">{tx.id}</div>
             </div>
 
             <div className="bg-muted/50 border border-primary/20 p-3 rounded">
               <div className="text-muted-foreground text-xs mb-1">OPERATION_TYPE</div>
-              <div className={`font-bold flex items-center gap-1 ${isBuy ? 'text-success' : 'text-warning'}`}>
-                {isBuy ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                {isBuy ? 'BUY_EARTH' : 'SELL_EARTH'}
+              <div className={`font-bold flex items-center gap-1 ${color}`}>
+                <Icon className="w-3 h-3" />
+                {type}
               </div>
             </div>
 
@@ -554,59 +409,61 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
               <div className="text-muted-foreground text-xs mb-1">TIMESTAMP</div>
               <div className="text-primary font-bold">{new Date(tx.created_at).toLocaleString()}</div>
             </div>
+
+            <div className="bg-muted/50 border border-primary/20 p-3 rounded">
+              <div className="text-muted-foreground text-xs mb-1">CHARACTER</div>
+              <div className="text-primary font-bold">{tx.character_id}</div>
+            </div>
           </div>
 
-          {/* Exchange Details */}
           <div className="bg-muted/30 border border-primary/20 p-4 rounded mb-4">
-            <div className="text-muted-foreground text-xs mb-3">EXCHANGE_DETAILS</div>
+            <div className="text-muted-foreground text-xs mb-3">TRANSACTION_DETAILS</div>
 
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-center">
-                <div className="text-muted-foreground text-xs mb-1">FROM_VAULT</div>
-                <div className="text-primary font-bold">{tx.from_vault}</div>
-                <div className="text-primary text-lg font-bold mt-1">{tx.from_units}</div>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <div className={`p-2 border rounded ${isBuy ? 'border-success/50 bg-success/10' : 'border-error/50 bg-error/10'}`}>
-                  {isBuy ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-warning" />}
+            {tx.from_vault && tx.to_vault && (
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-center">
+                  <div className="text-muted-foreground text-xs mb-1">FROM</div>
+                  <div className="text-primary font-bold">{tx.from_vault}</div>
+                  <div className="text-primary text-lg font-bold mt-1">{formatAmount(tx.from_units || 0)}</div>
                 </div>
-                <div className="text-muted-foreground text-xs mt-1">EXCHANGE</div>
-              </div>
 
-              <div className="text-center">
-                <div className="text-muted-foreground text-xs mb-1">TO_VAULT</div>
-                <div className="text-primary font-bold">{tx.to_vault}</div>
-                <div className="text-primary text-lg font-bold mt-1">{tx.to_units}</div>
-              </div>
-            </div>
+                <div className="flex flex-col items-center">
+                  <div className="p-2 border rounded border-primary/50 bg-primary/10">
+                    <Icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="text-muted-foreground text-xs mt-1">TRANSFER</div>
+                </div>
 
-            <div className="border-t border-primary/20 pt-3">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground text-xs">EXCHANGE_RATE:</span>
-                <span className="text-primary font-bold">{formatRate(tx.exchange_flux)} EARTH/SOL</span>
+                <div className="text-center">
+                  <div className="text-muted-foreground text-xs mb-1">TO</div>
+                  <div className="text-primary font-bold">{tx.to_vault}</div>
+                  <div className="text-primary text-lg font-bold mt-1">{formatAmount(tx.to_units || 0)}</div>
+                </div>
               </div>
+            )}
+
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">DESCRIPTION:</span>
+                <span className="text-primary">{tx.description}</span>
+              </div>
+              {tx.exchange_flux && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">EXCHANGE_RATE:</span>
+                  <span className="text-primary">{formatAmount(tx.exchange_flux)}</span>
+                </div>
+              )}
+              {tx.on_chain_signature && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">TX_HASH:</span>
+                  <span className="text-primary font-mono">{tx.on_chain_signature.slice(0, 8)}...{tx.on_chain_signature.slice(-8)}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Character Info */}
-          <div className="bg-muted/50 border border-primary/20 p-3 rounded mb-4">
-            <div className="text-muted-foreground text-xs mb-1">PLAYER_DATA</div>
-            <div className="grid grid-cols-3 gap-4 text-xs">
-              <div>
-                <span className="text-muted-foreground">SENDER: </span>
-                <span className="text-primary">{tx.sender_earth || tx.txn_earth || 'UNKNOWN'}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">RECEIVER: </span>
-                <span className="text-primary">{'TREASURY'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
           <div className="pt-2 border-t border-primary/20 text-muted-foreground/60 text-xs text-center">
-            {'>'} WASTELAND_BLOCKCHAIN_EXPLORER_v2.089
+            {'>'} TERMINAL_TRANSACTION_EXPLORER_v2.089
           </div>
         </div>
       </div>
@@ -619,38 +476,29 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
       <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4" />
-          <span className="text-primary font-bold">EARTH BRIDGE TERMINAL v2.089</span>
+          <span className="text-primary font-bold">SOL/EARTH TERMINAL v2.089</span>
         </div>
         <div className="flex items-center gap-2">
-          <Activity className="w-3 h-3 animate-pulse" />
-          <span className="text-primary">LIVE</span>
+          <Activity className={`w-3 h-3 ${systemStatus === 'ONLINE' ? 'animate-pulse text-success' : systemStatus === 'MAINTENANCE' ? 'text-warning' : 'text-destructive'}`} />
+          <span className={getSystemStatusColor(systemStatus)}>{systemStatus}</span>
         </div>
       </div>
 
-      {/* Market Stats */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-4">
+      {/* Balance Overview */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="bg-muted/50 border border-primary/20 p-3 rounded">
-          <div className="text-muted-foreground text-xs mb-1">SOL/EARTH</div>
-          <div className="text-primary text-lg font-bold">{formatRate(currentRate)}</div>
-          <div className={`text-xs flex items-center gap-1 ${change24h >= 0 ? 'text-success ' : 'text-warning'}`}>
-            {change24h >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {formatChange(change24h)}
-          </div>
+          <div className="text-muted-foreground text-xs mb-1">WALLET_SOL</div>
+          <div className="text-primary text-lg font-bold">{actions.formatBalance(solBalance)}</div>
+          <div className="text-muted-foreground text-xs">SOLANA</div>
         </div>
 
         <div className="bg-muted/50 border border-primary/20 p-3 rounded">
-          <div className="text-muted-foreground text-xs mb-1">24H VOL<span className="hidden sm:inline">UME</span></div>
-          <div className="text-primary text-lg font-bold">{formatVolume(volume24h)}</div>
-          <div className="text-muted-foreground text-xs">SOL</div>
+          <div className="text-muted-foreground text-xs mb-1">GAME_EARTH</div>
+          <div className="text-success text-lg font-bold">{actions.formatBalance(gameEarthBalance)}/{actions.formatBalance(walletEarthBalance)}</div>
+          <div className="text-muted-foreground text-xs">IN-GAME/WALLET</div>
         </div>
 
         <div className="bg-muted/50 border border-primary/20 p-3 rounded">
-          <div className="text-muted-foreground text-xs mb-1">TRADES</div>
-          <div className="text-primary text-lg font-bold">{totalTrades}</div>
-          <div className="text-muted-foreground text-xs">24H</div>
-        </div>
-
-        <div className="bg-muted/50 border border-primary/20 p-3 rounded hidden sm:block">
           <div className="text-muted-foreground text-xs mb-1">NETWORK</div>
           <div className="text-primary text-lg font-bold flex items-center gap-1">
             <Zap className="w-3 h-3" />
@@ -660,10 +508,9 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
         </div>
       </div>
 
-      {/* Bridge Menu Bar */}
+      {/* Action Menu Bar */}
       <div className="mb-4">
         <div className="flex border border-primary/30 rounded overflow-hidden">
-          {/* Left side - scrollable buttons */}
           <div className="flex-1 overflow-x-auto">
             <div className="flex items-center gap-2 p-2 min-w-max">
               <button
@@ -672,6 +519,14 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
               >
                 <Database className="w-3 h-3" />
                 BRIDGE
+              </button>
+
+              <button
+                disabled
+                className="bg-muted/50 border border-primary/30 text-muted-foreground px-3 py-1 rounded text-xs font-bold cursor-not-allowed flex items-center gap-1 whitespace-nowrap"
+              >
+                <ArrowLeftRight className="w-3 h-3" />
+                SWAP (SOON)
               </button>
 
               <button
@@ -692,9 +547,8 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
             </div>
           </div>
 
-          {/* Right side - settings (always visible) */}
           <div className="flex items-center gap-2 p-2 border-l border-primary/30 bg-muted/20">
-            <span className="text-muted-foreground text-xs whitespace-nowrap hidden sm:inline">BRIDGE_TOOLS</span>
+            <span className="text-muted-foreground text-xs whitespace-nowrap hidden sm:inline">TERMINAL_TOOLS</span>
             <button
               onClick={() => console.log('Settings clicked')}
               className="bg-muted/50 border border-primary/30 text-primary px-2 py-1 rounded text-xs hover:border-primary/50 transition-colors flex-shrink-0"
@@ -705,141 +559,75 @@ const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
         </div>
       </div>
 
-      {/* Price Chart */}
-      <div className="mb-4">
-        <div className="text-muted-foreground text-xs mb-2 flex items-center justify-between">
-          <span>PRICE FLUX (EARTH PER SOL)</span>
-          <span>LAST {marketData.length} BLOCKS</span>
-        </div>
-        <div className="bg-muted/30 border border-primary/20 rounded p-2 h-48">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <Activity className="w-4 h-4 animate-spin mr-2" />
-              SYNCING BLOCKCHAIN...
-            </div>
-          ) : (
-            <ChartContainer config={chartConfig} className="h-full w-full">
-              <LineChart
-                data={marketData}
-                margin={{
-                  left: 12,
-                  right: 12,
-                  top: 12,
-                  bottom: 12,
-                }}
-              >
-                <XAxis
-                  dataKey="block"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10 }}
-                  tickFormatter={(value) => `${value % 10000}`}
-                  className="fill-muted-foreground"
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10 }}
-                  domain={['dataMin - 5', 'dataMax + 5']}
-                  className="fill-muted-foreground"
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) => `Block ${value}`}
-                      formatter={(value) => [
-                        `${parseFloat(value as string).toFixed(2)}`,
-                        "EARTH/SOL"
-                      ]}
-                    />
-                  }
-                />
-                <ReferenceLine
-                  y={180}
-                  stroke="hsl(var(--destructive))"
-                  strokeDasharray="2 2"
-                  strokeOpacity={0.5}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="rate"
-                  stroke="var(--color-rate)"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{
-                    r: 4,
-                    className: "fill-primary stroke-primary-foreground"
-                  }}
-                />
-              </LineChart>
-            </ChartContainer>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Transactions */}
+      {/* Recent Transaction Activity */}
       <div>
-        <div className="text-muted-foreground text-xs mb-2">RECENT TRANSACTIONS</div>
+        <div className="text-muted-foreground text-xs mb-2">RECENT SOL/EARTH ACTIVITY</div>
         <div className="bg-muted/30 border border-primary/20 rounded p-2 max-h-48 overflow-y-auto main-transactions-scroll">
-          {recentTransactions.length > 0 ? (
-            recentTransactions.map((tx, idx) => {
-              const isBuy = tx.from_vault === 'SCRAP_SOL';
-              const txKey = String(tx.txn_earth || tx.wasteland_block || `tx-${idx}`);
+          {isLoading ? (
+            <div className="flex items-center justify-center h-20 text-muted-foreground">
+              <Activity className="w-4 h-4 animate-spin mr-2" />
+              LOADING TRANSACTION DATA...
+            </div>
+          ) : transactions.length > 0 ? (
+            transactions.map((tx) => {
+              const { type, icon: Icon, color } = getTransactionTypeDisplay(tx);
               return (
                 <div
-                  key={txKey}
-                  className={`py-2 border-b border-border/30 last:border-b-0 cursor-pointer hover:bg-muted/20 transition-all duration-300 ${newTransactionIds.has(txKey)
-                    ? 'animate-pulse bg-primary/10 border-primary/30'
-                    : ''
+                  key={tx.id}
+                  className={`py-2 border-b border-border/30 last:border-b-0 cursor-pointer hover:bg-muted/20 transition-all duration-300 ${newTransactionIds.has(tx.id) ? 'animate-pulse bg-primary/10 border-primary/30' : ''
                     }`}
                   onClick={() => setSelectedTransaction(tx)}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <span className={`font-bold flex items-center gap-1 ${isBuy ? 'text-success' : 'text-warning'}`}>
-                        {isBuy ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        {isBuy ? 'BUY_EARTH' : 'SELL_EARTH'}
+                      <span className={`font-bold flex items-center gap-1 ${color}`}>
+                        <Icon className="w-3 h-3" />
+                        {type}
                       </span>
-                      <span className="text-muted-foreground text-xs">BLK{tx.wasteland_block % 10000}</span>
+                      {tx.wasteland_block && (
+                        <span className="text-muted-foreground text-xs">BLK{tx.wasteland_block % 10000}</span>
+                      )}
                     </div>
                     <span className="text-muted-foreground/60 text-xs">{new Date(tx.created_at).toLocaleTimeString()}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs">
-                    <span className="text-primary">{tx.from_units}</span>
-                    <span className="text-muted-foreground">{tx.from_vault?.split('_')[1] || tx.from_vault}</span>
-                    <span className="text-muted-foreground">→</span>
-                    <span className="text-primary">{formatVolume(tx.to_units)}</span>
-                    <span className="text-muted-foreground">{tx.to_vault?.split('_')[1] || tx.to_vault}</span>
-                    <span className="text-muted-foreground ml-2">@{formatRate(tx.exchange_flux)}</span>
+                    {tx.from_vault && tx.to_vault ? (
+                      <>
+                        <span className="text-primary">{formatAmount(tx.from_units || 0)}</span>
+                        <span className="text-muted-foreground">{tx.from_vault.split('_')[1] || tx.from_vault}</span>
+                        <span className="text-muted-foreground">→</span>
+                        <span className="text-primary">{formatAmount(tx.to_units || 0)}</span>
+                        <span className="text-muted-foreground">{tx.to_vault.split('_')[1] || tx.to_vault}</span>
+                        {tx.exchange_flux && (
+                          <span className="text-muted-foreground ml-2">@{formatAmount(tx.exchange_flux)}</span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">{tx.description}</span>
+                    )}
                     <span className="text-muted-foreground/50 ml-auto text-xs">CLICK_TO_EXPLORE</span>
                   </div>
                 </div>
               );
             })
           ) : (
-            marketData.slice(-5).reverse().map((data, idx) => (
-              <div key={idx} className="flex justify-between items-center py-1 border-b border-border/30 last:border-b-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">BLK{data.block % 10000}</span>
-                  <span className="text-primary">{formatRate(data.rate)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">{formatVolume(data.volume)}SOL</span>
-                  <span className="text-muted-foreground/60">{data.time}</span>
-                </div>
+            <div className="flex items-center justify-center h-20 text-muted-foreground">
+              <div className="text-center">
+                <div className="text-muted-foreground">NO_RECENT_ACTIVITY</div>
+                <div className="text-muted-foreground/60 text-xs mt-1">SOL/EARTH transactions will appear here</div>
               </div>
-            ))
+            </div>
           )}
         </div>
       </div>
 
       {/* Footer */}
       <div className="mt-4 pt-2 border-t border-primary/20 flex justify-between text-xs text-muted-foreground/60">
-        <span>EARTH_BRIDGE_v2089 | 100%_BACKING</span>
+        <span>SOL_EARTH_TERMINAL_v2089 | UNIFIED_MANAGEMENT</span>
         <span>LAST_UPDATE: {new Date().toLocaleTimeString()}</span>
       </div>
 
-      {/* ✅ FIXED: Bridge Component with onCharacterUpdate prop */}
+      {/* Bridge Component with all functionality preserved */}
       <EarthBridge
         isOpen={showBridge}
         onClose={() => setShowBridge(false)}

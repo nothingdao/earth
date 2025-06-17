@@ -1,4 +1,4 @@
-// src/components/views/CharacterCreationView.tsx - Updated with better button styling
+// src/components/views/CharacterCreationView.tsx - Updated with asset loader
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,44 +17,16 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { toast } from '@/components/ui/use-toast'
 import SimplePayment from '@/components/SimplePayment'
 import type { Character, Enums } from '@/types'
+// ✅ NEW: Import the clean asset loader API
+import {
+  assetLoader,
+  getLayerAssets,
+  getRandomAsset,
+  getCompatibleAssets,
+  areAssetsCompatible
+} from '@/utils/asset-loader'
 
-interface CharacterCreationViewProps {
-  character: Character | null
-  onCharacterCreated?: () => void
-}
-
-// Type definitions for manifest structure
-interface AssetEntry {
-  file: string
-  compatible_headwear?: string[]
-  incompatible_headwear?: string[]
-  requires_hair?: string[]
-  incompatible_hair?: string[]
-  incompatible_base?: string[]
-  compatible_outerwear?: string[]
-  incompatible_outerwear?: string[]
-  rules?: Record<string, unknown>
-}
-
-interface LayerManifest {
-  male?: (string | AssetEntry)[]
-  female?: (string | AssetEntry)[]
-  neutral?: (string | AssetEntry)[]
-}
-
-interface Manifest {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [layer_type: string]: LayerManifest | any
-  compatibility_rules?: {
-    hair_headwear_conflicts?: Record<string, { blocks?: string[]; allows?: string[] }>
-    outerwear_combinations?: Record<string, { blocks_headwear?: string[]; allows_headwear?: string[] }>
-    style_themes?: Record<string, { preferred_combinations?: string[][] }>
-  }
-}
-
-type GenderFilter = 'ALL' | 'MALE' | 'FEMALE'
-
-// Define proper layer order with probability weights
+// ✅ MOVED: Layer config belongs in the UI, not the API
 const LAYER_CONFIG = {
   '1-base': { required: true, probability: 1.0 },
   '2-skin': { required: false, probability: 0.3 },
@@ -67,162 +39,28 @@ const LAYER_CONFIG = {
   '9-misc-accessories': { required: false, probability: 0.2 },
   'backgrounds': { required: true, probability: 1.0 },
   'overlays': { required: false, probability: 0.3 }
+} as const
+
+const LAYER_ORDER = [
+  'backgrounds',
+  '1-base',
+  '2-skin',
+  '3-undergarments',
+  '4-clothing',
+  '5-outerwear',
+  '6-hair',
+  '7-face-accessories',
+  '8-headwear',
+  '9-misc-accessories',
+  'overlays'
+] as const
+
+interface CharacterCreationViewProps {
+  character: Character | null
+  onCharacterCreated?: () => void
 }
 
-// Parse asset entry
-const parseAssetEntry = (entry: string | AssetEntry): { file: string; rules?: AssetEntry } => {
-  if (typeof entry === 'string') {
-    return { file: entry }
-  }
-  if (typeof entry === 'object' && entry.file) {
-    return { file: entry.file, rules: entry }
-  }
-  return { file: '' }
-}
-
-// Get available assets for a layer based on gender and manifest
-const getLayerAssets = (manifest: Manifest, layer_type: string, gender: Enums<'Gender'>): string[] => {
-  const layerData = manifest[layer_type] as LayerManifest | undefined
-  if (!layerData || layer_type === 'compatibility_rules') return []
-
-  const genderKey = gender.toLowerCase() as 'male' | 'female'
-  const availableAssets: string[] = []
-
-  // Add gender-specific assets
-  if (layerData[genderKey]) {
-    for (const entry of layerData[genderKey]) {
-      const parsed = parseAssetEntry(entry)
-      if (parsed.file) {
-        availableAssets.push(parsed.file)
-      }
-    }
-  }
-
-  // Add neutral assets
-  if (layerData.neutral) {
-    for (const entry of layerData.neutral) {
-      const parsed = parseAssetEntry(entry)
-      if (parsed.file) {
-        availableAssets.push(parsed.file)
-      }
-    }
-  }
-
-  return availableAssets
-}
-
-// Helper function to find asset entry with rules
-const findAssetEntry = (manifest: Manifest, layer_type: string, fileName: string): AssetEntry | null => {
-  const layerData = manifest[layer_type] as LayerManifest | undefined
-  if (!layerData || layer_type === 'compatibility_rules') return null
-
-  // Search in all gender categories
-  const allEntries = [
-    ...(layerData.male || []),
-    ...(layerData.female || []),
-    ...(layerData.neutral || [])
-  ]
-
-  for (const entry of allEntries) {
-    if (typeof entry === 'object' && entry.file === fileName) {
-      return entry
-    }
-  }
-
-  return null
-}
-
-// Check compatibility
-const areAssetsCompatible = (manifest: Manifest, selectedLayers: Record<string, string | null>): boolean => {
-  const rules = manifest.compatibility_rules || {}
-
-  // Check hair-headwear conflicts
-  const selectedHair = selectedLayers['6-hair']
-  const selectedHeadwear = selectedLayers['8-headwear']
-  const selectedBase = selectedLayers['1-base']
-
-  // Check base/hair compatibility FIRST
-  if (selectedBase && selectedHair) {
-    const baseAsset = findAssetEntry(manifest, '1-base', selectedBase)
-    if (baseAsset && baseAsset.incompatible_hair) {
-      if (baseAsset.incompatible_hair.includes(selectedHair)) {
-        return false
-      }
-    }
-
-    const hairAsset = findAssetEntry(manifest, '6-hair', selectedHair)
-    if (hairAsset && hairAsset.incompatible_base) {
-      if (hairAsset.incompatible_base.includes(selectedBase)) {
-        return false
-      }
-    }
-  }
-
-  // Check hair-headwear conflicts
-  if (selectedHair && selectedHeadwear && rules.hair_headwear_conflicts) {
-    const hairConflicts = rules.hair_headwear_conflicts[selectedHair]
-    if (hairConflicts) {
-      if (hairConflicts.blocks && hairConflicts.blocks.includes(selectedHeadwear)) {
-        return false
-      }
-      if (hairConflicts.allows && !hairConflicts.allows.includes(selectedHeadwear)) {
-        return false
-      }
-    }
-  }
-
-  if (selectedHair && selectedHeadwear) {
-    const headwearAsset = findAssetEntry(manifest, '8-headwear', selectedHeadwear)
-    if (headwearAsset && headwearAsset.incompatible_hair) {
-      if (headwearAsset.incompatible_hair.includes(selectedHair)) {
-        return false
-      }
-    }
-
-    if (headwearAsset && headwearAsset.requires_hair) {
-      if (headwearAsset.requires_hair.length > 0 && !headwearAsset.requires_hair.includes(selectedHair)) {
-        return false
-      }
-    }
-
-    const hairAsset = findAssetEntry(manifest, '6-hair', selectedHair)
-    if (hairAsset && hairAsset.incompatible_headwear) {
-      if (hairAsset.incompatible_headwear.includes(selectedHeadwear)) {
-        return false
-      }
-    }
-  }
-
-  const selectedOuterwear = selectedLayers['5-outerwear']
-  if (selectedOuterwear && selectedHeadwear && rules.outerwear_combinations) {
-    const outerwearConflicts = rules.outerwear_combinations[selectedOuterwear]
-    if (outerwearConflicts) {
-      if (outerwearConflicts.blocks_headwear && outerwearConflicts.blocks_headwear.includes(selectedHeadwear)) {
-        return false
-      }
-      if (outerwearConflicts.allows_headwear && !outerwearConflicts.allows_headwear.includes(selectedHeadwear)) {
-        return false
-      }
-    }
-  }
-
-  return true
-}
-
-// Get compatible assets
-const getCompatibleAssets = (manifest: Manifest, layer_type: string, selectedLayers: Record<string, string | null>, gender: Enums<'Gender'>): string[] => {
-  const layerAssets = getLayerAssets(manifest, layer_type, gender)
-  const compatibleAssets: string[] = []
-
-  for (const asset of layerAssets) {
-    const testSelection = { ...selectedLayers, [layer_type]: asset }
-    if (areAssetsCompatible(manifest, testSelection)) {
-      compatibleAssets.push(asset)
-    }
-  }
-
-  return compatibleAssets
-}
+type GenderFilter = 'ALL' | 'MALE' | 'FEMALE'
 
 export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ character, onCharacterCreated }) => {
   const walletInfo = useWalletInfo()
@@ -234,48 +72,21 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [imageLoading, setImageLoading] = useState(false)
   const [currentGender, setCurrentGender] = useState<'MALE' | 'FEMALE'>('MALE')
-  const [manifest, setManifest] = useState<Manifest | null>(null)
-  const [manifestError, setManifestError] = useState<string | null>(null)
+  const [assetError, setAssetError] = useState<string | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   // Payment state
   const [showPayment, setShowPayment] = useState(false)
   const [creatingCharacter, setCreatingCharacter] = useState(false)
 
-  // Load and parse the layers manifest - stable function
-  const loadLayersManifest = useCallback(async (): Promise<Manifest> => {
-    if (manifest) return manifest
-
-    try {
-      // Always use the static file path since it works in both dev and production
-      const manifestPath = '/layers/manifest.json'
-
-      console.log(`Loading manifest from: ${manifestPath}`)
-
-      const response = await fetch(manifestPath)
-      if (!response.ok) {
-        throw new Error(`Failed to load manifest: ${response.status}`)
-      }
-      const loadedManifest = await response.json() as Manifest
-      setManifest(loadedManifest)
-      setManifestError(null)
-      return loadedManifest
-    } catch (error) {
-      console.error('Failed to load layers manifest:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      setManifestError(errorMessage)
-      toast.error(`Failed to load character assets: ${errorMessage}`)
-      return {}
-    }
-  }, [manifest])
-
-  // Generate character image with better error handling
+  // ✅ SIMPLIFIED: Generate character image with asset loader
   const generateCharacterImage = useCallback(async () => {
     if (imageLoading) return // Prevent multiple simultaneous generations
 
     setImageLoading(true)
     setGeneratedImage(null) // Clear previous image
     setShowPayment(false) // Ensure payment modal is closed
+    setAssetError(null)
 
     try {
       const canvas = canvasRef.current
@@ -300,13 +111,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
       setCurrentGender(selectedGender)
       console.log('🎯 Generating character:', selectedGender)
 
-      // Load manifest
-      const loadedManifest = await loadLayersManifest()
-      if (!loadedManifest || Object.keys(loadedManifest).length === 0) {
-        throw new Error('Manifest not loaded or empty')
-      }
-
-      // Select layers with retry logic for compatibility
+      // ✅ NEW: Use asset loader to generate layers with compatibility
       const newSelectedLayers: Record<string, string | null> = {}
       let retryCount = 0
       const maxRetries = 5
@@ -318,48 +123,51 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
             newSelectedLayers[layer] = null
           })
 
-          // First pass: required layers
-          for (const [layer_type, config] of Object.entries(LAYER_CONFIG)) {
-            if (config.required) {
-              if (layer_type === '6-hair') {
-                // For hair, check compatibility with already selected base
-                const compatibleAssets = getCompatibleAssets(loadedManifest, layer_type, newSelectedLayers, selectedGender)
-                if (compatibleAssets.length > 0) {
-                  newSelectedLayers[layer_type] = compatibleAssets[Math.floor(Math.random() * compatibleAssets.length)]
-                } else {
-                  // Fallback to any hair if no compatible ones
-                  const availableAssets = getLayerAssets(loadedManifest, layer_type, selectedGender)
-                  if (availableAssets.length > 0) {
-                    newSelectedLayers[layer_type] = availableAssets[Math.floor(Math.random() * availableAssets.length)]
-                  }
-                }
+          // ✅ FIXED: Only use layers that actually exist in your manifest
+          const actualLayers = ['1-base', '4-clothing', '5-outerwear', '6-hair', '8-headwear', '9-misc-accessories', 'backgrounds']
+          const currentAssets: Array<{ layerType: string; filename: string }> = []
+
+          // Always add required layers
+          for (const layer_type of ['1-base', '6-hair', 'backgrounds']) {
+            if (actualLayers.includes(layer_type)) {
+              const asset = await getRandomAsset(layer_type, selectedGender.toLowerCase())
+              if (asset) {
+                newSelectedLayers[layer_type] = asset
+                currentAssets.push({ layerType: layer_type, filename: asset })
+                console.log(`✓ Selected required: ${layer_type}/${asset}`)
+              }
+            }
+          }
+
+          // Add optional layers with probability
+          const optionalLayers = {
+            '4-clothing': 0.8,
+            '5-outerwear': 0.6,
+            '8-headwear': 0.4,
+            '9-misc-accessories': 0.2
+          }
+
+          for (const [layer_type, probability] of Object.entries(optionalLayers)) {
+            if (actualLayers.includes(layer_type) && Math.random() < probability) {
+              console.log(`🎲 Trying to get ${layer_type} asset...`)
+              const availableAssets = await getLayerAssets(layer_type, selectedGender.toLowerCase())
+              console.log(`📦 Available ${layer_type} assets:`, availableAssets)
+
+              const asset = await getRandomAsset(layer_type, selectedGender.toLowerCase())
+              if (asset) {
+                newSelectedLayers[layer_type] = asset
+                currentAssets.push({ layerType: layer_type, filename: asset })
+                console.log(`✓ Selected optional: ${layer_type}/${asset}`)
               } else {
-                // For other required layers (like base), just pick randomly
-                const availableAssets = getLayerAssets(loadedManifest, layer_type, selectedGender)
-                if (availableAssets.length > 0) {
-                  newSelectedLayers[layer_type] = availableAssets[Math.floor(Math.random() * availableAssets.length)]
-                }
+                console.log(`❌ No asset returned for ${layer_type}`)
               }
+            } else {
+              console.log(`⏭️ Skipped ${layer_type} (probability: ${probability}, rolled: ${Math.random()})`)
             }
           }
 
-          // Second pass: optional layers (with compatibility checking)
-          for (const [layer_type, config] of Object.entries(LAYER_CONFIG)) {
-            if (!config.required && Math.random() < config.probability) {
-              const compatibleAssets = getCompatibleAssets(loadedManifest, layer_type, newSelectedLayers, selectedGender)
-              if (compatibleAssets.length > 0) {
-                newSelectedLayers[layer_type] = compatibleAssets[Math.floor(Math.random() * compatibleAssets.length)]
-              }
-            }
-          }
-
-          // Validate final combination
-          if (areAssetsCompatible(loadedManifest, newSelectedLayers)) {
-            break // Success!
-          } else {
-            retryCount++
-            console.warn(`🔄 Compatibility retry ${retryCount}/${maxRetries}`)
-          }
+          // Success - we have a valid combination
+          break
 
         } catch (error) {
           console.warn(`❌ Layer selection error (retry ${retryCount}):`, error)
@@ -373,7 +181,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
 
       setSelectedLayers(newSelectedLayers)
 
-      // Load and draw images with better error handling
+      // Load and draw images
       const loadImage = (src: string): Promise<HTMLImageElement> => {
         return new Promise((resolve, reject) => {
           const img = new Image()
@@ -391,10 +199,9 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
         })
       }
 
-      const layerOrder = Object.keys(LAYER_CONFIG)
       let successfulLayers = 0
 
-      for (const layer_type of layerOrder) {
+      for (const layer_type of LAYER_ORDER) {
         const selectedFile = newSelectedLayers[layer_type]
         if (!selectedFile) continue
 
@@ -414,15 +221,14 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
       }
 
       // Convert to base64
-      const imageDataUrl = canvas.toDataURL('image/png', 0.9) // Slightly compress
+      const imageDataUrl = canvas.toDataURL('image/png', 0.9)
       setGeneratedImage(imageDataUrl)
-      // man we got to get a handle on these toasts
-      // toast.success(`${selectedGender.toLowerCase()} character generated! (${successfulLayers} layers)`)
 
     } catch (error) {
       console.error('Image generation failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       if (!errorMessage.includes('Canvas not available')) {
+        setAssetError(errorMessage)
         toast.error(`Failed to generate character: ${errorMessage}`)
       }
       setGeneratedImage(null)
@@ -430,7 +236,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
     } finally {
       setImageLoading(false)
     }
-  }, [genderFilter, imageLoading, loadLayersManifest])
+  }, [genderFilter, imageLoading])
 
   // Handle gender filter change
   const handleGenderFilterChange = (newFilter: GenderFilter) => {
@@ -441,7 +247,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
   // Handle payment success
   const handlePaymentSuccess = (paymentSignature: string) => {
     setShowPayment(false)
-    setCreatingCharacter(true) // Show creation progress instead of going back to builder
+    setCreatingCharacter(true)
     createCharacterWithPayment(paymentSignature)
   }
 
@@ -458,7 +264,6 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
       return
     }
 
-    // Prevent payment during image generation
     if (imageLoading) {
       toast.error('Please wait for character generation to complete')
       return
@@ -477,8 +282,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
     setShowPayment(true)
   }
 
-  // Create character with payment - improved error handling
-  // Fixed createCharacterWithPayment function - match backend expectations
+  // Create character with payment
   const createCharacterWithPayment = async (paymentSignature: string) => {
     if (!wallet.publicKey || !generatedImage || !selectedLayers) {
       toast.error('Missing required data for character creation')
@@ -499,12 +303,12 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          wallet_address: wallet.publicKey.toString(), // ✅ Matches backend
-          gender: currentGender,                       // ✅ Matches backend  
-          imageBlob: generatedImage,                   // ✅ Changed from imageUrl to imageBlob
-          selectedLayers: selectedLayers,              // ✅ Matches backend
-          paymentSignature: paymentSignature,         // ✅ Matches backend
-          isNPC: false                                 // ✅ Optional field for backend
+          wallet_address: wallet.publicKey.toString(),
+          gender: currentGender,
+          imageBlob: generatedImage,
+          selectedLayers: selectedLayers,
+          paymentSignature: paymentSignature,
+          isNPC: false
         })
       })
 
@@ -524,12 +328,12 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
         setShowPayment(false)
         setCreatingCharacter(false)
 
-        // Navigate to main app AFTER character is successfully created
+        // Navigate to main app
         if (onCharacterCreated) {
           onCharacterCreated()
         }
 
-        // Auto-generate new character after 2 seconds for rapid testing
+        // Auto-generate new character for testing
         if (process.env.NODE_ENV === 'development') {
           setTimeout(() => {
             generateCharacterImage()
@@ -542,18 +346,14 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
     } catch (error: unknown) {
       console.error('Character creation failed:', error)
 
-      // Check if this is the "wallet already has character" error
+      // Check if wallet already has character
       if (error instanceof Error && (error.message?.includes('WALLET_HAS_PLAYER') || error.message?.includes('Wallet already has a character'))) {
         console.log('🎉 Wallet already has a character, proceeding to game...')
 
-        // Clear the creation state
         setCreatingCharacter(false)
         setShowPayment(false)
-
-        // Show success message
         toast.success('Character already exists! Entering game...')
 
-        // Navigate to the game since character already exists
         if (onCharacterCreated) {
           onCharacterCreated()
         }
@@ -561,29 +361,28 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
         return
       }
 
-      // Handle other errors normally
+      // Handle other errors
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       toast.error(`Creation failed: ${errorMessage}`)
-      setCreatingCharacter(false) // Hide creation progress on error
+      setCreatingCharacter(false)
     }
   }
 
-  // Auto-generate on mount and gender change (with debouncing)
+  // ✅ SIMPLIFIED: Auto-generate on mount
   useEffect(() => {
     if (walletInfo.connected && !character && !imageLoading && !generatedImage) {
-      // Debounce generation to prevent rapid calls
       const timer = setTimeout(() => {
         generateCharacterImage()
       }, 300)
 
       return () => clearTimeout(timer)
     }
-  }, [walletInfo.connected, character, genderFilter])
+  }, [walletInfo.connected, character, genderFilter, generateCharacterImage])
 
-  // Load manifest on mount
+  // ✅ NEW: Preload critical assets
   useEffect(() => {
-    loadLayersManifest()
-  }, [loadLayersManifest])
+    assetLoader.preloadCriticalLayers().catch(console.warn)
+  }, [])
 
   return (
     <div className="space-y-4">
@@ -601,27 +400,27 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
         </div>
       )}
 
-      {/* Manifest Error State */}
-      {manifestError && (
+      {/* ✅ UPDATED: Asset Error State */}
+      {assetError && (
         <div className="bg-muted/20 border border-error/30 rounded p-3">
           <div className="flex items-center gap-2 text-error">
             <AlertCircle className="w-4 h-4" />
             <span className="font-mono text-sm">ASSET_LOADING_ERROR</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1 font-mono">
-            {manifestError}
+            {assetError}
           </p>
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
-              setManifest(null)
-              setManifestError(null)
-              loadLayersManifest()
+              setAssetError(null)
+              assetLoader.clearCache()
+              generateCharacterImage()
             }}
             className="mt-2 h-7 text-xs font-mono"
           >
-            RETRY_ASSETS
+            RETRY_GENERATION
           </Button>
         </div>
       )}
@@ -667,7 +466,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
       {/* Main Character Creation */}
       {walletInfo.connected && !character && !showPayment && !creatingCharacter && (
         <div className="space-y-4">
-          {/* Gender Filter Row - Compact button group */}
+          {/* Gender Filter Row */}
           <div className="bg-muted/20 border border-primary/20 rounded p-3">
             <div className="flex items-center justify-between gap-3">
               <div className="text-primary font-mono text-sm font-bold">CHAR_TYPE</div>
@@ -722,7 +521,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
                 variant="outline"
                 size="sm"
                 onClick={generateCharacterImage}
-                disabled={imageLoading || manifestError !== null}
+                disabled={imageLoading}
                 className="h-7 w-7 p-0 border-success/50 text-success hover:bg-success/10"
               >
                 {imageLoading ? (
@@ -737,7 +536,6 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
           {/* Character Display */}
           <div className="bg-muted/20 border border-primary/20 rounded p-4">
             <div className="text-center space-y-3">
-              {/* Character Preview */}
               <div className="flex justify-center">
                 <div className="w-48 h-48 sm:w-64 sm:h-64 rounded border-2 border-primary/30 bg-muted/10 flex items-center justify-center relative overflow-hidden">
                   {generatedImage ? (
@@ -754,10 +552,10 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
                         <p className="text-xs text-muted-foreground font-mono">CREATING_CHARACTER</p>
                       </div>
                     </div>
-                  ) : manifestError ? (
+                  ) : assetError ? (
                     <div className="flex flex-col items-center gap-2 text-error">
                       <AlertCircle className="w-6 h-6" />
-                      <span className="text-xs font-mono">ASSETS_NOT_LOADED</span>
+                      <span className="text-xs font-mono">GENERATION_FAILED</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2">
@@ -791,7 +589,7 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
 
             <Button
               onClick={handleStartCreation}
-              disabled={!generatedImage || manifestError !== null || imageLoading}
+              disabled={!generatedImage || assetError !== null || imageLoading}
               className="w-full bg-success hover:bg-success/90 text-black font-mono text-sm h-9"
               size="lg"
             >
@@ -801,9 +599,9 @@ export const CharacterCreationView: React.FC<CharacterCreationViewProps> = ({ ch
 
             {/* Status Message */}
             <div className="h-4 flex items-center justify-center">
-              {manifestError && (
+              {assetError && (
                 <p className="text-xs text-error text-center font-mono">
-                  CANNOT_CREATE_UNTIL_ASSETS_LOADED
+                  CANNOT_CREATE_UNTIL_GENERATION_FIXED
                 </p>
               )}
             </div>

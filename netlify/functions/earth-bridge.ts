@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// netlify/functions/earth-bridge.ts - Clean version with JSON array treasury key
+// netlify/functions/earth-bridge.ts - Fixed with user token account creation
 import { createClient } from '@supabase/supabase-js'
 import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js'
 import {
@@ -256,6 +256,7 @@ async function handleEarthWithdrawal(
   userWallet: string,
   headers: any
 ) {
+  console.log('🚀 HANDLEWITHDRAWAL VERSION: 2024-FIXED-TOKEN-ACCOUNT')
   console.log('🏦 Processing EARTH withdrawal...', {
     characterId,
     amount,
@@ -618,6 +619,8 @@ async function sendEarthFromTreasury(
   userWallet: string,
   amount: number
 ): Promise<string | null> {
+  console.log('🚀 SENDEARTH VERSION: 2024-FIXED-TOKEN-ACCOUNT') // Add this line
+
   try {
     console.log(`🏦 Sending ${amount} EARTH from treasury to ${userWallet}`)
 
@@ -684,13 +687,16 @@ async function sendEarthFromTreasury(
       throw error
     }
 
-    // Check if user token account exists, create if needed
+    // ✅ FIXED: Check if user token account exists, create if needed
     let needsCreateUserAccount = false
     try {
       await getAccount(connection, userTokenAccount)
       console.log('✅ User token account exists')
     } catch (error) {
-      if (error.message.includes('could not find account')) {
+      if (
+        error.message.includes('could not find account') ||
+        error.name === 'TokenAccountNotFoundError'
+      ) {
         console.log('📝 User token account does not exist - will create it')
         needsCreateUserAccount = true
       } else {
@@ -701,7 +707,7 @@ async function sendEarthFromTreasury(
     // Build transaction
     const transaction = new Transaction()
 
-    // Add create user token account instruction if needed
+    // ✅ FIXED: Add create user token account instruction if needed
     if (needsCreateUserAccount) {
       console.log('Adding create user token account instruction')
       const createAccountInstruction = createAssociatedTokenAccountInstruction(

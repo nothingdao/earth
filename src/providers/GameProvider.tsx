@@ -1,6 +1,8 @@
-// src/providers/GameProvider.tsx - Fixed refetchCharacter
+// src/providers/GameProvider.tsx - Added balance management
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
+import { Connection, PublicKey } from '@solana/web3.js'
+import { getAssociatedTokenAddress } from '@solana/spl-token'
 import { useNetwork } from '@/contexts/NetworkContext'
 import { usePlayerCharacter, useCharacterActions } from '@/hooks/usePlayerCharacter'
 import { useGameData } from '@/hooks/useGameData'
@@ -30,6 +32,10 @@ interface GameState {
   hasLoadedGameData: boolean
   isTravelingOnMap: boolean
   mapTravelDestination: string | null
+  // ✅ ADD BALANCE STATE
+  solBalance: number
+  walletEarthBalance: number
+  balancesLoading: boolean
 }
 
 type GameAction =
@@ -42,13 +48,19 @@ type GameAction =
   | { type: 'END_TRAVEL' }
   | { type: 'SET_SELECTED_LOCATION'; location: Location | undefined }
   | { type: 'SET_PLAYER_DATA'; character: Character; hasCharacter: boolean; loading: boolean }
-  | { type: 'UPDATE_CHARACTER'; character: Character } // ✅ ADD THIS
+  | { type: 'UPDATE_CHARACTER'; character: Character }
   | { type: 'PLAYER_CHECK_COMPLETE'; hasCharacter: boolean }
   | { type: 'GAME_DATA_LOADED' }
   | { type: 'USER_WANTS_TO_ENTER_GAME' }
   | { type: 'SET_MAP_TRAVELING'; isTraveling: boolean; destination: string | null }
   | { type: 'CLEAR_MAP_TRAVELING' }
   | { type: 'RESET_ALL_STATE' }
+  // ✅ ADD BALANCE ACTIONS
+  | { type: 'SET_BALANCES_LOADING'; loading: boolean }
+  | { type: 'SET_SOL_BALANCE'; balance: number }
+  | { type: 'SET_WALLET_EARTH_BALANCE'; balance: number }
+  | { type: 'SET_BALANCES'; solBalance: number; walletEarthBalance: number }
+  | { type: 'RESET_BALANCES' }
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -91,7 +103,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         characterLoading: action.loading
       }
 
-    // ✅ ADD THIS CASE
     case 'UPDATE_CHARACTER':
       return {
         ...state,
@@ -132,6 +143,41 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         mapTravelDestination: null
       }
 
+    // ✅ ADD BALANCE REDUCERS
+    case 'SET_BALANCES_LOADING':
+      return {
+        ...state,
+        balancesLoading: action.loading
+      }
+
+    case 'SET_SOL_BALANCE':
+      return {
+        ...state,
+        solBalance: action.balance
+      }
+
+    case 'SET_WALLET_EARTH_BALANCE':
+      return {
+        ...state,
+        walletEarthBalance: action.balance
+      }
+
+    case 'SET_BALANCES':
+      return {
+        ...state,
+        solBalance: action.solBalance,
+        walletEarthBalance: action.walletEarthBalance,
+        balancesLoading: false
+      }
+
+    case 'RESET_BALANCES':
+      return {
+        ...state,
+        solBalance: 0,
+        walletEarthBalance: 0,
+        balancesLoading: false
+      }
+
     case 'RESET_ALL_STATE':
       return {
         ...state,
@@ -148,7 +194,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         hasCheckedCharacter: false,
         hasLoadedGameData: false,
         isTravelingOnMap: false,
-        mapTravelDestination: null
+        mapTravelDestination: null,
+        // ✅ RESET BALANCES
+        solBalance: 0,
+        walletEarthBalance: 0,
+        balancesLoading: false
       }
 
     default:
@@ -174,6 +224,9 @@ interface GameContextType {
     handleSendMessage: (message: string) => Promise<void>
     handleRetry: () => void
     handleRefresh: () => void
+    // ✅ ADD BALANCE ACTIONS
+    refetchBalances: () => Promise<void>
+    formatBalance: (amount: number) => string
   }
 }
 
@@ -181,7 +234,12 @@ const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const wallet = useWallet()
+  const { publicKey } = wallet
   const { isMainnet } = useNetwork()
+
+  // Environment variables
+  const EARTH_MINT_ADDRESS = import.meta.env.VITE_EARTH_MINT_ADDRESS
+  const SOLANA_RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
 
   // Load character data on devnet only, but don't completely block the hooks
   const {
@@ -204,7 +262,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     hasCheckedCharacter: false,
     hasLoadedGameData: false,
     isTravelingOnMap: false,
-    mapTravelDestination: null
+    mapTravelDestination: null,
+    // ✅ INITIALIZE BALANCE STATE
+    solBalance: 0,
+    walletEarthBalance: 0,
+    balancesLoading: false
   })
 
   const gameData = useGameData(
@@ -213,33 +275,122 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     !isMainnet ? state.selectedLocation : undefined
   )
 
-  // ✅ FIXED: Character updates - sync hook state to provider state
+  // ✅ BALANCE FETCHING FUNCTIONS
+  const fetchSolBalance = useCallback(async (): Promise<number> => {
+    if (!publicKey || isMainnet) return 0;
+
+    try {
+      const response = await fetch(`/api/get-sol-balance?wallet_address=${publicKey.toString()}`);
+      const data = await response.json();
+
+      if (data.success) {
+        console.log(`💰 SOL Balance: ${data.solBalance}`);
+        return data.solBalance;
+      } else {
+        console.error('Failed to fetch SOL balance:', data.error);
+        return 0;
+      }
+    } catch (error) {
+      console.error('Error fetching SOL balance:', error);
+      return 0;
+    }
+  }, [publicKey, isMainnet]);
+
+  const fetchWalletEarthBalance = useCallback(async (): Promise<number> => {
+    if (!publicKey || !EARTH_MINT_ADDRESS || isMainnet) return 0;
+
+    try {
+      const connection = new Connection(SOLANA_RPC_URL);
+      const earthMint = new PublicKey(EARTH_MINT_ADDRESS);
+      const userTokenAccount = await getAssociatedTokenAddress(earthMint, publicKey);
+
+      const balance = await connection.getTokenAccountBalance(userTokenAccount);
+      const earthBalance = parseFloat(balance.value.uiAmount || '0');
+
+      console.log(`🌍 Wallet EARTH Balance: ${earthBalance}`);
+      return earthBalance;
+    } catch (error) {
+      if (error.message?.includes('could not find account')) {
+        console.log('User has no EARTH token account yet');
+        return 0;
+      }
+      console.error('Error fetching wallet EARTH balance:', error);
+      return 0;
+    }
+  }, [publicKey, EARTH_MINT_ADDRESS, SOLANA_RPC_URL, isMainnet]);
+
+  const refetchBalances = useCallback(async () => {
+    if (!publicKey || isMainnet) {
+      dispatch({ type: 'RESET_BALANCES' });
+      return;
+    }
+
+    dispatch({ type: 'SET_BALANCES_LOADING', loading: true });
+
+    try {
+      console.log('🔄 Fetching all balances...');
+      const [solBalance, walletEarthBalance] = await Promise.all([
+        fetchSolBalance(),
+        fetchWalletEarthBalance()
+      ]);
+
+      dispatch({
+        type: 'SET_BALANCES',
+        solBalance,
+        walletEarthBalance
+      });
+
+      console.log('✅ All balances updated:', { solBalance, walletEarthBalance });
+    } catch (error) {
+      console.error('❌ Failed to fetch balances:', error);
+      dispatch({ type: 'SET_BALANCES_LOADING', loading: false });
+    }
+  }, [publicKey, isMainnet, fetchSolBalance, fetchWalletEarthBalance]);
+
+  // ✅ FORMAT BALANCE HELPER
+  const formatBalance = useCallback((amount: number): string => {
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`;
+    return Math.floor(amount).toString();
+  }, []);
+
+  // Character updates - sync hook state to provider state
   useEffect(() => {
     if (character && !isMainnet) {
-      console.log('🔄 Character updated from hook, syncing to provider state')
-      console.log('📊 Character EARTH balance:', character.earth)
+      console.log('🔄 Character updated from hook, syncing to provider state');
+      console.log('📊 Character EARTH balance:', character.earth);
       dispatch({
         type: 'SET_PLAYER_DATA',
         character: character,
         hasCharacter,
         loading: characterLoading
-      })
+      });
     }
-  }, [character, hasCharacter, characterLoading, isMainnet])
+  }, [character, hasCharacter, characterLoading, isMainnet]);
+
+  // ✅ FETCH BALANCES WHEN WALLET CONNECTS
+  useEffect(() => {
+    if (publicKey && !isMainnet) {
+      console.log('💰 Wallet connected, fetching balances...');
+      refetchBalances();
+    } else {
+      dispatch({ type: 'RESET_BALANCES' });
+    }
+  }, [publicKey, isMainnet, refetchBalances]);
 
   // Wallet connection handling
   useEffect(() => {
     if (!wallet.connected) {
-      console.log('🔌 Wallet disconnected - resetting game state')
-      dispatch({ type: 'RESET_ALL_STATE' })
+      console.log('🔌 Wallet disconnected - resetting game state');
+      dispatch({ type: 'RESET_ALL_STATE' });
     } else if (wallet.connected && state.appState === 'wallet-required') {
       if (isMainnet) {
-        console.log('🟢 MAINNET: Staying at wallet-required for reservations')
-        return
+        console.log('🟢 MAINNET: Staying at wallet-required for reservations');
+        return;
       }
-      dispatch({ type: 'SET_APP_STATE', appState: 'checking-character' })
+      dispatch({ type: 'SET_APP_STATE', appState: 'checking-character' });
     }
-  }, [wallet.connected, state.appState, isMainnet])
+  }, [wallet.connected, state.appState, isMainnet]);
 
   // Character detection - ONLY ON DEVNET
   useEffect(() => {
@@ -247,103 +398,106 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       dispatch({
         type: 'PLAYER_CHECK_COMPLETE',
         hasCharacter: true
-      })
+      });
     }
-  }, [character, hasCharacter, characterLoading, isMainnet])
+  }, [character, hasCharacter, characterLoading, isMainnet]);
 
   const actions = {
     navigate: useCallback((view: GameView) => {
       if (isMainnet) {
-        console.log('🟢 MAINNET: Navigation blocked')
-        return
+        console.log('🟢 MAINNET: Navigation blocked');
+        return;
       }
-      dispatch({ type: 'SET_VIEW', view })
+      dispatch({ type: 'SET_VIEW', view });
     }, [isMainnet]),
 
     setSelectedLocation: useCallback((location: Location | undefined) => {
       if (isMainnet) {
-        console.log('🟢 MAINNET: Location selection blocked')
-        return
+        console.log('🟢 MAINNET: Location selection blocked');
+        return;
       }
-      dispatch({ type: 'SET_SELECTED_LOCATION', location })
+      dispatch({ type: 'SET_SELECTED_LOCATION', location });
     }, [isMainnet]),
 
     checkForCharacter: useCallback(async () => {
-      if (!wallet.connected || isMainnet) return
+      if (!wallet.connected || isMainnet) return;
       try {
-        await refetchCharacter()
-        dispatch({ type: 'PLAYER_CHECK_COMPLETE', hasCharacter })
+        await refetchCharacter();
+        dispatch({ type: 'PLAYER_CHECK_COMPLETE', hasCharacter });
       } catch (error) {
-        dispatch({ type: 'SET_ERROR', error: 'Failed to check character' })
+        dispatch({ type: 'SET_ERROR', error: 'Failed to check character' });
       }
     }, [wallet.connected, refetchCharacter, hasCharacter, isMainnet]),
 
     enterGame: useCallback(async () => {
-      if (!character || isMainnet) return
+      if (!character || isMainnet) return;
       try {
-        await gameData.actions.loadGameData()
-        dispatch({ type: 'GAME_DATA_LOADED' })
+        await gameData.actions.loadGameData();
+        dispatch({ type: 'GAME_DATA_LOADED' });
       } catch (error) {
-        dispatch({ type: 'SET_ERROR', error: 'Failed to load game data' })
+        dispatch({ type: 'SET_ERROR', error: 'Failed to load game data' });
       }
     }, [character, gameData.actions, isMainnet]),
 
     createCharacterComplete: useCallback(() => {
-      if (isMainnet) return
-      dispatch({ type: 'USER_WANTS_TO_ENTER_GAME' })
+      if (isMainnet) return;
+      dispatch({ type: 'USER_WANTS_TO_ENTER_GAME' });
     }, [isMainnet]),
 
-    // ✅ FIXED: refetchCharacter now properly updates provider state
+    // ✅ ENHANCED: refetchCharacter now also refreshes balances
     refetchCharacter: useCallback(async () => {
-      if (isMainnet) return
+      if (isMainnet) return;
       try {
-        console.log('🔄 GameProvider: Refetching character...')
-        await refetchCharacter() // This updates the hook's character state
-
-        // The useEffect above will automatically sync the new character to provider state
-        console.log('✅ GameProvider: Character refetch completed')
+        console.log('🔄 GameProvider: Refetching character and balances...');
+        await refetchCharacter(); // This updates the hook's character state
+        await refetchBalances(); // Also refresh wallet balances
+        console.log('✅ GameProvider: Character and balances refetch completed');
       } catch (error) {
-        console.error('❌ GameProvider: Character refetch failed:', error)
-        dispatch({ type: 'SET_ERROR', error: 'Failed to refresh character data' })
+        console.error('❌ GameProvider: Character refetch failed:', error);
+        dispatch({ type: 'SET_ERROR', error: 'Failed to refresh character data' });
       }
-    }, [refetchCharacter, isMainnet]),
+    }, [refetchCharacter, refetchBalances, isMainnet]),
+
+    // ✅ ADD BALANCE ACTIONS
+    refetchBalances,
+    formatBalance,
 
     handleMining: useCallback(async () => {
-      if (!character || isMainnet) return
+      if (!character || isMainnet) return;
       if (character.energy < 10) {
-        toast.error('Not enough energy! Need at least 10 energy to mine.')
-        return
+        toast.error('Not enough energy! Need at least 10 energy to mine.');
+        return;
       }
 
       try {
-        dispatch({ type: 'SET_LOADING_ITEM', item_id: 'mining', loading: true })
-        const result = await characterActions.mine()
+        dispatch({ type: 'SET_LOADING_ITEM', item_id: 'mining', loading: true });
+        const result = await characterActions.mine();
 
         if (result.success) {
           if (result.foundItem) {
-            toast.success(`Found ${result.foundItem.name}! (-${result.energyCost} energy)`)
+            toast.success(`Found ${result.foundItem.name}! (-${result.energyCost} energy)`);
           } else {
-            toast.warning(`Nothing found this time... (-${result.energyCost} energy)`)
+            toast.warning(`Nothing found this time... (-${result.energyCost} energy)`);
           }
           if (result.healthLoss > 0) {
-            toast.warning(`Lost ${result.healthLoss} health!`)
+            toast.warning(`Lost ${result.healthLoss} health!`);
           }
-          await refetchCharacter()
+          await refetchCharacter();
         } else {
-          toast.error(result.message || 'Mining failed')
+          toast.error(result.message || 'Mining failed');
         }
       } catch (error) {
-        toast.error('Mining failed. Please try again.')
+        toast.error('Mining failed. Please try again.');
       } finally {
-        dispatch({ type: 'SET_LOADING_ITEM', item_id: 'mining', loading: false })
+        dispatch({ type: 'SET_LOADING_ITEM', item_id: 'mining', loading: false });
       }
     }, [character, characterActions, refetchCharacter, isMainnet]),
 
     handleTravel: useCallback(async (location_id: string) => {
-      if (!character || isMainnet) return
+      if (!character || isMainnet) return;
 
       try {
-        dispatch({ type: 'SET_MAP_TRAVELING', isTraveling: true, destination: location_id })
+        dispatch({ type: 'SET_MAP_TRAVELING', isTraveling: true, destination: location_id });
 
         const response = await fetch('/api/travel-action', {
           method: 'POST',
@@ -352,27 +506,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             wallet_address: character.wallet_address,
             destinationId: location_id
           })
-        })
+        });
 
         if (!response.ok) {
-          const errorText = await response.text()
-          let errorMessage = 'Travel failed'
+          const errorText = await response.text();
+          let errorMessage = 'Travel failed';
           try {
-            const errorData = JSON.parse(errorText)
-            errorMessage = errorData.error || errorData.message || errorMessage
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error || errorData.message || errorMessage;
           } catch {
-            errorMessage = errorText || errorMessage
+            errorMessage = errorText || errorMessage;
           }
-          throw new Error(errorMessage)
+          throw new Error(errorMessage);
         }
 
-        const result = await response.json()
+        const result = await response.json();
 
-        // Show arrival toast with available services
-        const availableServices = []
-        if (result.destination?.has_market) availableServices.push('MARKET')
-        if (result.destination?.has_mining) availableServices.push('MINING')
-        if (result.destination?.has_chat) availableServices.push('COMMS')
+        const availableServices = [];
+        if (result.destination?.has_market) availableServices.push('MARKET');
+        if (result.destination?.has_mining) availableServices.push('MINING');
+        if (result.destination?.has_chat) availableServices.push('COMMS');
 
         toast.success('ARRIVAL_SUCCESSFUL', {
           description: `LOCATION: ${result.destination?.name.toUpperCase()}\n${availableServices.length > 0
@@ -380,116 +533,116 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             : 'NO_SERVICES_AVAILABLE'
             }`,
           duration: 4000,
-        })
+        });
 
-        await refetchCharacter()
-        await gameData.actions.loadGameData()
+        await refetchCharacter();
+        await gameData.actions.loadGameData();
       } catch (error) {
-        console.error('Travel failed:', error)
-        toast.error(error instanceof Error ? error.message : 'Travel failed')
+        console.error('Travel failed:', error);
+        toast.error(error instanceof Error ? error.message : 'Travel failed');
       } finally {
-        dispatch({ type: 'CLEAR_MAP_TRAVELING' })
+        dispatch({ type: 'CLEAR_MAP_TRAVELING' });
       }
     }, [character, characterActions, refetchCharacter, gameData.actions, isMainnet]),
 
     handlePurchase: useCallback(async (item_id: string, cost: number, itemName: string) => {
-      if (!character || isMainnet) return
+      if (!character || isMainnet) return;
 
       try {
-        dispatch({ type: 'SET_LOADING_ITEM', item_id, loading: true })
-        const result = await characterActions.buyItem(item_id)
+        dispatch({ type: 'SET_LOADING_ITEM', item_id, loading: true });
+        const result = await characterActions.buyItem(item_id);
 
         if (result.success) {
           toast.success('PURCHASE_SUCCESSFUL', {
             description: `ITEM: ${itemName.toUpperCase()}\nCOST: ${cost} EARTH\nBALANCE: ${result.newBalance || 0} EARTH`,
             duration: 4000,
-          })
-          await refetchCharacter()
-          await gameData.actions.loadGameData()
+          });
+          await refetchCharacter();
+          await gameData.actions.loadGameData();
         } else {
           toast.error('PURCHASE_FAILED', {
             description: result.message || 'INSUFFICIENT_FUNDS',
             duration: 4000,
-          })
+          });
         }
       } catch (error) {
         toast.error('PURCHASE_FAILED', {
           description: 'NETWORK_ERROR • RETRY_REQUIRED',
           duration: 4000,
-        })
+        });
       } finally {
-        dispatch({ type: 'SET_LOADING_ITEM', item_id, loading: false })
+        dispatch({ type: 'SET_LOADING_ITEM', item_id, loading: false });
       }
     }, [character, characterActions, refetchCharacter, gameData.actions, isMainnet]),
 
     handleEquipItem: useCallback(async (inventoryId: string, shouldEquip: boolean) => {
-      if (!character || isMainnet) return
+      if (!character || isMainnet) return;
 
       try {
-        dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: true })
-        const result = await characterActions.equipItem(inventoryId, shouldEquip)
+        dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: true });
+        const result = await characterActions.equipItem(inventoryId, shouldEquip);
 
         if (result.success) {
-          const action = shouldEquip ? 'EQUIPPED' : 'UNEQUIPPED'
+          const action = shouldEquip ? 'EQUIPPED' : 'UNEQUIPPED';
           toast.success('EQUIPMENT_UPDATE', {
             description: `ITEM: ${result.item.name.toUpperCase()}\nSTATUS: ${action}\nCATEGORY: ${result.item.category}\nRARITY: ${result.item.rarity}`,
             duration: 4000,
-          })
-          await refetchCharacter()
+          });
+          await refetchCharacter();
         } else {
           toast.error('EQUIPMENT_ERROR', {
             description: result.message || 'INVALID_SLOT • RETRY_REQUIRED',
             duration: 4000,
-          })
+          });
         }
       } catch (error) {
         toast.error('EQUIPMENT_ERROR', {
           description: 'NETWORK_ERROR • RETRY_REQUIRED',
           duration: 4000,
-        })
+        });
       } finally {
-        dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: false })
+        dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: false });
       }
     }, [character, characterActions, refetchCharacter, isMainnet]),
 
     handleUseItem: useCallback(async (inventoryId: string, itemName: string, energy_effect?: number, health_effect?: number) => {
-      if (!character || isMainnet) return
+      if (!character || isMainnet) return;
 
       try {
-        dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: true })
-        const result = await characterActions.useItem(inventoryId)
+        dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: true });
+        const result = await characterActions.useItem(inventoryId);
 
         if (result.success) {
-          const effects = []
-          if (energy_effect) effects.push(`ENERGY: +${energy_effect}`)
-          if (health_effect) effects.push(`HEALTH: +${health_effect}`)
+          const effects = [];
+          if (energy_effect) effects.push(`ENERGY: +${energy_effect}`);
+          if (health_effect) effects.push(`HEALTH: +${health_effect}`);
 
           toast.success('ITEM_USED', {
             description: `ITEM: ${itemName.toUpperCase()}\n${effects.join('\n')}\nSTATUS: CONSUMED`,
             duration: 4000,
-          })
-          await refetchCharacter()
+          });
+          await refetchCharacter();
         } else {
           toast.error('ITEM_ERROR', {
             description: result.message || 'INVALID_ITEM • RETRY_REQUIRED',
             duration: 4000,
-          })
+          });
         }
       } catch (error) {
         toast.error('ITEM_ERROR', {
           description: 'NETWORK_ERROR • RETRY_REQUIRED',
           duration: 4000,
-        })
+        });
       } finally {
-        dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: false })
+        dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: false });
       }
     }, [character, characterActions, refetchCharacter, isMainnet]),
 
     handleSendMessage: useCallback(async (message: string) => {
-      if (!character || !message.trim() || isMainnet) return
+      if (!character || !message.trim() || isMainnet) return;
 
       try {
-        const location_id = character.current_location_id
+        const location_id = character.current_location_id;
 
         console.log('💬 Sending message debug info:', {
           character_name: character.name,
@@ -497,32 +650,32 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           selectedLocation_id: state.selectedLocation?.id,
           using_location_id: location_id,
           message_preview: message.trim().substring(0, 20) + '...'
-        })
+        });
 
-        const result = await characterActions.sendMessage(location_id, message.trim(), 'CHAT')
+        const result = await characterActions.sendMessage(location_id, message.trim(), 'CHAT');
 
         if (result.success) {
-          await gameData.actions.loadChatMessages(location_id)
+          await gameData.actions.loadChatMessages(location_id);
         } else {
-          toast.error(result.message || 'Failed to send message')
+          toast.error(result.message || 'Failed to send message');
         }
       } catch (error) {
-        console.error('Failed to send message:', error)
-        toast.error('Failed to send message. Please try again.')
+        console.error('Failed to send message:', error);
+        toast.error('Failed to send message. Please try again.');
       }
     }, [character, characterActions, gameData.actions, state.selectedLocation, isMainnet]),
 
     handleRetry: useCallback(() => {
-      dispatch({ type: 'CLEAR_ERROR' })
+      dispatch({ type: 'CLEAR_ERROR' });
       if (wallet.connected && !isMainnet) {
-        dispatch({ type: 'SET_APP_STATE', appState: 'checking-character' })
+        dispatch({ type: 'SET_APP_STATE', appState: 'checking-character' });
       }
     }, [wallet.connected, isMainnet]),
 
     handleRefresh: useCallback(() => {
-      window.location.reload()
+      window.location.reload();
     }, [])
-  }
+  };
 
   const contextValue: GameContextType = {
     state: {
@@ -531,21 +684,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     },
     dispatch,
     actions
-  }
+  };
 
   return (
     <GameContext.Provider value={contextValue}>
       {children}
     </GameContext.Provider>
-  )
+  );
 }
 
 export const useGame = () => {
-  const context = useContext(GameContext)
+  const context = useContext(GameContext);
   if (!context) {
-    throw new Error('useGame must be used within GameProvider')
+    throw new Error('useGame must be used within GameProvider');
   }
-  return context
-}
+  return context;
+};
 
-export type { GameContextType, GameState, GameAction }
+export type { GameContextType, GameState, GameAction };

@@ -98,6 +98,13 @@ export function BottomDrawerNav({
       current: currentView === 'main',
     },
     {
+      id: 'profile',
+      icon: User,
+      label: 'PROFILE',
+      action: onProfileClick,
+      current: currentView === 'profile',
+    },
+    {
       id: 'map',
       icon: Map,
       label: 'WORLD_MAP',
@@ -132,13 +139,6 @@ export function BottomDrawerNav({
       label: 'EXCHANGE',
       action: onearthMarketClick,
       current: currentView === 'earth-market',
-    },
-    {
-      id: 'profile',
-      icon: User,
-      label: 'PROFILE',
-      action: onProfileClick,
-      current: currentView === 'profile',
     },
     {
       id: 'economy',
