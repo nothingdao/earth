@@ -1,6 +1,7 @@
 // src/components/ViewRenderer.tsx - Fixed with EarthMarket character refresh
 import { useState } from 'react'
 import { toast } from '@/components/ui/use-toast'
+import { useAdminLocations } from '@/hooks/useAdminData'
 import {
   MainView,
   ProfileView,
@@ -37,6 +38,7 @@ export function ViewRenderer({
   const [isFullscreenChat, setIsFullscreenChat] = useState(false)
 
   const { state } = useGame()
+  const { updateLocation } = useAdminLocations()
 
   // Simple travel handler that delegates to GameProvider with animation delay
   const handleTravel = async (location_id: string) => {
@@ -232,17 +234,18 @@ export function ViewRenderer({
           onTravel={handleTravel}
           isTravelingOnMap={state.isTravelingOnMap}
           mapTravelDestination={state.mapTravelDestination}
-          onLocationUpdate={(locationId, updates) => {
-            // Update the gameData.locations array directly
-            if (gameData.locations) {
-              const updatedLocations = gameData.locations.map(loc =>
-                loc.id === locationId ? { ...loc, ...updates } : loc
-              )
-              // We need to update this in the GameProvider state
-              state.dispatch?.({
-                type: 'UPDATE_LOCATIONS',
-                locations: updatedLocations
-              })
+          onLocationUpdate={async (locationId, updates) => {
+            try {
+              // Save to database using admin hook
+              await updateLocation(locationId, updates)
+
+              // Refresh game data to get updated locations
+              await actions.enterGame()
+
+              toast.success('Location updated successfully')
+            } catch (error) {
+              console.error('Failed to update location:', error)
+              toast.error('Failed to save location changes')
             }
           }}
         />

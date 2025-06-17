@@ -195,7 +195,7 @@ export const SimplePayment: React.FC<SimplePaymentProps> = ({
         lamports: Math.floor(NFT_PRICE * LAMPORTS_PER_SOL)
       })
 
-      transaction.add(transferInstruction)
+      // transaction.add(transferInstruction)
 
       console.log('📝 Transaction Details:', {
         instructions: transaction.instructions.length,

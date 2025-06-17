@@ -7,6 +7,7 @@ import { useNetwork } from '@/contexts/NetworkContext'
 import { usePlayerCharacter, useCharacterActions } from '@/hooks/usePlayerCharacter'
 import { useGameData } from '@/hooks/useGameData'
 import { toast } from '@/components/ui/use-toast'
+import { gameToast } from '@/utils/enhanced-toast'
 import type { GameView, Location, Character } from '@/types'
 
 type AppState =
@@ -475,7 +476,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
         if (result.success) {
           if (result.foundItem) {
-            toast.success(`Found ${result.foundItem.name}! (-${result.energyCost} energy)`);
+            // Use auto-merging toast for mining successes
+            gameToast.mining(result.foundItem.name, 1);
           } else {
             toast.warning(`Nothing found this time... (-${result.energyCost} energy)`);
           }
@@ -499,6 +501,22 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       try {
         dispatch({ type: 'SET_MAP_TRAVELING', isTraveling: true, destination: location_id });
 
+        // Get location data for enhanced toast
+        const destination = gameData.locations?.find(loc => loc.id === location_id);
+        const currentLocation = gameData.locations?.find(loc => loc.id === character.current_location_id);
+
+        const availableServices = [];
+        if (destination?.has_market) availableServices.push('MARKET');
+        if (destination?.has_mining) availableServices.push('MINING');
+        if (destination?.has_chat) availableServices.push('COMMS');
+
+        // Start progressive travel toast
+        const travelToast = gameToast.travel(
+          currentLocation?.name || 'UNKNOWN',
+          destination?.name || 'UNKNOWN',
+          availableServices
+        );
+
         const response = await fetch('/api/travel-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -517,33 +535,27 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           } catch {
             errorMessage = errorText || errorMessage;
           }
+          travelToast.error(errorMessage);
           throw new Error(errorMessage);
         }
 
-        const result = await response.json();
+        await response.json();
 
-        const availableServices = [];
-        if (result.destination?.has_market) availableServices.push('MARKET');
-        if (result.destination?.has_mining) availableServices.push('MINING');
-        if (result.destination?.has_chat) availableServices.push('COMMS');
-
-        toast.success('ARRIVAL_SUCCESSFUL', {
-          description: `LOCATION: ${result.destination?.name.toUpperCase()}\n${availableServices.length > 0
-            ? `AVAILABLE_SERVICES: ${availableServices.join(', ')}`
-            : 'NO_SERVICES_AVAILABLE'
-            }`,
-          duration: 4000,
-        });
+        // Complete the progressive toast
+        travelToast.complete();
 
         await refetchCharacter();
         await gameData.actions.loadGameData();
       } catch (error) {
         console.error('Travel failed:', error);
-        toast.error(error instanceof Error ? error.message : 'Travel failed');
+        // Error already shown by travelToast.error() if it was a travel failure
+        if (!error.message?.includes('Travel failed')) {
+          toast.error(error instanceof Error ? error.message : 'Travel failed');
+        }
       } finally {
         dispatch({ type: 'CLEAR_MAP_TRAVELING' });
       }
-    }, [character, characterActions, refetchCharacter, gameData.actions, isMainnet]),
+    }, [character, refetchCharacter, gameData.actions, gameData.locations, isMainnet]),
 
     handlePurchase: useCallback(async (item_id: string, cost: number, itemName: string) => {
       if (!character || isMainnet) return;
