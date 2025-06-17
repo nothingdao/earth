@@ -145,7 +145,7 @@ export function useAdminCharacters() {
     updates: {
       health?: number
       energy?: number
-      coins?: number
+      earth?: number
       level?: number
       status?: string
     }

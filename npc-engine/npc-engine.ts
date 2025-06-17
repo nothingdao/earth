@@ -37,7 +37,7 @@ interface NPC {
   name: string
   health: number
   energy: number
-  coins: number
+  earth: number
   location: string
   personality: string
   wallet: Keypair
@@ -68,7 +68,7 @@ interface CharacterData {
   name: string
   health: number
   energy: number
-  coins: number
+  earth: number
   current_location_id: string
 }
 
@@ -287,7 +287,7 @@ export class NPCEngine {
                 name: character.name,
                 health: character.health,
                 energy: character.energy,
-                coins: character.coins,
+                earth: character.earth,
                 location: character.current_location_id,
                 personality: npcData.personality || 'neutral',
                 wallet: wallet,
@@ -295,7 +295,7 @@ export class NPCEngine {
               })
 
               console.log(
-                `✅ Resumed ${character.name} (${character.health}H ${character.energy}E ${character.coins}C)`
+                `✅ Resumed ${character.name} (${character.health}H ${character.energy}E ${character.earth}C)`
               )
               resumed++
             }
@@ -599,7 +599,7 @@ export class NPCEngine {
         name: mintResult.character.name,
         health: mintResult.character.health,
         energy: mintResult.character.energy,
-        coins: mintResult.character.coins,
+        earth: mintResult.character.earth,
         location: mintResult.character.current_location_id,
         personality: personalityType,
         wallet: npcWallet,
@@ -696,20 +696,20 @@ export class NPCEngine {
   }
 
   private async performBuy(npc: NPC): Promise<void> {
-    if (npc.coins < 10) {
-      console.log(`[BUY] NPC ${npc.id} too poor to buy (coins: ${npc.coins})`)
+    if (npc.earth < 10) {
+      console.log(`[BUY] NPC ${npc.id} too poor to buy (earth: ${npc.earth})`)
       return
     }
 
     const cost = Math.floor(Math.random() * 10) + 1
-    npc.coins -= cost
+    npc.earth -= cost
     console.log(
-      `[BUY] NPC ${npc.id} bought item for ${cost} coins (remaining: ${npc.coins})`
+      `[BUY] NPC ${npc.id} bought item for ${cost} earth (remaining: ${npc.earth})`
     )
     await this.createTransaction(
       npc,
       'BUY',
-      `Bought item for ${cost} coins`,
+      `Bought item for ${cost} earth`,
       undefined,
       cost
     )
@@ -717,14 +717,14 @@ export class NPCEngine {
 
   private async performSell(npc: NPC): Promise<void> {
     const reward = Math.floor(Math.random() * 10) + 1
-    npc.coins += reward
+    npc.earth += reward
     console.log(
-      `[SELL] NPC ${npc.id} sold item for ${reward} coins (total: ${npc.coins})`
+      `[SELL] NPC ${npc.id} sold item for ${reward} earth (total: ${npc.earth})`
     )
     await this.createTransaction(
       npc,
       'SELL',
-      `Sold item for ${reward} coins`,
+      `Sold item for ${reward} earth`,
       undefined,
       reward
     )

@@ -58,7 +58,7 @@ export const handler = async (event, context) => {
         health,
         created_at,
         updated_at,
-        coins,
+        earth,
         level,
         status,
         payment_signature,

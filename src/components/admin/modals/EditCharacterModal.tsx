@@ -23,7 +23,7 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     level: 1,
-    coins: 0,
+    earth: 0,
     health: 100,
     energy: 100
   })
@@ -33,7 +33,7 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
     if (character) {
       setFormData({
         level: character.level || 1,
-        coins: character.coins || 0,
+        earth: character.earth || 0,
         health: character.health || 100,
         energy: character.energy || 100
       })
@@ -82,11 +82,11 @@ export const EditCharacterModal: React.FC<EditCharacterModalProps> = ({
               />
             </div>
             <div>
-              <Label className="text-xs font-mono">COINS</Label>
+              <Label className="text-xs font-mono">EARTH</Label>
               <Input
                 type="number"
-                value={formData.coins}
-                onChange={(e) => handleInputChange('coins', e.target.value)}
+                value={formData.earth}
+                onChange={(e) => handleInputChange('earth', e.target.value)}
                 className="font-mono text-xs"
                 min="0"
               />

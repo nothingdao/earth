@@ -64,26 +64,26 @@ export const handler = async (event, context) => {
 
       // Exchange calculations
       rates: {
-        // For buying SOL with coins (1 coin = $1)
+        // For buying SOL with earth (1 coin = $1)
         buySOL: {
           rate: `$${solPrice.toFixed(2)} per SOL`,
-          coinsPerSOL: solPrice, // How many coins needed to buy 1 SOL
+          earthPerSOL: solPrice, // How many earth needed to buy 1 SOL
           netSOLPerDollar: (1 - EXCHANGE_FEE_PERCENT / 100) / solPrice, // After fees
           example: {
-            spend: "$10 (10 coins)",
+            spend: "$10 (10 earth)",
             receive: `${((10 * (1 - EXCHANGE_FEE_PERCENT / 100)) / solPrice).toFixed(6)} SOL`,
             fee: `$${(10 * EXCHANGE_FEE_PERCENT / 100).toFixed(2)}`
           }
         },
 
-        // For selling SOL for coins
+        // For selling SOL for earth
         sellSOL: {
           rate: `$${solPrice.toFixed(2)} per SOL`,
           dollarsPerSOL: solPrice, // How many dollars you get per SOL
           netCoinsPerSOL: solPrice * (1 - EXCHANGE_FEE_PERCENT / 100), // After fees
           example: {
             spend: `${(10 / solPrice).toFixed(6)} SOL`,
-            receive: `${Math.floor(10 * (1 - EXCHANGE_FEE_PERCENT / 100))} coins ($${10 * (1 - EXCHANGE_FEE_PERCENT / 100)})`,
+            receive: `${Math.floor(10 * (1 - EXCHANGE_FEE_PERCENT / 100))} earth ($${10 * (1 - EXCHANGE_FEE_PERCENT / 100)})`,
             fee: `$${(10 * EXCHANGE_FEE_PERCENT / 100).toFixed(2)}`
           }
         }
@@ -92,7 +92,7 @@ export const handler = async (event, context) => {
       // Transaction limits in different units
       limits: {
         minCoinsForBuySOL: MIN_TRANSACTION_USD, // $1 = 1 coin
-        maxCoinsForBuySOL: MAX_TRANSACTION_USD, // $100 = 100 coins
+        maxCoinsForBuySOL: MAX_TRANSACTION_USD, // $100 = 100 earth
         minSOLForBuySOL: minSOLForBuy,
         maxSOLForBuySOL: maxSOLForBuy,
         minSOLForSellSOL: minSOLForSell,

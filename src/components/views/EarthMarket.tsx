@@ -1,8 +1,10 @@
+// src/components/EarthMarket.tsx - Fixed with refetchCharacter prop
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { LineChart, Line, XAxis, YAxis, ReferenceLine } from 'recharts';
-import { TrendingUp, TrendingDown, Zap, Database, Activity, ArrowUpDown, AlertTriangle, X, Search, BarChart3, Settings, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Zap, Database, Activity, X, Search, BarChart3, Settings, Info } from 'lucide-react';
 import supabase from '../../utils/supabase';
+import EarthBridge from '@/components/EarthBridge';
 
 import {
   type ChartConfig,
@@ -13,7 +15,7 @@ import {
 
 const chartConfig = {
   rate: {
-    label: "SHARD/SOL Rate",
+    label: "EARTH/SOL Rate",
     color: "hsl(var(--chart-1))",
   },
   volume: {
@@ -30,8 +32,8 @@ interface Transaction {
   to_units: number;
   exchange_flux: number;
   wasteland_block: number;
-  txn_shard: string;
-  sender_shard: string;
+  txn_earth: string;
+  sender_earth: string;
 }
 
 interface MarketData {
@@ -42,14 +44,19 @@ interface MarketData {
   time: string;
 }
 
-const RustMarket: React.FC = () => {
+// ✅ ADD PROPS INTERFACE
+interface EarthMarketProps {
+  onCharacterUpdate?: () => Promise<void>;
+}
+
+const EarthMarket: React.FC<EarthMarketProps> = ({ onCharacterUpdate }) => {
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [currentRate, setCurrentRate] = useState<number>(0);
   const [change24h, setChange24h] = useState<number>(0);
   const [volume24h, setVolume24h] = useState<number>(0);
   const [totalTrades, setTotalTrades] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [showSwap, setShowSwap] = useState(false);
+  const [showBridge, setShowBridge] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showCharacterLookup, setShowCharacterLookup] = useState(false);
@@ -84,18 +91,18 @@ const RustMarket: React.FC = () => {
   useEffect(() => {
     fetchMarketData();
 
-    // Set up realtime subscription for new exchange transactions
+    // Set up realtime subscription for new transactions (both EXCHANGE and BRIDGE)
     const subscription = supabase
-      .channel('rust-market-updates')
+      .channel('earth-market-updates')
       .on('postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'transactions',
-          filter: 'type=eq.EXCHANGE'
+          filter: 'type=in.(EXCHANGE,BRIDGE_DEPOSIT,BRIDGE_WITHDRAW)'
         },
         (payload) => {
-          console.log('📊 New exchange transaction detected!', payload.new);
+          console.log('📊 New transaction detected!', payload.new);
           fetchMarketData();
         }
       )
@@ -111,16 +118,20 @@ const RustMarket: React.FC = () => {
 
   const fetchMarketData = async () => {
     try {
-      const response = await fetch('/api/rust-market');
+      const response = await fetch('/api/earth-market');
       const data = await response.json();
 
       if (data.success) {
-        console.log('📊 Data:', data);
+        console.log('📊 Market Data:', data);
 
-        // Set SOL price
-        setCurrentRate(data.data.rustPerSOL);
+        // Updated to use new API structure
+        if (data.market) {
+          setCurrentRate(data.market.earthSolRate || data.market.solUsdPrice || 0);
+          setChange24h(data.market.priceChange24h || 0);
+          setVolume24h(data.market.volume24h || 0);
+        }
 
-        // Process your transactions using your existing function
+        // Process exchange transactions if available
         if (data.transactions && data.transactions.length > 0) {
           const processedData = processTransactionData(data.transactions);
           setMarketData(processedData);
@@ -130,18 +141,18 @@ const RustMarket: React.FC = () => {
 
           // Only update recent transactions if they're actually different
           const hasNewTransactions = !arraysEqual(
-            recentTransactions.map((tx: Transaction) => tx.txn_shard || tx.wasteland_block),
-            newTransactions.map((tx: Transaction) => tx.txn_shard || tx.wasteland_block)
+            recentTransactions.map((tx: Transaction) => tx.txn_earth || tx.wasteland_block),
+            newTransactions.map((tx: Transaction) => tx.txn_earth || tx.wasteland_block)
           );
 
           if (hasNewTransactions) {
             // Track new transactions for animation
             if (recentTransactions.length > 0) {
-              const existingIds = new Set(recentTransactions.map((tx: Transaction) => tx.txn_shard || tx.wasteland_block));
+              const existingIds = new Set(recentTransactions.map((tx: Transaction) => tx.txn_earth || tx.wasteland_block));
               const newIds = new Set<string>();
 
               newTransactions.forEach((tx: Transaction) => {
-                const txId = tx.txn_shard || tx.wasteland_block;
+                const txId = tx.txn_earth || tx.wasteland_block;
                 if (txId && !existingIds.has(txId)) {
                   newIds.add(String(txId));
                 }
@@ -223,158 +234,7 @@ const RustMarket: React.FC = () => {
   const formatVolume = (vol: number | null) => (vol ?? 0).toFixed(3);
   const formatChange = (change: number) => `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
 
-  // Swap Modal Component
-  const SwapModal = () => {
-    const [fromAmount, setFromAmount] = useState('');
-    const [toAmount, setToAmount] = useState('');
-    const [fromToken, setFromToken] = useState('SOL');
-    const [toToken, setToToken] = useState('SHARD');
-    const [isProcessing, setIsProcessing] = useState(false);
-
-    // Calculate conversion
-    useEffect(() => {
-      if (fromAmount && !isNaN(parseFloat(fromAmount))) {
-        const amount = parseFloat(fromAmount);
-        if (fromToken === 'SOL') {
-          setToAmount((amount * currentRate).toFixed(2));
-        } else {
-          setToAmount((amount / currentRate).toFixed(6));
-        }
-      } else {
-        setToAmount('');
-      }
-    }, [fromAmount, fromToken, toToken]);
-
-    const flipTokens = () => {
-      setFromToken(toToken);
-      setToToken(fromToken);
-      setFromAmount(toAmount);
-    };
-
-    const executeSwap = async () => {
-      setIsProcessing(true);
-
-      // Simulate processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      console.log('🔄 Executing swap:', {
-        from: `${fromAmount} ${fromToken}`,
-        to: `${toAmount} ${toToken}`,
-        rate: currentRate
-      });
-
-      setIsProcessing(false);
-      setShowSwap(false);
-    };
-
-    if (!showSwap) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-background border border-primary/30 rounded-lg p-4 font-mono text-xs text-primary">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
-            <div className="flex items-center gap-2">
-              <Database className="w-4 h-4" />
-              <span className="text-primary font-bold">SWAP_TERMINAL v2.089</span>
-            </div>
-            <button
-              onClick={() => setShowSwap(false)}
-              className="text-muted-foreground hover:text-destructive transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Rate Display */}
-          <div className="bg-muted/50 border border-primary/20 p-3 rounded mb-4">
-            <div className="text-muted-foreground text-xs mb-1">EXCHANGE_RATE</div>
-            <div className="text-primary font-bold">
-              1 SOL = {formatRate(currentRate)} SHARD
-            </div>
-            <div className="text-muted-foreground text-xs mt-1">
-              {'>'} LIVE_FEED_ACTIVE
-            </div>
-          </div>
-
-          {/* From Token */}
-          <div className="mb-3">
-            <div className="text-muted-foreground text-xs mb-2">FROM:</div>
-            <div className="bg-muted/30 border border-primary/20 p-3 rounded">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-primary font-bold">{fromToken}</span>
-                <span className="text-muted-foreground text-xs">BAL: 0.000</span>
-              </div>
-              <input
-                type="number"
-                value={fromAmount}
-                onChange={(e) => setFromAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full bg-transparent text-primary text-lg font-bold outline-none placeholder-muted-foreground/50"
-              />
-            </div>
-          </div>
-
-          {/* Swap Button */}
-          <div className="flex justify-center mb-3">
-            <button
-              onClick={flipTokens}
-              className="bg-muted/30 border border-primary/20 p-2 rounded hover:border-primary/50 transition-colors"
-            >
-              <ArrowUpDown className="w-4 h-4 text-primary" />
-            </button>
-          </div>
-
-          {/* To Token */}
-          <div className="mb-4">
-            <div className="text-muted-foreground text-xs mb-2">TO:</div>
-            <div className="bg-muted/30 border border-primary/20 p-3 rounded">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-primary font-bold">{toToken}</span>
-                <span className="text-muted-foreground text-xs">BAL: 0.000</span>
-              </div>
-              <div className="text-primary text-lg font-bold">
-                {toAmount || '0.00'}
-              </div>
-            </div>
-          </div>
-
-          {/* Warning */}
-          {fromAmount && parseFloat(fromAmount) > 0.1 && (
-            <div className="bg-destructive/10 border border-destructive/50 p-3 rounded mb-4">
-              <div className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="text-xs">PRICE_IMPACT: HIGH</span>
-              </div>
-            </div>
-          )}
-
-          {/* Execute Button */}
-          <button
-            onClick={executeSwap}
-            disabled={!fromAmount || parseFloat(fromAmount) <= 0 || isProcessing}
-            className="w-full bg-primary/10 border border-primary text-primary p-3 rounded font-bold hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isProcessing ? (
-              <div className="flex items-center justify-center gap-2">
-                <Zap className="w-4 h-4 animate-pulse" />
-                PROCESSING_SWAP...
-              </div>
-            ) : (
-              `EXECUTE_SWAP`
-            )}
-          </button>
-
-          {/* Footer */}
-          <div className="mt-4 pt-2 border-t border-primary/20 text-muted-foreground/60 text-xs text-center">
-            {'>'} EARTH_TREASURY_AMM_v2.089
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Documentation Modal
+  // Documentation Modal (keeping existing implementation)
   const DocumentationModal = () => {
     if (!showDocumentation) return null;
 
@@ -385,7 +245,7 @@ const RustMarket: React.FC = () => {
           <div className="flex items-center justify-between mb-6 border-b border-primary/20 pb-4 flex-shrink-0">
             <div className="flex items-center gap-2">
               <Info className="w-5 h-5" />
-              <span className="text-primary font-bold text-sm">SHARD_MARKET_DOCUMENTATION v2.089</span>
+              <span className="text-primary font-bold text-sm">EARTH_BRIDGE_DOCUMENTATION v2.089</span>
             </div>
             <button
               onClick={() => setShowDocumentation(false)}
@@ -397,188 +257,98 @@ const RustMarket: React.FC = () => {
 
           {/* Scrollable Content Container */}
           <div className="flex-1 overflow-y-auto documentation-modal-scroll" ref={documentationScrollRef}>
-            {/* Documentation Content */}
+            {/* Updated Documentation Content for Bridge */}
             <div className="max-w-6xl mx-auto space-y-8">
 
-              {/* Overview */}
+              {/* Overview - Updated */}
               <section className="bg-muted/30 border border-primary/20 rounded p-6">
                 <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
                   <Database className="w-5 h-5" />
-                  OVERVIEW
+                  EARTH_BRIDGE_OVERVIEW
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-3 text-sm">
-                  The SHARD Market is a hybrid off-chain/on-chain automated market maker (AMM) that enables seamless
-                  trading between SOL and SHARD tokens. Built for the Earth gaming ecosystem, it combines the
-                  efficiency of off-chain processing with the security of on-chain asset backing on Solana.
+                  The EARTH Bridge is a virtual bridge system that enables seamless transfers between on-chain EARTH tokens
+                  and in-game EARTH balances. Built for the Earth gaming ecosystem, it provides 100% backing with
+                  zero gas fees for in-game transactions.
                 </p>
                 <div className="bg-primary/10 border border-primary/30 p-3 rounded mt-3">
                   <span className="text-primary font-bold">KEY PRINCIPLE:</span>
-                  <span className="text-muted-foreground ml-2">1 SHARD = 1 USDC (pegged value) - No Fractional Reserve</span>
+                  <span className="text-muted-foreground ml-2">100% Treasury Backing - No Fractional Reserve</span>
                 </div>
               </section>
 
-              {/* Vault System */}
+              {/* Bridge Operations */}
               <section className="bg-muted/30 border border-primary/20 rounded p-6">
                 <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
                   <Zap className="w-5 h-5" />
-                  VAULT_SYSTEM
+                  BRIDGE_OPERATIONS
                 </h2>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-success font-bold mb-2 text-sm">SCRAP_SOL</div>
+                    <div className="text-success font-bold mb-2 text-sm">DEPOSIT</div>
                     <div className="text-muted-foreground text-sm leading-relaxed">
-                      Real SOL tokens held in our on-chain treasury wallet. Provides actual liquidity backing
-                      for all SHARD redemptions. Balance visible on Solana blockchain.
+                      Transfer EARTH tokens from your wallet to the treasury, receive equivalent in-game EARTH.
+                      1:1 ratio, instant credit to character balance.
                     </div>
                   </div>
                   <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-orange-500 font-bold mb-2 text-sm">SHARD_COIN</div>
+                    <div className="text-warning font-bold mb-2 text-sm">WITHDRAW</div>
                     <div className="text-muted-foreground text-sm leading-relaxed">
-                      Off-chain SHARD tokens stored in our database. Pegged 1:1 with USDC value.
-                      Instantly transferable between game characters with zero gas fees. Off-chain validators verify supply is true.
+                      Convert in-game EARTH back to on-chain tokens. Treasury sends EARTH tokens to your wallet,
+                      deducts from in-game balance.
                     </div>
                   </div>
                 </div>
               </section>
 
-              {/* Value Pegging */}
+              {/* Treasury Backing */}
               <section className="bg-muted/30 border border-primary/20 rounded p-6">
                 <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
                   <TrendingUp className="w-5 h-5" />
-                  VALUE_PEGGING_MECHANISM
+                  TREASURY_BACKING
                 </h2>
                 <div className="space-y-4">
                   <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">USDC_PEG_FORMULA:</div>
-                    <code className="text-success text-sm">SHARD_VALUE = 1 USDC</code>
+                    <div className="text-primary font-bold mb-2">BACKING_FORMULA:</div>
+                    <code className="text-success text-sm">TREASURY_EARTH ≥ IN_GAME_EARTH</code>
                     <div className="text-muted-foreground text-sm mt-2">
-                      SHARD maintains stable purchasing power regardless of SOL price volatility.
+                      Every in-game EARTH is backed 1:1 by treasury EARTH tokens.
                     </div>
                   </div>
                   <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">EXCHANGE_RATE_CALCULATION:</div>
-                    <code className="text-success text-sm">SOL_TO_SHARD_RATE = SOL_USD_PRICE / 1</code>
+                    <div className="text-primary font-bold mb-2">SAFETY_MECHANISM:</div>
+                    <code className="text-success text-sm">WITHDRAWALS_BLOCKED if TREASURY_EARTH &lt; REQUESTED_AMOUNT</code>
                     <div className="text-muted-foreground text-sm mt-2">
-                      Dynamic rate based on real-time SOL/USD pricing from Jupiter/Helius APIs.
+                      Bridge automatically prevents over-withdrawals to maintain 100% backing.
                     </div>
                   </div>
                 </div>
               </section>
 
-              {/* Hybrid AMM */}
+              {/* Testing Instructions */}
               <section className="bg-muted/30 border border-primary/20 rounded p-6">
                 <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
                   <BarChart3 className="w-5 h-5" />
-                  HYBRID_AMM_ARCHITECTURE
-                </h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-blue-500 font-bold mb-2 text-sm">ON_CHAIN_COMPONENT:</div>
-                    <div className="text-muted-foreground text-sm space-y-1">
-                      <div>• Treasury wallet holds real SOL on Solana devnet</div>
-                      <div>• Transparent, auditable reserves</div>
-                      <div>• Future migration path to full on-chain AMM</div>
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-purple-500 font-bold mb-2 text-sm">OFF_CHAIN_COMPONENT:</div>
-                    <div className="text-muted-foreground text-sm space-y-1">
-                      <div>• SHARD balances in Supabase for instant transfers</div>
-                      <div>• Zero gas fees for in-game transactions</div>
-                      <div>• Real-time market data processing</div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Market Dynamics */}
-              <section className="bg-muted/30 border border-primary/20 rounded p-6">
-                <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
-                  <Activity className="w-5 h-5" />
-                  MARKET_DYNAMICS
+                  TESTING_INSTRUCTIONS
                 </h2>
                 <div className="space-y-4">
                   <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">PRICE_DISCOVERY:</div>
+                    <div className="text-primary font-bold mb-2">1. CONNECT_WALLET:</div>
                     <div className="text-muted-foreground text-sm">
-                      SOL price fluctuates based on real crypto markets. SHARD maintains stable USD value.
-                      Exchange rate automatically adjusts to reflect current SOL/USD pricing.
+                      Connect your Solana wallet (Phantom, Solflare, etc.) to interact with the bridge.
                     </div>
                   </div>
                   <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                    <div className="text-primary font-bold mb-2">LIQUIDITY_MANAGEMENT:</div>
+                    <div className="text-primary font-bold mb-2">2. CHECK_STATUS:</div>
                     <div className="text-muted-foreground text-sm">
-                      Treasury SOL reserves back all SHARD redemptions. No impermanent loss for users.
-                      Slippage-free trading due to external price oracle integration.
+                      Review bridge health, treasury balances, and your current EARTH holdings.
                     </div>
                   </div>
-                </div>
-              </section>
-
-              {/* Trading Examples */}
-              <section className="bg-muted/30 border border-primary/20 rounded p-6">
-                <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
-                  <ArrowUpDown className="w-5 h-5" />
-                  TRADING_EXAMPLES
-                </h2>
-                <div className="bg-muted/50 border border-primary/20 p-4 rounded">
-                  <div className="text-primary font-bold mb-3">SCENARIO: SOL = $150 USD</div>
-                  <div className="text-muted-foreground text-sm space-y-2">
-                    <div>• Player trades 1 SOL → receives 150 SHARD</div>
-                    <div>• Player trades 75 SHARD → receives 0.5 SOL</div>
-                    <div>• SHARD purchasing power: 1 SHARD = $1 USD equivalent</div>
-                    <div>• All rates update automatically with SOL price changes</div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Future Roadmap */}
-              <section className="bg-muted/30 border border-primary/20 rounded p-6">
-                <h2 className="text-primary font-bold mb-4 flex items-center gap-2 text-base">
-                  <Settings className="w-5 h-5" />
-                  MAINNET_MIGRATION_PATH
-                </h2>
-                <div className="space-y-3">
-                  <div className="bg-success/10 border border-success/30 p-3 rounded">
-                    <span className="text-success font-bold">PHASE_1:</span>
-                    <span className="text-muted-foreground ml-2 text-sm">
-                      Current hybrid system with USDC reserves backing
-                    </span>
-                  </div>
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded">
-                    <span className="text-yellow-500 font-bold">PHASE_2:</span>
-                    <span className="text-muted-foreground ml-2 text-sm">
-                      SPL token deployment with on-chain SHARD minting
-                    </span>
-                  </div>
-                  <div className="bg-blue-500/10 border border-blue-500/30 p-3 rounded">
-                    <span className="text-blue-500 font-bold">PHASE_3:</span>
-                    <span className="text-muted-foreground ml-2 text-sm">
-                      Full decentralized AMM with liquidity provider rewards
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Technical Specs */}
-              <section className="bg-muted/30 border border-primary/20 rounded p-6">
-                <h2 className="text-primary font-bold mb-4 text-base">TECHNICAL_SPECIFICATIONS</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
-                  <div>
-                    <div className="text-muted-foreground mb-2">NETWORK:</div>
-                    <div className="text-primary">Solana Devnet</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground mb-2">PRICE_ORACLE:</div>
-                    <div className="text-primary">Jupiter API + Helius</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground mb-2">DATABASE:</div>
-                    <div className="text-primary">Supabase PostgreSQL</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground mb-2">UPDATE_FREQUENCY:</div>
-                    <div className="text-primary">30 seconds</div>
+                  <div className="bg-muted/50 border border-primary/20 p-4 rounded">
+                    <div className="text-primary font-bold mb-2">3. TEST_OPERATIONS:</div>
+                    <div className="text-muted-foreground text-sm">
+                      Try deposits (uses mock signatures) and withdrawals to verify functionality.
+                    </div>
                   </div>
                 </div>
               </section>
@@ -586,10 +356,10 @@ const RustMarket: React.FC = () => {
               {/* Footer */}
               <div className="text-center py-8">
                 <div className="text-muted-foreground/60 text-sm">
-                  {'>'} EARTH_TREASURY_AMM_DOCUMENTATION_v2.089
+                  {'>'} EARTH_BRIDGE_DOCUMENTATION_v2.089
                 </div>
                 <div className="text-muted-foreground/60 text-sm mt-2">
-                  BUILT_FOR_THE_FUTURE_OF_GAMING_FINANCE
+                  VIRTUAL_BRIDGE_100%_BACKED
                 </div>
                 <div className="text-muted-foreground/40 text-xs mt-4">
                   Press ESC to close
@@ -605,7 +375,6 @@ const RustMarket: React.FC = () => {
     return createPortal(modalContent, document.body);
   };
 
-
   const CharacterLookup = () => {
     const [isSearching, setIsSearching] = useState(false);
 
@@ -619,8 +388,8 @@ const RustMarket: React.FC = () => {
 
         // Mock data - replace with actual character transaction lookup
         const mockHistory = recentTransactions.filter((tx: Transaction) =>
-          tx.sender_shard === lookupCharacter ||
-          tx.txn_shard === lookupCharacter
+          tx.sender_earth === lookupCharacter ||
+          tx.txn_earth === lookupCharacter
         );
 
         setCharacterHistory(mockHistory);
@@ -656,13 +425,13 @@ const RustMarket: React.FC = () => {
 
           {/* Search Input */}
           <div className="mb-4">
-            <div className="text-muted-foreground text-xs mb-2">ENTER_PLAYER_ID_OR_SHARD:</div>
+            <div className="text-muted-foreground text-xs mb-2">ENTER_PLAYER_ID_OR_EARTH:</div>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={lookupCharacter}
                 onChange={(e) => setLookupCharacter(e.target.value)}
-                placeholder="player_123 or shard_abc..."
+                placeholder="player_123 or earth_abc..."
                 className="flex-1 bg-muted/30 border border-primary/20 p-2 rounded text-primary outline-none focus:border-primary/50"
                 onKeyPress={(e) => e.key === 'Enter' && searchCharacterHistory()}
               />
@@ -698,7 +467,7 @@ const RustMarket: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <span className={`font-bold flex items-center gap-1 ${isBuy ? 'text-success' : 'text-warning'}`}>
                             {isBuy ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            {isBuy ? 'BUY_SHARD' : 'SELL_SHARD'}
+                            {isBuy ? 'BUY_EARTH' : 'SELL_EARTH'}
                           </span>
                           <span className="text-muted-foreground text-xs">BLK{tx.wasteland_block % 10000}</span>
                         </div>
@@ -738,7 +507,6 @@ const RustMarket: React.FC = () => {
     );
   };
 
-
   const TransactionExplorer = () => {
     if (!selectedTransaction) return null;
 
@@ -752,7 +520,7 @@ const RustMarket: React.FC = () => {
           <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
             <div className="flex items-center gap-2">
               <Database className="w-4 h-4" />
-              <span className="text-primary font-bold">SHARD_BLOCK_EXPLORER v2.089</span>
+              <span className="text-primary font-bold">EARTH_BLOCK_EXPLORER v2.089</span>
             </div>
             <button
               onClick={() => setSelectedTransaction(null)}
@@ -766,7 +534,7 @@ const RustMarket: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="bg-muted/50 border border-primary/20 p-3 rounded">
               <div className="text-muted-foreground text-xs mb-1">TRANSACTION_ID</div>
-              <div className="text-primary font-bold break-all">{tx.txn_shard || tx.wasteland_block || 'N/A'}</div>
+              <div className="text-primary font-bold break-all">{tx.txn_earth || tx.wasteland_block || 'N/A'}</div>
             </div>
 
             <div className="bg-muted/50 border border-primary/20 p-3 rounded">
@@ -778,7 +546,7 @@ const RustMarket: React.FC = () => {
               <div className="text-muted-foreground text-xs mb-1">OPERATION_TYPE</div>
               <div className={`font-bold flex items-center gap-1 ${isBuy ? 'text-success' : 'text-warning'}`}>
                 {isBuy ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                {isBuy ? 'BUY_SHARD' : 'SELL_SHARD'}
+                {isBuy ? 'BUY_EARTH' : 'SELL_EARTH'}
               </div>
             </div>
 
@@ -816,7 +584,7 @@ const RustMarket: React.FC = () => {
             <div className="border-t border-primary/20 pt-3">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground text-xs">EXCHANGE_RATE:</span>
-                <span className="text-primary font-bold">{formatRate(tx.exchange_flux)} SHARD/SOL</span>
+                <span className="text-primary font-bold">{formatRate(tx.exchange_flux)} EARTH/SOL</span>
               </div>
             </div>
           </div>
@@ -827,7 +595,7 @@ const RustMarket: React.FC = () => {
             <div className="grid grid-cols-3 gap-4 text-xs">
               <div>
                 <span className="text-muted-foreground">SENDER: </span>
-                <span className="text-primary">{tx.sender_shard || tx.txn_shard || 'UNKNOWN'}</span>
+                <span className="text-primary">{tx.sender_earth || tx.txn_earth || 'UNKNOWN'}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">RECEIVER: </span>
@@ -851,7 +619,7 @@ const RustMarket: React.FC = () => {
       <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4" />
-          <span className="text-primary font-bold">EARTH GLOBAL EXCHANGE v2.089</span>
+          <span className="text-primary font-bold">EARTH BRIDGE TERMINAL v2.089</span>
         </div>
         <div className="flex items-center gap-2">
           <Activity className="w-3 h-3 animate-pulse" />
@@ -862,7 +630,7 @@ const RustMarket: React.FC = () => {
       {/* Market Stats */}
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-4">
         <div className="bg-muted/50 border border-primary/20 p-3 rounded">
-          <div className="text-muted-foreground text-xs mb-1">SOL/SHARD</div>
+          <div className="text-muted-foreground text-xs mb-1">SOL/EARTH</div>
           <div className="text-primary text-lg font-bold">{formatRate(currentRate)}</div>
           <div className={`text-xs flex items-center gap-1 ${change24h >= 0 ? 'text-success ' : 'text-warning'}`}>
             {change24h >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -892,18 +660,18 @@ const RustMarket: React.FC = () => {
         </div>
       </div>
 
-      {/* Trading Menu Bar */}
+      {/* Bridge Menu Bar */}
       <div className="mb-4">
         <div className="flex border border-primary/30 rounded overflow-hidden">
           {/* Left side - scrollable buttons */}
           <div className="flex-1 overflow-x-auto">
             <div className="flex items-center gap-2 p-2 min-w-max">
               <button
-                onClick={() => setShowSwap(true)}
+                onClick={() => setShowBridge(true)}
                 className="bg-primary/10 border border-primary text-primary px-3 py-1 rounded text-xs font-bold hover:bg-primary/20 transition-colors flex items-center gap-1 whitespace-nowrap"
               >
-                <ArrowUpDown className="w-3 h-3" />
-                SWAP
+                <Database className="w-3 h-3" />
+                BRIDGE
               </button>
 
               <button
@@ -926,7 +694,7 @@ const RustMarket: React.FC = () => {
 
           {/* Right side - settings (always visible) */}
           <div className="flex items-center gap-2 p-2 border-l border-primary/30 bg-muted/20">
-            <span className="text-muted-foreground text-xs whitespace-nowrap hidden sm:inline">TRADING_TOOLS</span>
+            <span className="text-muted-foreground text-xs whitespace-nowrap hidden sm:inline">BRIDGE_TOOLS</span>
             <button
               onClick={() => console.log('Settings clicked')}
               className="bg-muted/50 border border-primary/30 text-primary px-2 py-1 rounded text-xs hover:border-primary/50 transition-colors flex-shrink-0"
@@ -940,7 +708,7 @@ const RustMarket: React.FC = () => {
       {/* Price Chart */}
       <div className="mb-4">
         <div className="text-muted-foreground text-xs mb-2 flex items-center justify-between">
-          <span>PRICE FLUX (SHARD PER SOL)</span>
+          <span>PRICE FLUX (EARTH PER SOL)</span>
           <span>LAST {marketData.length} BLOCKS</span>
         </div>
         <div className="bg-muted/30 border border-primary/20 rounded p-2 h-48">
@@ -981,7 +749,7 @@ const RustMarket: React.FC = () => {
                       labelFormatter={(value) => `Block ${value}`}
                       formatter={(value) => [
                         `${parseFloat(value as string).toFixed(2)}`,
-                        "SHARD/SOL"
+                        "EARTH/SOL"
                       ]}
                     />
                   }
@@ -1009,8 +777,6 @@ const RustMarket: React.FC = () => {
         </div>
       </div>
 
-
-
       {/* Recent Transactions */}
       <div>
         <div className="text-muted-foreground text-xs mb-2">RECENT TRANSACTIONS</div>
@@ -1018,7 +784,7 @@ const RustMarket: React.FC = () => {
           {recentTransactions.length > 0 ? (
             recentTransactions.map((tx, idx) => {
               const isBuy = tx.from_vault === 'SCRAP_SOL';
-              const txKey = String(tx.txn_shard || tx.wasteland_block || `tx-${idx}`);
+              const txKey = String(tx.txn_earth || tx.wasteland_block || `tx-${idx}`);
               return (
                 <div
                   key={txKey}
@@ -1032,7 +798,7 @@ const RustMarket: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <span className={`font-bold flex items-center gap-1 ${isBuy ? 'text-success' : 'text-warning'}`}>
                         {isBuy ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        {isBuy ? 'BUY_SHARD' : 'SELL_SHARD'}
+                        {isBuy ? 'BUY_EARTH' : 'SELL_EARTH'}
                       </span>
                       <span className="text-muted-foreground text-xs">BLK{tx.wasteland_block % 10000}</span>
                     </div>
@@ -1069,12 +835,16 @@ const RustMarket: React.FC = () => {
 
       {/* Footer */}
       <div className="mt-4 pt-2 border-t border-primary/20 flex justify-between text-xs text-muted-foreground/60">
-        <span>SHARD_CHAIN_v2089 | TREASURY_AMM</span>
+        <span>EARTH_BRIDGE_v2089 | 100%_BACKING</span>
         <span>LAST_UPDATE: {new Date().toLocaleTimeString()}</span>
       </div>
 
-      {/* Swap Modal */}
-      <SwapModal />
+      {/* ✅ FIXED: Bridge Component with onCharacterUpdate prop */}
+      <EarthBridge
+        isOpen={showBridge}
+        onClose={() => setShowBridge(false)}
+        onCharacterUpdate={onCharacterUpdate}
+      />
 
       {/* Character Lookup Modal */}
       <CharacterLookup />
@@ -1088,4 +858,4 @@ const RustMarket: React.FC = () => {
   );
 };
 
-export default RustMarket;
+export default EarthMarket;

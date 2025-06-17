@@ -192,7 +192,7 @@ export function useGameHandlers({
           : ''
       }${
         destination?.entry_cost
-          ? `ENTRY_COST: ${destination.entry_cost} SHARD`
+          ? `ENTRY_COST: ${destination.entry_cost} EARTH`
           : ''
       }`,
       duration: 4000,
@@ -271,7 +271,7 @@ export function useGameHandlers({
     try {
       await characterActions.buyItem(marketListingId, 1)
 
-      toast.success(`Bought ${itemName} for ${price} coins!`)
+      toast.success(`Bought ${itemName} for ${price} earth!`)
 
       setMarketItems(
         (prev) =>

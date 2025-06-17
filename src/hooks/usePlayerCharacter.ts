@@ -192,16 +192,16 @@ export function usePlayerCharacter(
                 }
               }
 
-              if (new_.coins !== undefined && new_.coins !== prev.coins) {
-                const diff = new_.coins - prev.coins
+              if (new_.earth !== undefined && new_.earth !== prev.earth) {
+                const diff = new_.earth - prev.earth
                 if (diff > 0) {
                   console.log(
-                    `🪙 Coins: ${prev.coins} → ${new_.coins} (+${diff})`
+                    `🪙 Coins: ${prev.earth} → ${new_.earth} (+${diff})`
                   )
                   toast.success(`+${diff} Coins`, { duration: 2000 })
                 } else if (diff < 0) {
                   console.log(
-                    `🪙 Coins: ${prev.coins} → ${new_.coins} (${diff})`
+                    `🪙 Coins: ${prev.earth} → ${new_.earth} (${diff})`
                   )
                 }
               }

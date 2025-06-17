@@ -14,11 +14,11 @@ import { TopControls } from './TopControls'
 
 export function AppRouter() {
   const { state, actions } = useGame()
-  const { connected, publicKey } = useWallet()
+  const { connected } = useWallet()
   const { isDevnet, setNetwork } = useNetwork()
 
-  console.log('Wallet Connected:', connected)
-  console.log('Wallet PublicKey:', publicKey?.toBase58())
+  // console.log('Wallet Connected:', connected)
+  // console.log('Wallet PublicKey:', publicKey?.toBase58())
 
   // Auto-switch to devnet by default (for game)
   React.useEffect(() => {
@@ -559,8 +559,8 @@ function EnteringGameScreen() {
                     <div className="text-muted-foreground">ENERGY</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-yellow-400 font-bold">{state.character.coins}</div>
-                    <div className="text-muted-foreground">SHARD</div>
+                    <div className="text-yellow-400 font-bold">{state.character.earth}</div>
+                    <div className="text-muted-foreground">EARTH</div>
                   </div>
                 </div>
               </div>

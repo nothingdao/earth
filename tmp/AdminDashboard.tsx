@@ -474,8 +474,8 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="mt-1 text-xs">
-                          <span className="text-muted-foreground">SHARD: </span>
-                          <span className="text-yellow-500 font-bold">{character.coins}</span>
+                          <span className="text-muted-foreground">EARTH: </span>
+                          <span className="text-yellow-500 font-bold">{character.earth}</span>
                         </div>
                       </div>
 
@@ -548,7 +548,7 @@ export default function AdminDashboard() {
           <StatCard
             title="TOTAL_VALUE"
             value={marketStats.totalValue}
-            subtitle="SHARD"
+            subtitle="EARTH"
             icon={TrendingUp}
             loading={marketLoading}
           />
@@ -1250,10 +1250,10 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-mono">COINS</Label>
+                  <Label className="text-xs font-mono">EARTH</Label>
                   <Input
                     type="number"
-                    defaultValue={selectedCharacter.coins}
+                    defaultValue={selectedCharacter.earth}
                     className="font-mono text-xs"
                   />
                 </div>
@@ -1289,7 +1289,7 @@ export default function AdminDashboard() {
                     const formData = new FormData(/* get form element */);
                     handleEditCharacter(selectedCharacter.id, {
                       level: parseInt(formData.get('level')),
-                      coins: parseInt(formData.get('coins')),
+                      earth: parseInt(formData.get('earth')),
                       health: parseInt(formData.get('health')),
                       energy: parseInt(formData.get('energy'))
                     });

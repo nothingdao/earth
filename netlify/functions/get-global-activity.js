@@ -178,12 +178,12 @@ export const handler = async (event, context) => {
       } else if (transaction.type === 'MINE') {
         details.energyChange = -10 // Mining costs energy
       } else if (transaction.type === 'BUY') {
-        const priceMatch = cleanDescription.match(/for (\d+) coins/)
+        const priceMatch = cleanDescription.match(/for (\d+) earth/)
         if (priceMatch) {
           details.priceChange = -parseInt(priceMatch[1])
         }
       } else if (transaction.type === 'SELL') {
-        const priceMatch = cleanDescription.match(/for (\d+) coins/)
+        const priceMatch = cleanDescription.match(/for (\d+) earth/)
         if (priceMatch) {
           details.priceChange = parseInt(priceMatch[1])
         }

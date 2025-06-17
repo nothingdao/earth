@@ -1,4 +1,4 @@
-// netlify/functions/buy-item.js - FIXED: Actually deduct coins!
+// netlify/functions/buy-item.js - FIXED: Actually deduct earth!
 import supabaseAdmin from '../../src/utils/supabase-admin'
 import { randomUUID } from 'crypto'
 
@@ -120,35 +120,35 @@ export const handler = async (event, context) => {
     // Calculate total cost
     const totalCost = marketListing.price * quantity
 
-    // CRITICAL FIX: Check if character has enough coins
-    if (character.coins < totalCost) {
+    // CRITICAL FIX: Check if character has enough earth
+    if (character.earth < totalCost) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           error: 'Insufficient funds',
-          message: `You need ${totalCost} coins but only have ${character.coins}`,
+          message: `You need ${totalCost} earth but only have ${character.earth}`,
           required: totalCost,
-          available: character.coins
+          available: character.earth
         })
       }
     }
 
-    // CRITICAL FIX: Deduct coins from character
-    const newCoinBalance = character.coins - totalCost
+    // CRITICAL FIX: Deduct earth from character
+    const newCoinBalance = character.earth - totalCost
     const { data: updatedCharacter, error: coinDeductError } = await supabaseAdmin
       .from('characters')
-      .update({ coins: newCoinBalance })
+      .update({ earth: newCoinBalance })
       .eq('id', character.id)
       .select('*')
       .single()
 
     if (coinDeductError) {
-      console.error('Failed to deduct coins:', coinDeductError)
+      console.error('Failed to deduct earth:', coinDeductError)
       throw coinDeductError
     }
 
-    console.log(`💰 Deducted ${totalCost} coins from ${character.name}: ${character.coins} → ${newCoinBalance}`)
+    console.log(`💰 Deducted ${totalCost} earth from ${character.name}: ${character.earth} → ${newCoinBalance}`)
 
     // Add item to character inventory
     const { data: existingInventory } = await supabaseAdmin
@@ -225,7 +225,7 @@ export const handler = async (event, context) => {
         item_id: marketListing.item_id,
         quantity: quantity,
         amount: totalCost,
-        description: `Bought ${quantity}x ${item.name} for ${totalCost} coins`
+        description: `Bought ${quantity}x ${item.name} for ${totalCost} earth`
       })
 
     if (transactionError) {
@@ -233,12 +233,12 @@ export const handler = async (event, context) => {
       // Don't throw, just log - transaction logging is not critical
     }
 
-    // If there's a seller, give them the coins
+    // If there's a seller, give them the earth
     if (seller) {
-      const sellerNewBalance = seller.coins + totalCost
+      const sellerNewBalance = seller.earth + totalCost
       const { error: sellerUpdateError } = await supabaseAdmin
         .from('characters')
-        .update({ coins: sellerNewBalance })
+        .update({ earth: sellerNewBalance })
         .eq('id', seller.id)
 
       if (sellerUpdateError) {
@@ -257,7 +257,7 @@ export const handler = async (event, context) => {
           item_id: marketListing.item_id,
           quantity: quantity,
           amount: totalCost,
-          description: `Sold ${quantity}x ${item.name} for ${totalCost} coins`
+          description: `Sold ${quantity}x ${item.name} for ${totalCost} earth`
         })
 
       if (sellerTransactionError) {

@@ -110,15 +110,15 @@ export const handler = async (event, context) => {
     }
 
     // Check entry cost
-    if (destination.entry_cost && character.coins < destination.entry_cost) {
+    if (destination.entry_cost && character.earth < destination.entry_cost) {
       return {
         statusCode: 402,
         headers,
         body: JSON.stringify({
           error: 'Insufficient funds for entry',
-          message: `${destination.name} costs ${destination.entry_cost} coins to enter. You have ${character.coins}.`,
+          message: `${destination.name} costs ${destination.entry_cost} earth to enter. You have ${character.earth}.`,
           cost: destination.entry_cost,
-          available: character.coins
+          available: character.earth
         })
       }
     }
@@ -140,15 +140,15 @@ export const handler = async (event, context) => {
     const newHealth = Math.max(0, character.health - travelHealthCost)
 
     // Calculate new coin balance after entry cost
-    const newCoins = destination.entry_cost ? character.coins - destination.entry_cost : character.coins
+    const newCoins = destination.entry_cost ? character.earth - destination.entry_cost : character.earth
 
-    // Update character location, health, and coins in a single query
+    // Update character location, health, and earth in a single query
     const { data: updatedCharacter, error: updateError } = await supabaseAdmin
       .from('characters')
       .update({
         current_location_id: destinationId,
         health: newHealth,
-        coins: newCoins
+        earth: newCoins
       })
       .eq('id', character.id)
       .select('*')

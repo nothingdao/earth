@@ -32,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
         onCharactersClick={() => actions.navigate('characters')}
         onEconomyClick={() => actions.navigate('economy')}
         onLeaderboardsClick={() => actions.navigate('leaderboards')}
-        onRustMarketClick={() => actions.navigate('rust-market')}
+        onearthMarketClick={() => actions.navigate('earth-market')}
       />
 
 

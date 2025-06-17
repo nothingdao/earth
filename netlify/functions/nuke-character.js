@@ -160,7 +160,7 @@ export const handler = async (event, context) => {
           type: 'NUKE',
           description: `Character ${character.name} nuked by wallet ${wallet_address}`,
           created_at: new Date().toISOString(),
-          txn_shard: burnSignature
+          txn_earth: burnSignature
         })
 
       if (logError) {

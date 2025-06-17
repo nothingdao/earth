@@ -1,4 +1,4 @@
-// netlify/functions/rust-market.ts - COMPLETE FILE
+// netlify/functions/earth-market.ts - COMPLETE FILE
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -58,7 +58,7 @@ export const handler = async (event: any, context: any) => {
       console.error('Database error:', error)
     }
 
-    const rustPerSOL = solPrice // Since 1 RUST = 1 USDC
+    const earthPerSOL = solPrice // Since 1 EARTH = 1 USDC
 
     return {
       statusCode: 200,
@@ -67,8 +67,8 @@ export const handler = async (event: any, context: any) => {
         success: true,
         data: {
           solUsdcPrice: solPrice,
-          rustPerSOL: rustPerSOL,
-          rustUsdcPeg: 1.0,
+          earthPerSOL: earthPerSOL,
+          earthUsdcPeg: 1.0,
           timestamp: new Date().toISOString(),
           source: 'Jupiter/CoinGecko',
         },
@@ -77,7 +77,7 @@ export const handler = async (event: any, context: any) => {
       }),
     }
   } catch (error) {
-    console.error('Rust market endpoint error:', error)
+    console.error('Earth market endpoint error:', error)
     return {
       statusCode: 500,
       headers,

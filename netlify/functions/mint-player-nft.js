@@ -489,7 +489,7 @@ async function generateRandomCharacter(name, gender, wallet_address, isNPC = fal
     energy: 100,
     health: 100,
     level: 9000,
-    coins: 1200,
+    earth: 1200,
     current_version: 1
   }
 }

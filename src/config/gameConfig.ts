@@ -19,8 +19,8 @@ export const GAME_MECHANICS = {
   MAX_TRAVEL_HEALTH_COST: 10, // Based on difficulty difference
 
   // Currency and Economy
-  COINS_PER_USD: 1, // 1 coin = $1 USD (for exchange rates)
-  STARTING_COINS: 1200,
+  EARTH_PER_USD: 1, // 1 coin = $1 USD (for exchange rates)
+  STARTING_EARTH: 1200,
   STARTING_LEVEL: 1,
 
   // Experience and Leveling

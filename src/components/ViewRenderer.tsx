@@ -1,4 +1,4 @@
-// src/components/ViewRenderer.tsx - Fixed with chat handlers
+// src/components/ViewRenderer.tsx - Fixed with EarthMarket character refresh
 import { useState } from 'react'
 import { toast } from '@/components/ui/use-toast'
 import {
@@ -12,7 +12,7 @@ import {
   AdminView,
   CharactersView,
   LeaderboardsView,
-  RustMarket,
+  EarthMarket,
   EconomyView
 } from './views'
 import type { Character, GameView } from '@/types'
@@ -61,7 +61,7 @@ export function ViewRenderer({
     toast.success('TRAVEL_INITIATED', {
       description: `DESTINATION: ${destination?.name.toUpperCase()}\n${destination?.biome ? `BIOME: ${destination.biome.toUpperCase()}\n` : ''
         }${destination?.difficulty ? `THREAT_LEVEL: ${destination.difficulty}\n` : ''
-        }${destination?.entry_cost ? `ENTRY_COST: ${destination.entry_cost} RUST` : ''
+        }${destination?.entry_cost ? `ENTRY_COST: ${destination.entry_cost} EARTH` : ''
         }`,
       duration: 4000,
     })
@@ -212,7 +212,7 @@ export function ViewRenderer({
           onChatClick={openFullscreenChat}
           onEconomyClick={() => actions.navigate('economy')}
           onLeaderboardsClick={() => actions.navigate('leaderboards')}
-          onRustMarketClick={() => actions.navigate('rust-market')}
+          onEarthMarketClick={() => actions.navigate('earth-market')}
         />
       )
 
@@ -303,8 +303,12 @@ export function ViewRenderer({
     case 'characters':
       return <CharactersView />
 
-    case 'rust-market':
-      return <RustMarket />
+    case 'earth-market':
+      return (
+        <EarthMarket
+          onCharacterUpdate={actions.refetchCharacter} // ✅ FIXED: Pass refetchCharacter
+        />
+      )
 
     case 'admin':
       return <AdminView character={character} />
@@ -319,7 +323,7 @@ export function ViewRenderer({
           onChatClick={openFullscreenChat}
           onEconomyClick={() => actions.navigate('economy')}
           onLeaderboardsClick={() => actions.navigate('leaderboards')}
-          onRustMarketClick={() => actions.navigate('rust-market')}
+          onEarthMarketClick={() => actions.navigate('earth-market')}
         />
       )
   }

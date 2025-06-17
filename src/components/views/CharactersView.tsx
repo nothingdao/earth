@@ -720,8 +720,8 @@ export default function CharactersView() {
                     <div className="text-xl font-bold text-primary font-mono">{selectedCharacter.level}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground mb-1">SHARD</div>
-                    <div className="text-xl font-bold text-primary font-mono">{selectedCharacter.coins?.toLocaleString() || '0'}</div>
+                    <div className="text-muted-foreground mb-1">EARTH</div>
+                    <div className="text-xl font-bold text-primary font-mono">{selectedCharacter.earth?.toLocaleString() || '0'}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground mb-1">SOL_BALANCE</div>

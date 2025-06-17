@@ -130,7 +130,7 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
                     <div>NAME: {character.name}</div>
                     <div>LEVEL: {character.level}</div>
                     <div>ENERGY: {character.energy}/100</div>
-                    <div>COINS: {character.coins}</div>
+                    <div>EARTH: {character.earth}</div>
                   </div>
 
                   <Button

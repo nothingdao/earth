@@ -107,19 +107,19 @@ export const handler = async (event, context) => {
     // Calculate sell price based on item properties
     const sellPrice = calculateSellPrice(inventoryItem.item, quantity)
 
-    console.log(`💰 ${character.name} selling ${quantity}x ${inventoryItem.item.name} for ${sellPrice} coins`)
+    console.log(`💰 ${character.name} selling ${quantity}x ${inventoryItem.item.name} for ${sellPrice} earth`)
 
-    // Add coins to character
-    const newCoinBalance = character.coins + sellPrice
+    // Add earth to character
+    const newCoinBalance = character.earth + sellPrice
     const { data: updatedCharacter, error: coinUpdateError } = await supabaseAdmin
       .from('characters')
-      .update({ coins: newCoinBalance })
+      .update({ earth: newCoinBalance })
       .eq('id', character.id)
       .select('*')
       .single()
 
     if (coinUpdateError) {
-      console.error('Failed to add coins:', coinUpdateError)
+      console.error('Failed to add earth:', coinUpdateError)
       throw coinUpdateError
     }
 
@@ -161,7 +161,7 @@ export const handler = async (event, context) => {
         item_id: inventoryItem.item.id,
         quantity: quantity,
         amount: sellPrice,
-        description: `Sold ${quantity}x ${inventoryItem.item.name} for ${sellPrice} coins`
+        description: `Sold ${quantity}x ${inventoryItem.item.name} for ${sellPrice} earth`
       })
 
     if (transactionError) {

@@ -130,7 +130,7 @@ export async function updateCharacterStats(
   updates: {
     health?: number
     energy?: number
-    coins?: number
+    earth?: number
     level?: number
     status?: string
   }
@@ -722,7 +722,7 @@ export async function bulkUpdateCharacters(
   updates: {
     health?: number
     energy?: number
-    coins?: number
+    earth?: number
     level?: number
   }
 ) {
@@ -757,19 +757,19 @@ export async function getEconomyStats() {
   try {
     const { data: characters } = await supabase
       .from('characters')
-      .select('coins, level')
+      .select('earth, level')
 
     if (!characters) return null
 
-    const totalWealth = characters.reduce((sum, c) => sum + (c.coins || 0), 0)
+    const totalWealth = characters.reduce((sum, c) => sum + (c.earth || 0), 0)
     const avgWealth =
       characters.length > 0 ? Math.round(totalWealth / characters.length) : 0
     const wealthDistribution = {
-      poor: characters.filter((c) => (c.coins || 0) < 50).length,
+      poor: characters.filter((c) => (c.earth || 0) < 50).length,
       middle: characters.filter(
-        (c) => (c.coins || 0) >= 50 && (c.coins || 0) < 200
+        (c) => (c.earth || 0) >= 50 && (c.earth || 0) < 200
       ).length,
-      rich: characters.filter((c) => (c.coins || 0) >= 200).length,
+      rich: characters.filter((c) => (c.earth || 0) >= 200).length,
     }
 
     return {

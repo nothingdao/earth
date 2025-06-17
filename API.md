@@ -63,7 +63,7 @@ GET /get-player-character?wallet_address={wallet_address}
     "experience": 2250,
     "health": 85,
     "energy": 70,
-    "coins": 1450,
+    "earth": 1450,
     "gender": "MALE",
     "character_type": "HUMAN",
     "status": "ACTIVE",
@@ -467,7 +467,7 @@ POST /buy-item
 
 ### Sell Item
 
-Sells an item for coins with dynamic pricing.
+Sells an item for earth with dynamic pricing.
 
 ```http
 POST /sell-item
@@ -526,10 +526,10 @@ GET /get-exchange-info
   "rates": {
     "buySOL": {
       "rate": "$180.50 per SOL",
-      "coinsPerSOL": 180.5,
+      "earthPerSOL": 180.5,
       "netSOLPerDollar": 0.00552,
       "example": {
-        "spend": "$10 (10 coins)",
+        "spend": "$10 (10 earth)",
         "receive": "0.055187 SOL",
         "fee": "$0.05"
       }
@@ -540,7 +540,7 @@ GET /get-exchange-info
       "netCoinsPerSOL": 179.5975,
       "example": {
         "spend": "0.055376 SOL",
-        "receive": "9 coins ($9.95)",
+        "receive": "9 earth ($9.95)",
         "fee": "$0.05"
       }
     }
@@ -568,7 +568,7 @@ GET /get-exchange-quote?action={action}&amountUSD={amount}
   "action": "BUY_SOL",
   "inputAmount": 10,
   "inputCurrency": "USD",
-  "coinsRequired": 10,
+  "earthRequired": 10,
   "outputAmount": 0.055187,
   "outputCurrency": "SOL",
   "exchangeRate": 180.5,
@@ -809,7 +809,7 @@ GET /get-leaderboards
         "value": 6250 // Experience points
       }
     ],
-    "wealth": [...], // Sorted by coins
+    "wealth": [...], // Sorted by earth
     "mining": [...] // Sorted by mining achievements
   },
   "last_updated": "2025-06-15T..."

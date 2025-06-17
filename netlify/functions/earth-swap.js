@@ -1,4 +1,4 @@
-// netlify/functions/rust-swap.js - UPDATED
+// netlify/functions/earth-swap.js - UPDATED
 import supabaseAdmin from '../../src/utils/supabase-admin'
 import { randomUUID } from 'crypto'
 
@@ -111,15 +111,15 @@ export const handler = async (event, context) => {
       }
     }
 
-    // Calculate rust value (base price * quantity * 0.8)
-    const rustValue = Math.floor(item.base_price * quantity * 0.8)
+    // Calculate EARTH value (base price * quantity * 0.8)
+    const EARTHValue = Math.floor(item.base_price * quantity * 0.8)
 
     // Start transaction
-    const { data: result, error: swapError } = await supabaseAdmin.rpc('rust_swap', {
+    const { data: result, error: swapError } = await supabaseAdmin.rpc('EARTH_swap', {
       p_character_id: character.id,
       p_item_id: item_id,
       p_quantity: quantity,
-      p_rust_value: rustValue
+      p_EARTH_value: EARTHValue
     })
 
     if (swapError) throw swapError
@@ -131,15 +131,15 @@ export const handler = async (event, context) => {
       .insert({
         id: transactionId,
         character_id: character.id,
-        type: 'RUST_SWAP',
+        type: 'EARTH_SWAP',
         item_id: item_id,
         quantity: quantity,
-        price: rustValue,
-        description: `Swapped ${quantity} ${item.name} for ${rustValue} rust`
+        price: EARTHValue,
+        description: `Swapped ${quantity} ${item.name} for ${EARTHValue} EARTH`
       })
 
     if (logError) {
-      console.error('Failed to log rust swap transaction:', logError)
+      console.error('Failed to log EARTH swap transaction:', logError)
       // Don't throw, just log - transaction logging is not critical
     }
 
@@ -148,13 +148,13 @@ export const handler = async (event, context) => {
       headers,
       body: JSON.stringify({
         success: true,
-        message: `Successfully swapped ${quantity} ${item.name} for ${rustValue} rust`,
-        rust_value: rustValue
+        message: `Successfully swapped ${quantity} ${item.name} for ${EARTHValue} EARTH`,
+        EARTH_value: EARTHValue
       })
     }
 
   } catch (error) {
-    console.error('Error in rust-swap:', error)
+    console.error('Error in EARTH-swap:', error)
     return {
       statusCode: 500,
       headers,

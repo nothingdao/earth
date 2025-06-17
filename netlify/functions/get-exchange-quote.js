@@ -69,8 +69,8 @@ export const handler = async (event, context) => {
     let quote
 
     if (action === 'BUY_SOL') {
-      // User wants to spend coins (USD) to get SOL
-      const coinsRequired = amount // 1 coin = $1
+      // User wants to spend earth (USD) to get SOL
+      const earthRequired = amount // 1 coin = $1
       const feeAmount = amount * (EXCHANGE_FEE_PERCENT / 100)
       const netAmountUSD = amount - feeAmount
       const solReceived = netAmountUSD / solPrice
@@ -82,7 +82,7 @@ export const handler = async (event, context) => {
         action: 'BUY_SOL',
         inputAmount: amount,
         inputCurrency: 'USD',
-        coinsRequired: coinsRequired,
+        earthRequired: earthRequired,
         outputAmount: solReceived,
         outputCurrency: 'SOL',
         exchangeRate: solPrice,
@@ -101,7 +101,7 @@ export const handler = async (event, context) => {
       }
 
     } else if (action === 'SELL_SOL') {
-      // User wants to spend SOL to get coins (USD)
+      // User wants to spend SOL to get earth (USD)
       const grossSOLNeeded = amount / solPrice
       const feeAmount = amount * (EXCHANGE_FEE_PERCENT / 100)
       const netCoinsReceived = amount - feeAmount
@@ -113,7 +113,7 @@ export const handler = async (event, context) => {
         solRequired: grossSOLNeeded,
         outputAmount: netCoinsReceived,
         outputCurrency: 'USD',
-        coinsReceived: Math.floor(netCoinsReceived), // Coins are whole numbers
+        earthReceived: Math.floor(netCoinsReceived), // Coins are whole numbers
         exchangeRate: solPrice,
         feePercent: EXCHANGE_FEE_PERCENT,
         feeAmount: feeAmount,
@@ -125,7 +125,7 @@ export const handler = async (event, context) => {
           solPrice: `$${solPrice.toFixed(2)} per SOL`,
           grossValue: `$${amount}`,
           fee: `$${feeAmount.toFixed(2)} (${EXCHANGE_FEE_PERCENT}%)`,
-          netReceived: `${Math.floor(netCoinsReceived)} coins ($${netCoinsReceived.toFixed(2)})`
+          netReceived: `${Math.floor(netCoinsReceived)} earth ($${netCoinsReceived.toFixed(2)})`
         }
       }
 

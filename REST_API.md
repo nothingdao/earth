@@ -38,7 +38,7 @@ GET /get-character?character_id={character_id}
   "current_image_url": "string | null",
   "energy": "number",
   "health": "number",
-  "coins": "number",
+  "earth": "number",
   "level": "number",
   "status": "PENDING_MINT" | "ACTIVE" | "INACTIVE",
   "experience": "number",
@@ -368,9 +368,9 @@ GET /get-character-transactions?character_id={character_id}
       "to_units": "number | null",
       "exchange_flux": "number | null",
       "wasteland_block": "number | null",
-      "txn_shard": "string | null",
-      "sender_shard": "string | null",
-      "receiver_shard": "string | null",
+      "txn_earth": "string | null",
+      "sender_earth": "string | null",
+      "receiver_earth": "string | null",
       "energy_burn": "number | null",
       "sequence_id": "number | null"
     }

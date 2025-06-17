@@ -261,7 +261,7 @@ export function EquipmentVisualizer({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4 text-primary" />
-            <span className="text-primary font-bold text-sm font-mono">CHARACTER_DISPLAY</span>
+            <span className="text-primary font-bold text-sm font-mono">{character.name.toUpperCase()}</span>
           </div>
           <div className="flex items-center gap-1">
             <Badge variant="outline" className="text-xs font-mono">
@@ -338,10 +338,6 @@ export function EquipmentVisualizer({
         {/* Character Info */}
         <div className="bg-muted/30 border border-primary/10 rounded p-2">
           <div className="text-xs font-mono space-y-1">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">NAME:</span>
-              <span className="text-primary">{character.name.toUpperCase()}</span>
-            </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">GENDER:</span>
               <span className="text-primary">{character.gender}</span>

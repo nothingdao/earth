@@ -119,7 +119,7 @@ export const EditMarketListingModal: React.FC<EditMarketListingModalProps> = ({
             </Select>
             {selectedSeller && (
               <div className="text-xs text-muted-foreground mt-1">
-                Level {selectedSeller.level} • {selectedSeller.coins} shards
+                Level {selectedSeller.level} • {selectedSeller.earth} earths
               </div>
             )}
           </div>
@@ -157,7 +157,7 @@ export const EditMarketListingModal: React.FC<EditMarketListingModalProps> = ({
                 onChange={(e) => handleInputChange('price', parseInt(e.target.value) || 1)}
                 className="font-mono text-xs"
                 min="1"
-                placeholder="SHARDS"
+                placeholder="EARTH"
               />
             </div>
             <div>
@@ -200,10 +200,10 @@ export const EditMarketListingModal: React.FC<EditMarketListingModalProps> = ({
                   <div>LOCATION: {selectedLocation.name.toUpperCase()}</div>
                 )}
                 <div>TYPE: {formData.is_system_item ? 'SYSTEM' : 'PLAYER'}</div>
-                <div>PRICE: <span className="text-yellow-500">{formData.price}</span> SHARDS EACH</div>
+                <div>PRICE: <span className="text-yellow-500">{formData.price}</span> EARTH EACH</div>
                 <div>QTY: {formData.quantity}</div>
                 <div className="border-t border-primary/20 mt-1 pt-1">
-                  TOTAL VALUE: <span className="text-yellow-500 font-bold">{formData.price * formData.quantity}</span> SHARDS
+                  TOTAL VALUE: <span className="text-yellow-500 font-bold">{formData.price * formData.quantity}</span> EARTH
                 </div>
               </div>
             </div>

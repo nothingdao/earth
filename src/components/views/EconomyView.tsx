@@ -1,4 +1,4 @@
-// src/components/views/EconomyView.tsx
+// src/components/views/EconomyView.tsx - Fully corrected with EARTH currency and real data
 import React, { useState, useEffect } from 'react';
 import { XAxis, YAxis, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import {
@@ -9,28 +9,32 @@ import {
   Zap,
   Heart,
 } from 'lucide-react';
-import type { EconomyData, RustMarketData, GameEconomyFlow } from '@/types';
+import type { EconomyData, EarthMarketData, GameEconomyFlow } from '@/types';
 
 const EconomyView: React.FC = () => {
   const [economyData, setEconomyData] = useState<EconomyData | null>(null);
-  const [rustMarketData, setRustMarketData] = useState<RustMarketData | null>(null);
+  const [earthMarketData, setEarthMarketData] = useState<EarthMarketData | null>(null);
   const [gameEconomyFlow, setGameEconomyFlow] = useState<GameEconomyFlow | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ NPC Toggle
+  const [includeNPCs, setIncludeNPCs] = useState(true);
+
   useEffect(() => {
     fetchEconomyData();
-    const interval = setInterval(fetchEconomyData, 60000); // Update every minute
+    const interval = setInterval(fetchEconomyData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [includeNPCs]);
 
   const fetchEconomyData = async () => {
     try {
-      const [economyResponse, rustMarketResponse, gameEconomyResponse] = await Promise.all([
+      const [economyResponse, earthMarketResponse, gameEconomyResponse] = await Promise.all([
         fetch('/api/get-economy-overview'),
-        fetch('/api/rust-market'),
-        fetch('/api/game-economy')
+        fetch('/api/earth-market'), // TODO: Rename to earth-market
+        fetch(`/api/game-economy${includeNPCs ? '?includeNPCs=true' : ''}`)
       ]);
 
+      // ✅ Initialize with proper structure
       let newEconomyData: EconomyData = {
         totalWealth: 0,
         avgWealth: 0,
@@ -39,6 +43,7 @@ const EconomyView: React.FC = () => {
         marketData: {
           totalListings: 0,
           totalValue: 0,
+          totalEconomyValue: 0,
           avgPrice: 0,
           mostExpensiveItem: { name: "--", price: 0, location: "--" },
           cheapestItem: { name: "--", price: 0, location: "--" },
@@ -56,70 +61,90 @@ const EconomyView: React.FC = () => {
         }
       };
 
+      // ✅ Process economy overview data (fallback market data)
       if (economyResponse.ok) {
         const economyResult = await economyResponse.json();
-        // Populate market data from get-economy-overview (items)
-        const totalListings = economyResult.items?.length || 0;
-        let totalValue = 0;
-        let totalPrices = 0;
-        let itemCount = 0;
+        console.log('📊 Economy Overview Data:', economyResult);
 
-        economyResult.items?.forEach(item => {
-          if (item.current_price?.buy) {
-            totalValue += item.current_price.buy;
-            totalPrices += item.current_price.buy;
-            itemCount++;
-          }
-        });
-
-        newEconomyData.marketData = {
-          totalListings: totalListings,
-          totalValue: totalValue,
-          avgPrice: itemCount > 0 ? totalPrices / itemCount : 0,
-          mostExpensiveItem: economyResult.items?.sort((a, b) => (b.current_price?.buy || 0) - (a.current_price?.buy || 0))[0] || { name: "--", price: 0, location: "--" },
-          cheapestItem: economyResult.items?.sort((a, b) => (a.current_price?.buy || 0) - (b.current_price?.buy || 0))[0] || { name: "--", price: 0, location: "--" },
-          popularLocations: [] // Not available from this endpoint currently
-        };
-
+        if (economyResult.marketOverview) {
+          newEconomyData.marketData = {
+            totalListings: economyResult.marketOverview.totalListings || 0,
+            totalValue: economyResult.marketOverview.totalValue || 0,
+            totalEconomyValue: economyResult.marketOverview.totalEconomyValue || 0,
+            avgPrice: economyResult.marketOverview.avgPrice || 0,
+            mostExpensiveItem: economyResult.marketOverview.mostExpensive || { name: "--", price: 0, location: "--" },
+            cheapestItem: economyResult.marketOverview.cheapest || { name: "--", price: 0, location: "--" },
+            popularLocations: economyResult.marketOverview.popularLocations || []
+          };
+        }
       }
 
-      if (rustMarketResponse.ok) {
-        const rustMarketResult = await rustMarketResponse.json();
-        if (rustMarketResult.success) {
-          setRustMarketData({
-            currentRate: rustMarketResult.marketStats.currentRate,
-            change24h: rustMarketResult.marketStats.change24h,
-            volume24h: rustMarketResult.marketStats.volume24h,
-            totalTrades: rustMarketResult.marketStats.totalTrades,
-            totalTransactions: rustMarketResult.totalTransactions || 0
+      // ✅ Process Earth/SOL market data  
+      if (earthMarketResponse.ok) {
+        const earthMarketResult = await earthMarketResponse.json();
+        console.log('🌍 Earth Market Data:', earthMarketResult);
+
+        if (earthMarketResult.success) {
+          const marketStats = earthMarketResult.marketStats || earthMarketResult.data || {};
+
+          setEarthMarketData({
+            currentRate: marketStats.currentRate || 180,
+            change24h: marketStats.change24h || 0,
+            volume24h: marketStats.volume24h || 0,
+            totalTrades: marketStats.totalTrades || earthMarketResult.transactionCount || 0,
+            totalTransactions: earthMarketResult.totalTransactions || earthMarketResult.transactionCount || 0
           });
         }
       }
 
+      // ✅ Process game economy data (the main source!)
       if (gameEconomyResponse.ok) {
         const gameEconomyResult = await gameEconomyResponse.json();
+        console.log('🏦 Game Economy Data:', gameEconomyResult);
+
         if (gameEconomyResult.success) {
           setGameEconomyFlow(gameEconomyResult.gameEconomyFlow);
-          console.log('🏦 Dual-Currency Economy Data:', gameEconomyResult);
 
-          // Populate top-level economy data from game-economy
-          newEconomyData.totalWealth = gameEconomyResult.gameEconomyFlow.totalEconomicValue.totalEconomyUSD || 0;
-          // Assuming active users/characters would come from another endpoint or be calculated from characters list
-          // For now, using a placeholder or default from insights if available
-          newEconomyData.totalCharacters = gameEconomyResult.insights?.currencyUsage?.solUsage > 0 || gameEconomyResult.insights?.currencyUsage?.rustDominance > 0 ? 100 : 0; // Placeholder
-          newEconomyData.avgWealth = newEconomyData.totalCharacters > 0 ? newEconomyData.totalWealth / newEconomyData.totalCharacters : 0;
+          // ✅ Use real player data from enhanced endpoint
+          newEconomyData.totalWealth = gameEconomyResult.playerStats?.totalWealth || 0;
+          newEconomyData.totalCharacters = gameEconomyResult.playerStats?.totalCharacters || 0;
+          newEconomyData.avgWealth = gameEconomyResult.playerStats?.avgWealth || 0;
 
-          // Placeholder for system vitals, wealth distribution, etc.
-          newEconomyData.playerActivity.onlineNow = gameEconomyResult.insights?.onlineNow || 0; // Assuming this might be in insights
-          newEconomyData.playerActivity.avgLevel = gameEconomyResult.insights?.avgLevel || 0; // Assuming this might be in insights
-          newEconomyData.playerActivity.avgEnergy = gameEconomyResult.insights?.avgEnergy || 0; // Assuming this might be in insights
-          newEconomyData.playerActivity.avgHealth = gameEconomyResult.insights?.avgHealth || 0; // Assuming this might be in insights
-
-          newEconomyData.wealthDistribution = { // Placeholder
-            poor: Math.round(newEconomyData.totalCharacters * 0.5),
-            middle: Math.round(newEconomyData.totalCharacters * 0.3),
-            rich: Math.round(newEconomyData.totalCharacters * 0.2),
+          // ✅ Real player activity data
+          newEconomyData.playerActivity = {
+            onlineNow: gameEconomyResult.playerStats?.onlineNow || 0,
+            avgLevel: gameEconomyResult.playerStats?.avgLevel || 0,
+            avgEnergy: gameEconomyResult.playerStats?.avgEnergy || 0,
+            avgHealth: gameEconomyResult.playerStats?.avgHealth || 0,
+            topLocations: gameEconomyResult.locationStats?.topLocations || []
           };
+
+          // ✅ Real wealth distribution
+          newEconomyData.wealthDistribution = gameEconomyResult.playerStats?.wealthDistribution || {
+            poor: 0, middle: 0, rich: 0
+          };
+
+          // ✅ Override with better market data from game-economy if available
+          if (gameEconomyResult.marketStats) {
+            newEconomyData.marketData = {
+              totalListings: gameEconomyResult.marketStats.totalListings || newEconomyData.marketData.totalListings,
+              totalValue: gameEconomyResult.marketStats.totalListingsValue || newEconomyData.marketData.totalValue,
+              totalEconomyValue: gameEconomyResult.marketStats.totalEconomyValue || newEconomyData.marketData.totalEconomyValue,
+              avgPrice: gameEconomyResult.marketStats.avgPrice || newEconomyData.marketData.avgPrice,
+              mostExpensiveItem: gameEconomyResult.marketStats.mostExpensiveItem || newEconomyData.marketData.mostExpensiveItem,
+              cheapestItem: gameEconomyResult.marketStats.cheapestItem || newEconomyData.marketData.cheapestItem,
+              popularLocations: gameEconomyResult.marketStats.popularLocations || newEconomyData.marketData.popularLocations
+            };
+          }
+
+          console.log('✅ Real data loaded:', {
+            totalCharacters: newEconomyData.totalCharacters,
+            totalWealth: newEconomyData.totalWealth,
+            onlineNow: newEconomyData.playerActivity.onlineNow,
+            topLocation: newEconomyData.playerActivity.topLocations[0]?.name,
+            wealthDistribution: newEconomyData.wealthDistribution,
+            totalEconomyValue: newEconomyData.marketData.totalEconomyValue
+          });
         }
       }
 
@@ -127,13 +152,13 @@ const EconomyView: React.FC = () => {
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch economy data:', error);
-      // Generate mock data for demo
       generateMockData();
       setIsLoading(false);
     }
   };
 
   const generateMockData = () => {
+    console.log('⚠️ Using mock data due to API failure');
     setEconomyData({
       totalWealth: 127543,
       avgWealth: 156,
@@ -142,9 +167,10 @@ const EconomyView: React.FC = () => {
       marketData: {
         totalListings: 1247,
         totalValue: 45623,
+        totalEconomyValue: 68964,
         avgPrice: 36,
         mostExpensiveItem: { name: "Legendary Sword", price: 2500, location: "Central Hub" },
-        cheapestItem: { name: "Rusty Knife", price: 5, location: "Wasteland" },
+        cheapestItem: { name: "Earthy Knife", price: 5, location: "Wasteland" },
         popularLocations: [
           { name: "Central Hub", listings: 347 },
           { name: "Trading Post", listings: 234 },
@@ -171,7 +197,7 @@ const EconomyView: React.FC = () => {
       }
     });
 
-    setRustMarketData({
+    setEarthMarketData({
       currentRate: 186.45,
       change24h: -2.3,
       volume24h: 12.4,
@@ -179,13 +205,12 @@ const EconomyView: React.FC = () => {
       totalTransactions: 156
     });
 
-    // Mock dual-currency data
     setGameEconomyFlow({
-      rustCirculation: {
+      earthCirculation: { // ✅ Updated naming
         playerBalances: 45230,
         merchantFloat: 12500,
         tradingVelocity: 8940,
-        burnedRust: 2340,
+        burnedEarth: 2340,
         totalMinted: 67890
       },
       solCirculation: {
@@ -195,16 +220,16 @@ const EconomyView: React.FC = () => {
         treasurySOL: 45.678
       },
       crossCurrencyFlow: {
-        solToRustTrades: 8.234,
-        rustToSolTrades: 2.456,
+        solToEarthTrades: 8.234,
+        earthToSolTrades: 2.456,
         preferenceShifts: {},
         arbitrageGaps: {}
       },
       totalEconomicValue: {
-        rustEconomyUSD: 57730,
+        earthEconomyUSD: 57730,
         solEconomyUSD: 11234,
         totalEconomyUSD: 68964,
-        rustDominance: 0.837,
+        earthDominance: 0.837,
         solDominance: 0.163
       }
     });
@@ -216,7 +241,7 @@ const EconomyView: React.FC = () => {
     return num.toLocaleString();
   };
 
-  const formatCurrency = (amount: number) => `${formatNumber(amount)} SHARD`;
+  const formatCurrency = (amount: number) => `${formatNumber(amount)} EARTH`;
 
   const wealthChartData = economyData ? [
     { name: 'POOR', value: economyData.wealthDistribution.poor, color: '#ef4444' },
@@ -232,15 +257,32 @@ const EconomyView: React.FC = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto bg-background border border-primary/30 rounded-lg p-4 font-mono text-xs text-primary">
-      {/* Terminal Header */}
+      {/* Terminal Header with NPC Toggle */}
       <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-2">
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4" />
           <span className="text-primary font-bold">ECONOMIC OVERSIGHT SYSTEM v2.089</span>
         </div>
-        <div className="flex items-center gap-2">
-          <Activity className="w-3 h-3 animate-pulse" />
-          <span className="text-primary">MONITORING</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIncludeNPCs(!includeNPCs)}
+              className={`px-2 py-1 text-xs font-mono border rounded transition-colors ${includeNPCs
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background text-muted-foreground border-border hover:border-primary/50'
+                }`}
+            >
+              {includeNPCs ? '👥 ALL_ENTITIES' : '👤 HUMANS_ONLY'}
+            </button>
+            <span className="text-muted-foreground text-xs">
+              {includeNPCs ? 'NPCS_INCLUDED' : 'NPCS_EXCLUDED'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Activity className="w-3 h-3 animate-pulse" />
+            <span className="text-primary">MONITORING</span>
+          </div>
         </div>
       </div>
 
@@ -259,15 +301,17 @@ const EconomyView: React.FC = () => {
           <div className="text-primary text-lg font-bold">
             {economyData ? economyData.totalCharacters : '--'}
           </div>
-          <div className="text-muted-foreground text-xs">REGISTERED</div>
+          <div className="text-muted-foreground text-xs">
+            {includeNPCs ? 'TOTAL_ENTITIES' : 'HUMANS_ONLY'}
+          </div>
         </div>
 
         <div className="bg-muted/50 border border-primary/20 p-3 rounded">
-          <div className="text-muted-foreground text-xs mb-1">MARKET CAP</div>
+          <div className="text-muted-foreground text-xs mb-1">TOTAL ECONOMY</div>
           <div className="text-primary text-lg font-bold">
-            {economyData ? formatCurrency(economyData.marketData.totalValue) : '--'}
+            {economyData?.marketData?.totalEconomyValue ? `$${formatNumber(economyData.marketData.totalEconomyValue)}` : '--'}
           </div>
-          <div className="text-muted-foreground text-xs">LISTINGS</div>
+          <div className="text-muted-foreground text-xs">USD VALUE</div>
         </div>
 
         <div className="bg-muted/50 border border-primary/20 p-3 rounded">
@@ -279,13 +323,13 @@ const EconomyView: React.FC = () => {
         </div>
 
         <div className="bg-muted/50 border border-primary/20 p-3 rounded">
-          <div className="text-muted-foreground text-xs mb-1">SOL/SHARD</div>
+          <div className="text-muted-foreground text-xs mb-1">SOL/EARTH</div>
           <div className="text-primary text-lg font-bold">
-            {rustMarketData ? rustMarketData.currentRate.toFixed(2) : '--'}
+            {earthMarketData ? earthMarketData.currentRate.toFixed(2) : '--'}
           </div>
-          <div className={`text-xs flex items-center gap-1 ${rustMarketData && rustMarketData.change24h >= 0 ? 'text-success dark:text-green-400' : 'text-error dark:text-red-400'}`}>
-            {rustMarketData && rustMarketData.change24h >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {rustMarketData ? `${rustMarketData.change24h >= 0 ? '+' : ''}${rustMarketData.change24h.toFixed(2)}%` : '--'}
+          <div className={`text-xs flex items-center gap-1 ${earthMarketData && earthMarketData.change24h >= 0 ? 'text-success dark:text-green-400' : 'text-error dark:text-red-400'}`}>
+            {earthMarketData && earthMarketData.change24h >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {earthMarketData ? `${earthMarketData.change24h >= 0 ? '+' : ''}${earthMarketData.change24h.toFixed(2)}%` : '--'}
           </div>
         </div>
       </div>
@@ -420,32 +464,35 @@ const EconomyView: React.FC = () => {
           </div>
         </div>
 
-        {/* Exchange Activity - Now with Dual Currency Data */}
+        {/* Exchange Activity */}
         <div className="bg-muted/30 border border-primary/20 rounded p-4">
           <div className="text-muted-foreground text-xs mb-3">DUAL-CURRENCY ECONOMY</div>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-muted-foreground text-xs">SHARD CIRCULATION</span>
+              <span className="text-muted-foreground text-xs">EARTH CIRCULATION</span>
               <span className="text-primary">
-                {gameEconomyFlow ? formatCurrency(gameEconomyFlow.rustCirculation.playerBalances) : '--'}
+                {gameEconomyFlow?.earthCirculation ? formatCurrency(gameEconomyFlow.earthCirculation.playerBalances) :
+                  gameEconomyFlow?.earthCirculation ? formatCurrency(gameEconomyFlow.earthCirculation.playerBalances) : '--'}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground text-xs">SOL IN GAME</span>
+              <span className="text-muted-foreground text-xs">TREASURY SOL</span>
               <span className="text-primary">
-                {gameEconomyFlow ? `${gameEconomyFlow.solCirculation.playerSOL.toFixed(3)} SOL` : '--'}
+                {gameEconomyFlow ? `${gameEconomyFlow.solCirculation.treasurySOL.toFixed(3)} SOL` : '--'}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground text-xs">TOTAL ECONOMY</span>
+              <span className="text-muted-foreground text-xs">ECONOMY SIZE</span>
               <span className="text-primary">
-                {gameEconomyFlow ? `$${formatNumber(gameEconomyFlow.totalEconomicValue.totalEconomyUSD)}` : '--'}
+                {economyData?.marketData?.totalEconomyValue ? `$${formatNumber(economyData.marketData.totalEconomyValue)}` :
+                  gameEconomyFlow ? `$${formatNumber(gameEconomyFlow.totalEconomicValue.totalEconomyUSD)}` : '--'}
               </span>
             </div>
             <div className="border-t border-primary/20 pt-2 mt-2">
               <div className="text-xs text-muted-foreground mb-1">CURRENCY DOMINANCE</div>
               <div className="text-xs">
-                <span className="text-orange-500">SHARD: {gameEconomyFlow ? `${(gameEconomyFlow.totalEconomicValue.rustDominance * 100).toFixed(1)}%` : '--'}</span>
+                <span className="text-orange-500">EARTH: {gameEconomyFlow ?
+                  `${((gameEconomyFlow.totalEconomicValue.earthDominance || gameEconomyFlow.totalEconomicValue.earthDominance || 0) * 100).toFixed(1)}%` : '--'}</span>
                 <span className="text-muted-foreground mx-1">|</span>
                 <span className="text-blue-500">SOL: {gameEconomyFlow ? `${(gameEconomyFlow.totalEconomicValue.solDominance * 100).toFixed(1)}%` : '--'}</span>
               </div>
@@ -454,28 +501,36 @@ const EconomyView: React.FC = () => {
         </div>
       </div>
 
-      {/* NEW: Dual Currency Analytics Section */}
+      {/* Dual Currency Analytics Section */}
       {gameEconomyFlow && (
         <div className="grid grid-cols-3 gap-6 mb-6">
-          {/* SHARD Economy Health */}
+          {/* EARTH Economy Health */}
           <div className="bg-muted/30 border border-primary/20 rounded p-4">
-            <div className="text-muted-foreground text-xs mb-3">SHARD ECONOMY</div>
+            <div className="text-muted-foreground text-xs mb-3">EARTH ECONOMY</div>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">PLAYER BALANCES</span>
-                <span className="text-primary">{formatCurrency(gameEconomyFlow.rustCirculation.playerBalances)}</span>
+                <span className="text-primary">{formatCurrency(
+                  gameEconomyFlow.earthCirculation?.playerBalances || gameEconomyFlow.earthCirculation?.playerBalances || 0
+                )}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">NPC RESERVES</span>
-                <span className="text-primary">{formatCurrency(gameEconomyFlow.rustCirculation.merchantFloat)}</span>
+                <span className="text-primary">{formatCurrency(
+                  gameEconomyFlow.earthCirculation?.merchantFloat || gameEconomyFlow.earthCirculation?.merchantFloat || 0
+                )}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">TOTAL MINTED</span>
-                <span className="text-primary">{formatCurrency(gameEconomyFlow.rustCirculation.totalMinted)}</span>
+                <span className="text-primary">{formatCurrency(
+                  gameEconomyFlow.earthCirculation?.totalMinted || gameEconomyFlow.earthCirculation?.totalMinted || 0
+                )}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-xs">BURNED</span>
-                <span className="text-error">{formatCurrency(gameEconomyFlow.rustCirculation.burnedRust)}</span>
+                <span className="text-error">{formatCurrency(
+                  gameEconomyFlow.earthCirculation?.burnedEarth || gameEconomyFlow.earthCirculation?.burnedEarth || 0
+                )}</span>
               </div>
             </div>
           </div>
@@ -508,18 +563,27 @@ const EconomyView: React.FC = () => {
             <div className="text-muted-foreground text-xs mb-3">CURRENCY EXCHANGE</div>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-muted-foreground text-xs">SHARD</span>
-                <span className="text-success">{gameEconomyFlow.crossCurrencyFlow.solToRustTrades.toFixed(3)} SOL</span>
+                <span className="text-muted-foreground text-xs">SOL → EARTH</span>
+                <span className="text-success">{(
+                  gameEconomyFlow.crossCurrencyFlow.solToEarthTrades || gameEconomyFlow.crossCurrencyFlow.solToEarthTrades || 0
+                ).toFixed(3)} SOL</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground text-xs">SHARD</span>
-                <span className="text-error">{gameEconomyFlow.crossCurrencyFlow.rustToSolTrades.toFixed(3)} SOL</span>
+                <span className="text-muted-foreground text-xs">EARTH → SOL</span>
+                <span className="text-error">{(
+                  gameEconomyFlow.crossCurrencyFlow.earthToSolTrades || gameEconomyFlow.crossCurrencyFlow.earthToSolTrades || 0
+                ).toFixed(3)} SOL</span>
               </div>
               <div className="border-t border-primary/20 pt-2 mt-2">
                 <div className="text-xs text-muted-foreground mb-1">EXCHANGE ACTIVITY</div>
                 <div className="text-xs text-primary">
-                  Net Flow: {((gameEconomyFlow.crossCurrencyFlow.solToRustTrades - gameEconomyFlow.crossCurrencyFlow.rustToSolTrades) >= 0 ? '+' : '')}{(gameEconomyFlow.crossCurrencyFlow.solToRustTrades - gameEconomyFlow.crossCurrencyFlow.rustToSolTrades).toFixed(3)} SOL
-                </div>
+                  Net Flow: {(
+                    ((gameEconomyFlow.crossCurrencyFlow.solToEarthTrades || gameEconomyFlow.crossCurrencyFlow.solToEarthTrades || 0) -
+                      (gameEconomyFlow.crossCurrencyFlow.earthToSolTrades || gameEconomyFlow.crossCurrencyFlow.earthToSolTrades || 0)) >= 0 ? '+' : ''
+                  )}{(
+                    (gameEconomyFlow.crossCurrencyFlow.solToEarthTrades || gameEconomyFlow.crossCurrencyFlow.solToEarthTrades || 0) -
+                    (gameEconomyFlow.crossCurrencyFlow.earthToSolTrades || gameEconomyFlow.crossCurrencyFlow.earthToSolTrades || 0)
+                  ).toFixed(3)} SOL</div>
               </div>
             </div>
           </div>

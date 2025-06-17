@@ -130,7 +130,7 @@ export const handler = async (event, context) => {
 
         const listingId = randomUUID()
 
-        console.log(`🆕 Creating system listing: ${item.name} for ${price} coins (ID: ${listingId})`)
+        console.log(`🆕 Creating system listing: ${item.name} for ${price} earth (ID: ${listingId})`)
 
         const { data: listing, error: listingError } = await supabase
           .from('market_listings')

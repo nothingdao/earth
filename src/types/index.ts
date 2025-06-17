@@ -1,4 +1,4 @@
-// src/types/index.ts
+// src/types/index.ts - Fixed with missing hook return types
 
 import type { Rarity } from '@/config/gameConfig'
 
@@ -32,6 +32,18 @@ export type ItemCategory = Enums<'ItemCategory'>
 export type LocationType = Enums<'LocationType'>
 
 // =============================================================================
+// HOOK RETURN TYPES
+// =============================================================================
+
+export interface UsePlayerCharacterReturn {
+  character: Character | null
+  loading: boolean
+  hasCharacter: boolean
+  error: string | null
+  refetchCharacter: () => Promise<void>
+}
+
+// =============================================================================
 // UI/FRONTEND-SPECIFIC TYPES (Not covered by database schema)
 // =============================================================================
 
@@ -50,7 +62,7 @@ export type GameView =
   | 'admin'
   | 'economy'
   | 'leaderboards'
-  | 'rust-market'
+  | 'earth-market'
 
 // Equipment/UI specific types (not in database)
 export type EquipmentSlot = 'head' | 'body' | 'accessory' | 'tool'

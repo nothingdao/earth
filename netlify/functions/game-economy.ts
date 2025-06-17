@@ -1,4 +1,4 @@
-// netlify/functions/game-economy.ts - Dual Currency Economic Analytics
+// netlify/functions/game-economy.ts - Enhanced with Real Data
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -11,15 +11,15 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
  *
  * CORE CONCEPT:
  * We operate a realistic dual-currency economy similar to countries that accept both
- * local fiat and foreign crypto. Players can use either RUST (our game fiat) or SOL
+ * local fiat and foreign crypto. Players can use either EARTH (our game fiat) or SOL
  * (real crypto) depending on merchant preferences and player choice.
  *
  * CURRENCY ROLES:
- * - RUST: Primary game currency, stable value (1 RUST = 1 USDC), universal acceptance
+ * - EARTH: Primary game currency, stable value (1 EARTH = 1 USDC), universal acceptance
  * - SOL: Alternative currency, volatile value, selective acceptance, real crypto
  *
  * REAL WORLD ANALOGY:
- * Like a country where you can pay with local currency (RUST) or Bitcoin (SOL).
+ * Like a country where you can pay with local currency (EARTH) or Bitcoin (SOL).
  * Some vendors only take local currency, others accept both, creates natural dynamics.
  */
 
@@ -35,11 +35,31 @@ export const handler = async (event: any, context: any) => {
   }
 
   try {
+    console.log('🏦 Starting dual-currency economy analysis...')
+
+    // ✅ NEW: Check for NPC inclusion parameter
+    const includeNPCs = event.queryStringParameters?.includeNPCs === 'true'
+    console.log(
+      `📊 Analysis mode: ${includeNPCs ? 'ALL_ENTITIES' : 'HUMANS_ONLY'}`
+    )
+
     // Get current SOL/USDC rate for economic calculations
     const currentSOLPrice = await getCurrentSOLPrice()
 
+    // ✅ NEW: Pass NPC toggle to analysis functions
+    const playerStats = await getPlayerVitalStats(includeNPCs)
+    const locationStats = await getLocationPopulations(includeNPCs)
+    const marketStats = await getMarketOverview()
+
     // Analyze the dual-currency economy
     const gameEconomyFlow = await analyzeGameEconomy(currentSOLPrice)
+
+    console.log('✅ Economic analysis complete:', {
+      playerStats: playerStats.totalCharacters,
+      locationStats: locationStats.topLocations.length,
+      marketStats: marketStats.totalListings,
+      includeNPCs,
+    })
 
     return {
       statusCode: 200,
@@ -50,6 +70,20 @@ export const handler = async (event: any, context: any) => {
         timestamp: new Date().toISOString(),
         solUsdcRate: currentSOLPrice,
         gameEconomyFlow,
+
+        // ✅ Add analysis mode info
+        analysisMode: {
+          includeNPCs,
+          description: includeNPCs
+            ? 'All entities (humans + NPCs)'
+            : 'Human players only',
+        },
+
+        // ✅ Add the "Big 4" real data
+        playerStats,
+        locationStats,
+        marketStats,
+
         documentation: getEconomicDocumentation(),
         insights: generateEconomicInsights(gameEconomyFlow, currentSOLPrice),
       }),
@@ -67,263 +101,422 @@ export const handler = async (event: any, context: any) => {
   }
 }
 
-async function analyzeGameEconomy(currentSOLPrice: number) {
-  // RUST CIRCULATION ANALYSIS
-  const rustCirculation = {
-    // Total RUST held by all players (excludes NPCs and system accounts)
-    playerBalances: await getRustInWallets(),
+// ✅ UPDATED: Real Player Vital Statistics with NPC toggle
+async function getPlayerVitalStats(includeNPCs: boolean = false): Promise<any> {
+  console.log(
+    `📊 Analyzing player vital statistics... (NPCs: ${
+      includeNPCs ? 'INCLUDED' : 'EXCLUDED'
+    })`
+  )
 
-    // RUST held by NPCs for making change, rewards, etc (merchant cash registers)
-    merchantFloat: await getRustInNPCRegisters(),
+  const query = supabase
+    .from('characters')
+    .select(
+      'earth, level, energy, health, updated_at, current_location_id, character_type'
+    )
 
-    // How fast RUST moves through the economy (transactions per day)
-    tradingVelocity: await getRustTransactionVolume(),
+  // ✅ Filter based on NPC toggle
+  const { data: characters, error } = includeNPCs
+    ? await query // Include all characters
+    : await query.neq('character_type', 'NPC') // Exclude NPCs
 
-    // RUST that has been burned through purchases (removed from circulation)
-    burnedRust: await getTotalRustBurned(),
-
-    // Total RUST ever minted through SOL trades
-    totalMinted: await getTotalRustMinted(),
+  if (error) {
+    console.error('Error fetching characters:', error)
+    throw error
   }
 
-  // SOL CIRCULATION ANALYSIS
-  const solCirculation = {
-    // SOL balances held by players in-game (not in treasury)
-    playerSOL: await getSOLInGameWallets(),
+  const totalCharacters = characters?.length || 0
 
-    // Direct SOL-for-goods transactions (bypassing RUST entirely)
-    directSOLTrades: await getSOLToSOLTransactions(),
-
-    // Volume of SOL accepted by merchants for purchases
-    solAcceptingMerchants: await getSOLTransactionVolume(),
-
-    // SOL held in treasury backing RUST
-    treasurySOL: await getTreasurySOLReserves(),
+  if (totalCharacters === 0) {
+    return {
+      totalCharacters: 0,
+      onlineNow: 0,
+      avgLevel: 0,
+      avgEnergy: 0,
+      avgHealth: 0,
+      avgWealth: 0,
+      totalWealth: 0,
+      wealthDistribution: { poor: 0, middle: 0, rich: 0 },
+      entityBreakdown: includeNPCs ? { humans: 0, npcs: 0 } : { humans: 0 },
+    }
   }
 
-  // CROSS-CURRENCY FLOW ANALYSIS
-  const crossCurrencyFlow = {
-    // SOL → RUST exchanges via trading terminal
-    solToRustTrades: await getExchangeVolume('SOL_TO_RUST'),
+  // Calculate recently active (updated in last hour)
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+  const recentlyActive = characters.filter(
+    (c) => new Date(c.updated_at) > oneHourAgo
+  ).length
 
-    // RUST → SOL exchanges via trading terminal
-    rustToSolTrades: await getExchangeVolume('RUST_TO_SOL'),
+  // Calculate averages
+  const avgLevel =
+    characters.reduce((sum, c) => sum + (c.level || 0), 0) / totalCharacters
+  const avgEnergy =
+    characters.reduce((sum, c) => sum + (c.energy || 0), 0) / totalCharacters
+  const avgHealth =
+    characters.reduce((sum, c) => sum + (c.health || 0), 0) / totalCharacters
+  const totalWealth = characters.reduce((sum, c) => sum + (c.earth || 0), 0)
+  const avgWealth = totalWealth / totalCharacters
 
-    // Are players preferring RUST or SOL for purchases over time?
-    preferenceShifts: await getCurrencyUsagePatterns(),
-
-    // Arbitrage opportunities between direct SOL use vs exchange
-    arbitrageGaps: await calculateArbitrageOpportunities(currentSOLPrice),
+  // Calculate wealth distribution
+  const wealthDistribution = {
+    poor: characters.filter((c) => (c.earth || 0) < 100).length,
+    middle: characters.filter(
+      (c) => (c.earth || 0) >= 100 && (c.earth || 0) <= 1000
+    ).length,
+    rich: characters.filter((c) => (c.earth || 0) > 1000).length,
   }
+
+  // ✅ NEW: Entity breakdown for transparency
+  const entityBreakdown = includeNPCs
+    ? {
+        humans: characters.filter((c) => c.character_type !== 'NPC').length,
+        npcs: characters.filter((c) => c.character_type === 'NPC').length,
+      }
+    : {
+        humans: totalCharacters,
+      }
+
+  console.log('✅ Player stats calculated:', {
+    totalCharacters,
+    recentlyActive,
+    avgWealth: Math.round(avgWealth),
+    wealthDistribution,
+    entityBreakdown,
+  })
 
   return {
-    rustCirculation,
-    solCirculation,
-    crossCurrencyFlow,
-    totalEconomicValue: calculateTotalEconomicValue(
-      rustCirculation,
-      solCirculation,
-      currentSOLPrice
-    ),
+    totalCharacters,
+    onlineNow: recentlyActive,
+    avgLevel: Math.round(avgLevel * 10) / 10,
+    avgEnergy: Math.round(avgEnergy),
+    avgHealth: Math.round(avgHealth),
+    avgWealth: Math.round(avgWealth),
+    totalWealth: Math.round(totalWealth),
+    wealthDistribution,
+    entityBreakdown, // ✅ NEW: Show human/NPC breakdown
   }
 }
 
-// RUST CIRCULATION FUNCTIONS
-async function getRustInWallets(): Promise<number> {
-  const { data } = await supabase
-    .from('characters')
-    .select('coins')
-    .neq('character_type', 'NPC') // Exclude NPCs
-
-  return data?.reduce((sum, char) => sum + (char.coins || 0), 0) || 0
-}
-
-async function getRustInNPCRegisters(): Promise<number> {
-  const { data } = await supabase
-    .from('characters')
-    .select('coins')
-    .eq('character_type', 'NPC')
-
-  return data?.reduce((sum, npc) => sum + (npc.coins || 0), 0) || 0
-}
-
-async function getRustTransactionVolume(): Promise<number> {
-  const { data } = await supabase
-    .from('transactions')
-    .select('from_units, to_units')
-    .or('from_vault.eq.RUST_COIN,to_vault.eq.RUST_COIN')
-    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-
-  return (
-    data?.reduce((sum, tx) => {
-      return sum + (tx.from_vault === 'RUST_COIN' ? tx.from_units : tx.to_units)
-    }, 0) || 0
+// ✅ UPDATED: Real Location Population Analysis with NPC toggle
+async function getLocationPopulations(
+  includeNPCs: boolean = false
+): Promise<any> {
+  console.log(
+    `🗺️ Analyzing location populations... (NPCs: ${
+      includeNPCs ? 'INCLUDED' : 'EXCLUDED'
+    })`
   )
-}
 
-async function getTotalRustBurned(): Promise<number> {
-  // RUST spent on game items (leaves circulation permanently)
-  const { data } = await supabase
-    .from('transactions')
-    .select('from_units')
-    .eq('from_vault', 'RUST_COIN')
-    .eq('type', 'PURCHASE') // Assuming you have purchase transactions
+  const { data: locations, error: locError } = await supabase
+    .from('locations')
+    .select('id, name, has_market, has_mining, has_chat')
 
-  return data?.reduce((sum, tx) => sum + tx.from_units, 0) || 0
-}
+  if (locError) {
+    console.error('Error fetching locations:', locError)
+    throw locError
+  }
 
-async function getTotalRustMinted(): Promise<number> {
-  // RUST created through SOL exchanges
-  const { data } = await supabase
-    .from('transactions')
-    .select('to_units')
-    .eq('to_vault', 'RUST_COIN')
-    .eq('type', 'EXCHANGE')
-
-  return data?.reduce((sum, tx) => sum + tx.to_units, 0) || 0
-}
-
-// SOL CIRCULATION FUNCTIONS
-async function getSOLInGameWallets(): Promise<number> {
-  // This would need a sol_balance column in characters table
-  const { data } = await supabase
+  const query = supabase
     .from('characters')
-    .select('sol_balance')
-    .neq('character_type', 'NPC')
+    .select('current_location_id, character_type')
 
-  return data?.reduce((sum, char) => sum + (char.sol_balance || 0), 0) || 0
-}
+  // ✅ Filter based on NPC toggle
+  const { data: characters, error: charError } = includeNPCs
+    ? await query // Include all characters
+    : await query.neq('character_type', 'NPC') // Exclude NPCs
 
-async function getSOLToSOLTransactions(): Promise<number> {
-  // Direct SOL trades between players or SOL purchases
-  const { data } = await supabase
-    .from('transactions')
-    .select('from_units')
-    .eq('from_vault', 'SCRAP_SOL')
-    .neq('type', 'EXCHANGE') // Exclude SOL→RUST exchanges
-    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+  if (charError) {
+    console.error('Error fetching character locations:', charError)
+    throw charError
+  }
 
-  return data?.reduce((sum, tx) => sum + tx.from_units, 0) || 0
-}
-
-async function getSOLTransactionVolume(): Promise<number> {
-  // All SOL movement in 24h
-  const { data } = await supabase
-    .from('transactions')
-    .select('from_units, to_units')
-    .or('from_vault.eq.SCRAP_SOL,to_vault.eq.SCRAP_SOL')
-    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-
-  return (
-    data?.reduce((sum, tx) => {
-      return sum + (tx.from_vault === 'SCRAP_SOL' ? tx.from_units : tx.to_units)
-    }, 0) || 0
-  )
-}
-
-async function getTreasurySOLReserves(): Promise<number> {
-  // This would be your actual treasury wallet balance
-  // For now, calculate from exchange transactions
-  const { data } = await supabase
-    .from('transactions')
-    .select('from_units, to_units, from_vault')
-    .eq('type', 'EXCHANGE')
-
-  let treasuryBalance = 0
-  data?.forEach((tx) => {
-    if (tx.from_vault === 'SCRAP_SOL') {
-      treasuryBalance += tx.from_units // SOL came in
-    } else {
-      treasuryBalance -= tx.to_units // SOL went out
+  // Count characters by location
+  const locationCounts: Record<string, number> = {}
+  characters?.forEach((char) => {
+    const locId = char.current_location_id
+    if (locId) {
+      locationCounts[locId] = (locationCounts[locId] || 0) + 1
     }
   })
 
-  return Math.max(treasuryBalance, 0)
+  // Combine location data with character counts
+  const topLocations =
+    locations
+      ?.map((loc) => ({
+        id: loc.id,
+        name: loc.name,
+        player_count: locationCounts[loc.id] || 0,
+        has_market: loc.has_market,
+        has_mining: loc.has_mining,
+        has_chat: loc.has_chat,
+      }))
+      .sort((a, b) => b.player_count - a.player_count)
+      .slice(0, 10) || []
+
+  console.log('✅ Location stats calculated:', {
+    totalLocations: locations?.length || 0,
+    populatedLocations: topLocations.filter((l) => l.player_count > 0).length,
+    topLocation: topLocations[0]?.name,
+    includeNPCs,
+  })
+
+  return { topLocations }
 }
 
-// CROSS-CURRENCY FUNCTIONS
-async function getExchangeVolume(
-  direction: 'SOL_TO_RUST' | 'RUST_TO_SOL'
-): Promise<number> {
-  const isSOLToRust = direction === 'SOL_TO_RUST'
+// ✅ UPDATED: Enhanced market overview with true economy size
+async function getMarketOverview(): Promise<any> {
+  console.log('💰 Analyzing market overview...')
 
+  const { data: marketListings, error: marketError } = await supabase.from(
+    'market_listings'
+  ).select(`
+      id,
+      price,
+      quantity,
+      location_id,
+      item:items(name, rarity),
+      location:locations(name)
+    `)
+
+  if (marketError) {
+    console.error('Error fetching market listings:', marketError)
+    throw marketError
+  }
+
+  // Calculate market listings value (what was previously "market cap")
+  const totalListingsValue =
+    marketListings?.reduce(
+      (sum, listing) => sum + listing.price * listing.quantity,
+      0
+    ) || 0
+
+  // Get current SOL price for economy calculation
+  const currentSOLPrice = await getCurrentSOLPrice()
+
+  // ✅ NEW: Calculate true total economy size
+  const totalEconomyValue = await calculateTotalEconomicValue(currentSOLPrice)
+
+  if (!marketListings || marketListings.length === 0) {
+    return {
+      totalListings: 0,
+      totalListingsValue: 0,
+      totalEconomyValue, // ✅ NEW: True economy size
+      avgPrice: 0,
+      mostExpensiveItem: { name: '--', price: 0, location: '--' },
+      cheapestItem: { name: '--', price: 0, location: '--' },
+      popularLocations: [],
+    }
+  }
+
+  // Calculate market statistics
+  const totalListings = marketListings.length
+  const avgPrice =
+    marketListings.reduce((sum, listing) => sum + listing.price, 0) /
+    totalListings
+
+  // Find most/least expensive items
+  const sortedByPrice = [...marketListings].sort((a, b) => b.price - a.price)
+  const mostExpensiveItem = {
+    name: sortedByPrice[0]?.item?.name || '--',
+    price: sortedByPrice[0]?.price || 0,
+    location: sortedByPrice[0]?.location?.name || '--',
+  }
+  const cheapestItem = {
+    name: sortedByPrice[sortedByPrice.length - 1]?.item?.name || '--',
+    price: sortedByPrice[sortedByPrice.length - 1]?.price || 0,
+    location: sortedByPrice[sortedByPrice.length - 1]?.location?.name || '--',
+  }
+
+  // Calculate popular market locations
+  const locationCounts: Record<string, number> = {}
+  marketListings.forEach((listing) => {
+    const locName = listing.location?.name
+    if (locName) {
+      locationCounts[locName] = (locationCounts[locName] || 0) + 1
+    }
+  })
+
+  const popularLocations = Object.entries(locationCounts)
+    .map(([name, listings]) => ({ name, listings }))
+    .sort((a, b) => b.listings - a.listings)
+    .slice(0, 5)
+
+  console.log('✅ Market stats calculated:', {
+    totalListings,
+    totalListingsValue: Math.round(totalListingsValue),
+    totalEconomyValue: Math.round(totalEconomyValue),
+    avgPrice: Math.round(avgPrice),
+    mostExpensive: mostExpensiveItem.name,
+  })
+
+  return {
+    totalListings,
+    totalListingsValue: Math.round(totalListingsValue), // Old "market cap"
+    totalEconomyValue: Math.round(totalEconomyValue), // ✅ NEW: True economy size
+    avgPrice: Math.round(avgPrice),
+    mostExpensiveItem,
+    cheapestItem,
+    popularLocations,
+  }
+}
+
+// ✅ SIMPLIFIED: Remove complex cross-currency calculations for now
+async function analyzeGameEconomy(currentSOLPrice: number) {
+  // EARTH CIRCULATION ANALYSIS (simplified)
+  const earthCirculation = {
+    // Total EARTH held by all players
+    playerBalances: await getEarthInWallets(),
+    // EARTH held by NPCs
+    merchantFloat: await getEarthInNPCRegisters(),
+    // Simplified - remove complex transaction tracking for now
+    tradingVelocity: 0,
+    burnedEarth: 0,
+    totalMinted: 0,
+  }
+
+  // SOL CIRCULATION ANALYSIS (simplified)
+  const solCirculation = {
+    // Real treasury SOL from actual wallet
+    treasurySOL: await getTreasurySOLReserves(),
+    // Simplified - remove complex tracking for now
+    playerSOL: 0,
+    directSOLTrades: 0,
+    solAcceptingMerchants: 0,
+  }
+
+  // CROSS-CURRENCY FLOW ANALYSIS (simplified)
+  const crossCurrencyFlow = {
+    // Simplified - remove complex exchange tracking for now
+    solToEarthTrades: 0,
+    earthToSolTrades: 0,
+    preferenceShifts: {},
+    arbitrageGaps: {},
+  }
+
+  // Calculate real total economic value
+  const totalEconomicValue = await calculateTotalEconomicValue(currentSOLPrice)
+
+  return {
+    earthCirculation, // ✅ Updated naming
+    solCirculation,
+    crossCurrencyFlow,
+    totalEconomicValue: {
+      totalEconomyUSD: totalEconomicValue,
+      earthEconomyUSD:
+        earthCirculation.playerBalances + earthCirculation.merchantFloat,
+      solEconomyUSD: solCirculation.treasurySOL * currentSOLPrice,
+      earthDominance:
+        (earthCirculation.playerBalances + earthCirculation.merchantFloat) /
+        totalEconomicValue,
+      solDominance:
+        (solCirculation.treasurySOL * currentSOLPrice) / totalEconomicValue,
+    },
+  }
+}
+
+// ✅ RENAMED: Earth circulation functions
+async function getEarthInWallets(): Promise<number> {
   const { data } = await supabase
-    .from('transactions')
-    .select('from_units')
-    .eq('type', 'EXCHANGE')
-    .eq('from_vault', isSOLToRust ? 'SCRAP_SOL' : 'RUST_COIN')
-    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    .from('characters')
+    .select('earth')
+    .neq('character_type', 'NPC')
 
-  return data?.reduce((sum, tx) => sum + tx.from_units, 0) || 0
+  return data?.reduce((sum, char) => sum + (char.earth || 0), 0) || 0
 }
 
-async function getCurrencyUsagePatterns(): Promise<any> {
-  // Analyze whether players are increasingly using SOL vs RUST
-  const now = new Date()
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+async function getEarthInNPCRegisters(): Promise<number> {
+  const { data } = await supabase
+    .from('characters')
+    .select('earth')
+    .eq('character_type', 'NPC')
 
-  const recentRustUsage = await getRustTransactionVolume()
-  const recentSOLUsage = await getSOLTransactionVolume()
+  return data?.reduce((sum, npc) => sum + (npc.earth || 0), 0) || 0
+}
 
-  // Calculate weekly averages for comparison
-  const { data: weekData } = await supabase
-    .from('transactions')
-    .select('from_vault, from_units')
-    .gte('created_at', weekAgo.toISOString())
-    .lt('created_at', yesterday.toISOString())
+// ✅ UPDATED: Get real SOL balance from actual treasury wallet
+async function getTreasurySOLReserves(): Promise<number> {
+  // Your actual treasury wallet address
+  const TREASURY_WALLET = process.env.TREASURY_WALLET_ADDRESS
 
-  const weeklyRustAvg =
-    weekData
-      ?.filter((tx) => tx.from_vault === 'RUST_COIN')
-      .reduce((sum, tx) => sum + tx.from_units, 0) / 7 || 0
+  if (!TREASURY_WALLET) {
+    console.warn('⚠️ No treasury wallet address configured, using fallback')
+    return 0
+  }
 
-  const weeklySOLAvg =
-    weekData
-      ?.filter((tx) => tx.from_vault === 'SCRAP_SOL')
-      .reduce((sum, tx) => sum + tx.from_units, 0) / 7 || 0
+  try {
+    console.log(
+      `🏦 Checking real treasury balance for: ${TREASURY_WALLET.slice(0, 8)}...`
+    )
 
-  return {
-    rustPreference: {
-      recent24h: recentRustUsage,
-      weeklyAverage: weeklyRustAvg,
-      trend: recentRustUsage > weeklyRustAvg ? 'INCREASING' : 'DECREASING',
-    },
-    solPreference: {
-      recent24h: recentSOLUsage,
-      weeklyAverage: weeklySOLAvg,
-      trend: recentSOLUsage > weeklySOLAvg ? 'INCREASING' : 'DECREASING',
-    },
+    // Query actual Solana blockchain for wallet balance
+    const response = await fetch('https://api.mainnet-beta.solana.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'getBalance',
+        params: [TREASURY_WALLET],
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Solana RPC error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.error) {
+      throw new Error(`Solana RPC error: ${data.error.message}`)
+    }
+
+    // Convert lamports to SOL (1 SOL = 1,000,000,000 lamports)
+    const solBalance = data.result.value / 1000000000
+
+    console.log(`✅ Real treasury balance: ${solBalance.toFixed(6)} SOL`)
+    return solBalance
+  } catch (error) {
+    console.error('❌ Failed to get treasury balance:', error)
+
+    // Fallback to environment variable if blockchain query fails
+    const fallbackBalance = parseFloat(process.env.TREASURY_SOL_FALLBACK || '0')
+    console.log(`🔄 Using fallback balance: ${fallbackBalance} SOL`)
+    return fallbackBalance
   }
 }
 
-async function calculateArbitrageOpportunities(
+// ✅ UPDATED: Simplified total economic value calculation
+async function calculateTotalEconomicValue(
   currentSOLPrice: number
-): Promise<any> {
-  // Compare direct SOL spending vs SOL→RUST→purchase paths
-  return {
-    directSOLValue: currentSOLPrice,
-    rustExchangeRate: currentSOLPrice, // 1 SOL gets currentSOLPrice RUST
-    arbitrageSpread: 0, // In a perfect peg, should be minimal
-    opportunityExists: false,
-  }
-}
+): Promise<number> {
+  // Get total EARTH in circulation (all characters)
+  const { data: allCharacters } = await supabase
+    .from('characters')
+    .select('earth')
 
-function calculateTotalEconomicValue(
-  rustCirc: any,
-  solCirc: any,
-  solPrice: number
-): any {
-  const totalRustValue = (rustCirc.playerBalances + rustCirc.merchantFloat) * 1 // USDC value
-  const totalSOLValue = (solCirc.playerSOL + solCirc.treasurySOL) * solPrice
+  const totalEarthInCirculation =
+    allCharacters?.reduce((sum, char) => sum + (char.earth || 0), 0) || 0
 
-  return {
-    rustEconomyUSD: totalRustValue,
-    solEconomyUSD: totalSOLValue,
-    totalEconomyUSD: totalRustValue + totalSOLValue,
-    rustDominance: totalRustValue / (totalRustValue + totalSOLValue),
-    solDominance: totalSOLValue / (totalRustValue + totalSOLValue),
-  }
+  // Get real treasury SOL backing
+  const treasurySOL = await getTreasurySOLReserves()
+
+  // Calculate total economy value in USD
+  const earthValueUSD = totalEarthInCirculation * 1 // 1 EARTH = 1 USD (stable)
+  const solValueUSD = treasurySOL * currentSOLPrice
+
+  console.log('💰 Economic calculation (REAL WALLET):', {
+    totalEarthInCirculation,
+    treasurySOL: `${treasurySOL.toFixed(6)} SOL`,
+    treasurySOLUSD: `$${solValueUSD.toFixed(2)}`,
+    earthValueUSD: `$${earthValueUSD.toFixed(2)}`,
+    totalEconomyUSD: `$${(earthValueUSD + solValueUSD).toFixed(2)}`,
+    economyBacking: `${(
+      (solValueUSD / (earthValueUSD + solValueUSD)) *
+      100
+    ).toFixed(1)}% SOL`,
+  })
+
+  return earthValueUSD + solValueUSD
 }
 
 async function getCurrentSOLPrice(): Promise<number> {
@@ -354,9 +547,9 @@ function getEconomicDocumentation(): any {
   return {
     systemType: 'DUAL_CURRENCY_ECONOMY',
     description:
-      'Players can use either RUST (game fiat) or SOL (real crypto) for transactions',
+      'Players can use either EARTH (game currency) or SOL (real crypto) for transactions',
     currencies: {
-      RUST: {
+      EARTH: {
         role: 'PRIMARY_GAME_CURRENCY',
         stability: 'PEGGED_TO_USDC',
         acceptance: 'UNIVERSAL',
@@ -381,38 +574,46 @@ function getEconomicDocumentation(): any {
       'Some transactions bypass exchange entirely',
     ],
     monetaryPolicy: {
-      rustSupply: 'CONTROLLED_BY_SOL_TRADING',
+      earthSupply: 'CONTROLLED_BY_SOL_TRADING',
       solSupply: 'CONTROLLED_BY_PLAYER_DEPOSITS',
       exchangeRate: 'DETERMINED_BY_SOL_USD_ORACLE',
-      reserveRequirement: 'FULL_SOL_BACKING_FOR_RUST',
+      reserveRequirement: 'FULL_SOL_BACKING_FOR_EARTH',
     },
   }
 }
 
+// 🔧 Fix 3: Update generateEconomicInsights to handle new structure
 function generateEconomicInsights(economyData: any, solPrice: number): any {
-  const rustCirc = economyData.rustCirculation
+  const earthCirc = economyData.earthCirculation
   const solCirc = economyData.solCirculation
   const crossFlow = economyData.crossCurrencyFlow
 
   return {
     monetaryHealth: {
-      rustCirculation: rustCirc.playerBalances,
+      earthCirculation: earthCirc.playerBalances,
       solBacking: solCirc.treasurySOL * solPrice,
-      backingRatio: (solCirc.treasurySOL * solPrice) / rustCirc.totalMinted,
+      backingRatio:
+        earthCirc.totalMinted > 0
+          ? (solCirc.treasurySOL * solPrice) / earthCirc.totalMinted
+          : 0,
       status:
-        solCirc.treasurySOL * solPrice >= rustCirc.totalMinted
+        solCirc.treasurySOL * solPrice >= earthCirc.totalMinted
           ? 'FULLY_BACKED'
           : 'UNDER_BACKED',
     },
     currencyUsage: {
-      rustDominance: economyData.totalEconomicValue.rustDominance,
-      solUsage: economyData.totalEconomicValue.solDominance,
-      exchangeActivity: crossFlow.solToRustTrades + crossFlow.rustToSolTrades,
+      // ✅ FIX: Use the new totalEconomicValue structure
+      earthDominance: economyData.totalEconomicValue.earthDominance || 0,
+      solUsage: economyData.totalEconomicValue.solDominance || 0,
+      exchangeActivity: crossFlow.solToEarthTrades + crossFlow.earthToSolTrades,
       directSOLUsage: solCirc.directSOLTrades,
     },
     economicTrends: {
-      rustVelocity: rustCirc.tradingVelocity / rustCirc.playerBalances,
-      monetaryExpansion: rustCirc.totalMinted - rustCirc.burnedRust,
+      earthVelocity:
+        earthCirc.playerBalances > 0
+          ? earthCirc.tradingVelocity / earthCirc.playerBalances
+          : 0,
+      monetaryExpansion: earthCirc.totalMinted - earthCirc.burnedEarth,
       currencyPreferences: crossFlow.preferenceShifts,
     },
   }

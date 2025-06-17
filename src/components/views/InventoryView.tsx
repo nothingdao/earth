@@ -582,7 +582,7 @@ export function InventoryView({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4" />
-              <span className="text-primary font-bold text-sm">CHARACTER_SYSTEM</span>
+              <span className="text-primary font-bold text-sm">PLAYER_SYSTEM</span>
             </div>
             <Badge variant="outline" className="text-xs font-mono">
               LVL.{character.level}

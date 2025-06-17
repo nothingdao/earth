@@ -1,4 +1,4 @@
-// netlify/functions/npc-exchange.js - NPCs trade coins for SOL at market rates
+// netlify/functions/npc-exchange.js - NPCs trade earth for SOL at market rates
 import supabaseAdmin from '../../src/utils/supabase-admin'
 import { randomUUID } from 'crypto'
 
@@ -137,14 +137,14 @@ export const handler = async (event, context) => {
     // Calculate exchange value
     const exchangeValue = item.base_price * quantity
 
-    // Check if character has enough coins
-    if (character.coins < exchangeValue) {
+    // Check if character has enough earth
+    if (character.earth < exchangeValue) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           error: 'Insufficient funds',
-          message: `You need ${exchangeValue} coins to make this exchange`
+          message: `You need ${exchangeValue} earth to make this exchange`
         })
       }
     }
@@ -171,7 +171,7 @@ export const handler = async (event, context) => {
         item_id: item_id,
         quantity: quantity,
         price: exchangeValue,
-        description: `Exchanged ${quantity}x ${item.name} with ${npc.name} for ${exchangeValue} coins`
+        description: `Exchanged ${quantity}x ${item.name} with ${npc.name} for ${exchangeValue} earth`
       })
 
     if (logError) {

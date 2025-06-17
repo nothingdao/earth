@@ -92,7 +92,7 @@ export const EconomyTab: React.FC<EconomyTabProps> = ({
         <StatCard
           title="TOTAL_VALUE"
           value={marketStats.totalValue}
-          subtitle="SHARD"
+          subtitle="EARTH"
           icon={TrendingUp}
           loading={loading}
         />
@@ -187,7 +187,7 @@ export const EconomyTab: React.FC<EconomyTabProps> = ({
                         <div className="text-xs text-muted-foreground">
                           <span>TOTAL: </span>
                           <span className="text-yellow-500 font-bold">
-                            {listing.price * listing.quantity} SHARDS
+                            {listing.price * listing.quantity} EARTH
                           </span>
                           <span className="ml-2">
                             • {new Date(listing.created_at).toLocaleDateString()}

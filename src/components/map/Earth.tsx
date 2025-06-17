@@ -42,8 +42,8 @@ export default function Earth({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, translateX: 0, translateY: 0 })
 
-  console.log('🗺️ Earth component locations array length:', locations.length)
-  console.log('🗺️ First location:', locations[0])
+  // console.log('🗺️ Earth component locations array length:', locations.length)
+  // console.log('🗺️ First location:', locations[0])
 
   // Touch-specific state
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
@@ -60,12 +60,12 @@ export default function Earth({
   const [visualLocationId, setVisualLocationId] = useState<string | null>(null)
 
   useEffect(() => {
-    console.log('🎯 VISUAL LOCATION DEBUG:', {
-      characterLocationId: character?.current_location_id,
-      isTravelingOnMap,
-      currentVisualLocationId: visualLocationId,
-      willUpdate: !isTravelingOnMap
-    })
+    // console.log('🎯 VISUAL LOCATION DEBUG:', {
+    //   characterLocationId: character?.current_location_id,
+    //   isTravelingOnMap,
+    //   currentVisualLocationId: visualLocationId,
+    //   willUpdate: !isTravelingOnMap
+    // })
 
     if (!character?.current_location_id) return
 

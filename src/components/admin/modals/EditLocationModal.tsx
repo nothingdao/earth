@@ -240,7 +240,7 @@ export const EditLocationModal: React.FC<EditLocationModalProps> = ({
                 value={formData.entry_cost || ''}
                 onChange={(e) => handleInputChange('entry_cost', e.target.value ? parseInt(e.target.value) : null)}
                 className="font-mono text-xs"
-                placeholder="SHARDS_TO_ENTER"
+                placeholder="EARTH_TO_ENTER"
                 min="0"
               />
             </div>

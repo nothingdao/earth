@@ -87,7 +87,7 @@ const formatValue = (value: number, type: string) => {
   switch (type) {
     case 'wealth':
     case 'trading':
-      return `${value.toLocaleString()}_SHARD`
+      return `${value.toLocaleString()}_EARTH`
     case 'level':
       return `LVL_${value}`
     case 'items':
@@ -303,7 +303,7 @@ export default function LeaderboardsView() {
       id: 'wealth',
       label: 'WEALTH',
       icon: Coins,
-      description: 'HIGHEST_SHARD',
+      description: 'HIGHEST_EARTH',
       color: 'text-yellow-500'
     },
     {

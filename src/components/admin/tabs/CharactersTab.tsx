@@ -129,8 +129,8 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
                       </div>
 
                       <div className="mt-1 text-xs">
-                        <span className="text-muted-foreground">SHARDS: </span>
-                        <span className="text-yellow-500 font-bold">{character.coins}</span>
+                        <span className="text-muted-foreground">EARTH: </span>
+                        <span className="text-yellow-500 font-bold">{character.earth}</span>
                         {character.wallet_address && (
                           <span className="text-muted-foreground ml-2">
                             • {character.wallet_address.slice(0, 4)}...{character.wallet_address.slice(-4)}

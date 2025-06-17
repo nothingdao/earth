@@ -25,7 +25,7 @@ import {
 interface Character {
   id: string
   level: number
-  coins?: number
+  earth?: number
   current_location_id: string
 }
 
@@ -329,10 +329,10 @@ export default function ZoneAnalysisModal({
                   </div>
                 )}
                 {location.entry_cost && location.entry_cost > 0 && (
-                  <div className={`flex items-center gap-1 ${character && (character.coins || 0) < location.entry_cost ? 'text-destructive' : 'text-chart-2'}`}>
+                  <div className={`flex items-center gap-1 ${character && (character.earth || 0) < location.entry_cost ? 'text-destructive' : 'text-chart-2'}`}>
                     <DollarSign className="w-3 h-3" />
-                    <span>ENTRY_FEE: {location.entry_cost}_RUST</span>
-                    {character && (character.coins || 0) < location.entry_cost && <AlertTriangle className="w-3 h-3" />}
+                    <span>ENTRY_FEE: {location.entry_cost}_EARTH</span>
+                    {character && (character.earth || 0) < location.entry_cost && <AlertTriangle className="w-3 h-3" />}
                   </div>
                 )}
               </>
@@ -410,13 +410,13 @@ export default function ZoneAnalysisModal({
             disabled={
               character.current_location_id === location.id ||
               (!!location.min_level && character.level < location.min_level) ||
-              (!!location.entry_cost && location.entry_cost > (character.coins || 0)) ||
+              (!!location.entry_cost && location.entry_cost > (character.earth || 0)) ||
               !!location.is_private
             }
             className={`w-full h-8 text-xs font-mono ${character.current_location_id === location.id
               ? 'bg-muted text-muted-foreground cursor-not-allowed'
               : (!!location.min_level && character.level < location.min_level) ||
-                (!!location.entry_cost && location.entry_cost > (character.coins || 0))
+                (!!location.entry_cost && location.entry_cost > (character.earth || 0))
                 ? 'bg-destructive/20 text-destructive cursor-not-allowed border-destructive/30'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
@@ -426,8 +426,8 @@ export default function ZoneAnalysisModal({
               ? 'CURRENT_LOCATION'
               : (!!location.min_level && character.level < location.min_level)
                 ? `REQ_LVL_${location.min_level}`
-                : (!!location.entry_cost && location.entry_cost > (character.coins || 0))
-                  ? `INSUFFICIENT_RUST`
+                : (!!location.entry_cost && location.entry_cost > (character.earth || 0))
+                  ? `INSUFFICIENT_EARTH`
                   : `TRAVEL_TO_${location.name.toUpperCase()}`}
           </Button>
         )}

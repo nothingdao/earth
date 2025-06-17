@@ -46,7 +46,7 @@ interface MainViewProps {
   onChatClick: () => void
   onEconomyClick?: () => void
   onLeaderboardsClick?: () => void
-  onRustMarketClick?: () => void
+  onEarthMarketClick?: () => void
 }
 
 export const MainView: React.FC<MainViewProps> = ({
@@ -57,7 +57,7 @@ export const MainView: React.FC<MainViewProps> = ({
   onChatClick,
   onEconomyClick,
   onLeaderboardsClick,
-  onRustMarketClick
+  onEarthMarketClick
 }) => {
   const location_id = character.currentLocation.id
   const chatParticipants = useChatParticipantCount(location_id)
@@ -241,7 +241,7 @@ export const MainView: React.FC<MainViewProps> = ({
           <span>PLAYER: {character.name}</span>
           <span>ENERGY: {character.energy}/100</span>
           <span>HEALTH: {character.health}/100</span>
-          <span>SHARD: {character.coins}</span>
+          <span>EARTH: {character.earth}</span>
         </div>
       </div>
 
@@ -321,7 +321,7 @@ export const MainView: React.FC<MainViewProps> = ({
                 <div>
                   <div>LISTINGS: {marketPreview.totalListings}</div>
                   {marketPreview.cheapestItem && (
-                    <div>FROM: {marketPreview.cheapestItem.price} SHARD</div>
+                    <div>FROM: {marketPreview.cheapestItem.price} EARTH</div>
                   )}
                 </div>
               ) : (
@@ -392,11 +392,11 @@ export const MainView: React.FC<MainViewProps> = ({
               ECONOMY
             </Button>
           )}
-          {onRustMarketClick && (
+          {onEarthMarketClick && (
             <Button
               variant="outline"
               size="sm"
-              onClick={onRustMarketClick}
+              onClick={onEarthMarketClick}
               className="text-xs font-mono h-8"
             >
               <BarChart3 className="w-3 h-3 mr-1" />

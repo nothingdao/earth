@@ -1,4 +1,4 @@
-// netlify/functions/get-rust-markets.js - UPDATED
+// netlify/functions/get-earth-markets.js
 import supabaseAdmin from '../../src/utils/supabase-admin'
 
 export const handler = async (event, context) => {
@@ -32,9 +32,9 @@ export const handler = async (event, context) => {
         to_units,
         exchange_flux,
         wasteland_block,
-        txn_shard,
-        sender_shard,
-        receiver_shard
+        txn_earth,
+        sender_earth,
+        receiver_earth
       `)
       .eq('type', 'EXCHANGE')
       .not('exchange_flux', 'is', null)
@@ -59,7 +59,7 @@ export const handler = async (event, context) => {
     }
 
   } catch (error) {
-    console.error('Error in get-rust-markets:', error)
+    console.error('Error in get-earth-markets:', error)
     return {
       statusCode: 500,
       headers,
@@ -98,18 +98,18 @@ function processMarketData(transactions) {
       }
     }
 
-    // Convert rate to RUST per SOL format
-    let rustPerSol
-    if (tx.from_vault === 'RUST_COIN' && tx.to_vault === 'SCRAP_SOL') {
-      // Buying SOL with RUST: exchange_flux is already RUST per SOL
-      rustPerSol = tx.exchange_flux
-    } else if (tx.from_vault === 'SCRAP_SOL' && tx.to_vault === 'RUST_COIN') {
-      // Selling SOL for RUST: exchange_flux is RUST per SOL
-      rustPerSol = tx.exchange_flux
+    // Convert rate to EARTH per SOL format
+    let earthPerSol
+    if (tx.from_vault === 'EARTH_COIN' && tx.to_vault === 'SCRAP_SOL') {
+      // Buying SOL with EARTH: exchange_flux is already EARTH per SOL
+      earthPerSol = tx.exchange_flux
+    } else if (tx.from_vault === 'SCRAP_SOL' && tx.to_vault === 'EARTH_COIN') {
+      // Selling SOL for EARTH: exchange_flux is EARTH per SOL
+      earthPerSol = tx.exchange_flux
     }
 
-    if (rustPerSol && rustPerSol > 0) {
-      blockGroups[block].rates.push(rustPerSol)
+    if (earthPerSol && earthPerSol > 0) {
+      blockGroups[block].rates.push(earthPerSol)
 
       // Calculate volume in SOL, ensuring units are numbers or default to 0
       const solVolume = (tx.from_vault === 'SCRAP_SOL' ? (tx.from_units || 0) : (tx.to_units || 0))

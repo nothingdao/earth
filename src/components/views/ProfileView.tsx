@@ -1,3 +1,4 @@
+// src/components/views/ProfileView.tsx
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -35,7 +36,7 @@ interface ProfileViewProps {
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacterUpdated }) => {
-  // console.log('🖼️ ProfileView render - coins:', character.coins, 'character ID:', character.id, 'object ref:', character)
+  // console.log('🖼️ ProfileView render - earth:', character.earth, 'character ID:', character.id, 'object ref:', character)
 
   const walletInfo = useWalletInfo()
   const [imageError, setImageError] = useState(false)
@@ -204,12 +205,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-2">
               <Coins className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground font-mono">SHARD</span>
+              <span className="text-xs text-muted-foreground font-mono">EARTH</span>
             </div>
             <div className="text-primary font-bold text-lg font-mono">
-              {character.coins.toLocaleString()}
+              {character.earth.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">SHARD_COIN</div>
+            <div className="text-xs text-muted-foreground mt-1">EARTH_COIN</div>
           </div>
 
           <div className="text-center">

@@ -1,4 +1,4 @@
-// src/providers/GameProvider.tsx - Simplified without network blocking
+// src/providers/GameProvider.tsx - Fixed refetchCharacter
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useNetwork } from '@/contexts/NetworkContext'
@@ -42,13 +42,13 @@ type GameAction =
   | { type: 'END_TRAVEL' }
   | { type: 'SET_SELECTED_LOCATION'; location: Location | undefined }
   | { type: 'SET_PLAYER_DATA'; character: Character; hasCharacter: boolean; loading: boolean }
+  | { type: 'UPDATE_CHARACTER'; character: Character } // ✅ ADD THIS
   | { type: 'PLAYER_CHECK_COMPLETE'; hasCharacter: boolean }
   | { type: 'GAME_DATA_LOADED' }
   | { type: 'USER_WANTS_TO_ENTER_GAME' }
   | { type: 'SET_MAP_TRAVELING'; isTraveling: boolean; destination: string | null }
   | { type: 'CLEAR_MAP_TRAVELING' }
   | { type: 'RESET_ALL_STATE' }
-
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -91,11 +91,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         characterLoading: action.loading
       }
 
+    // ✅ ADD THIS CASE
+    case 'UPDATE_CHARACTER':
+      return {
+        ...state,
+        character: action.character
+      }
+
     case 'PLAYER_CHECK_COMPLETE':
       return {
         ...state,
         hasCheckedCharacter: true,
-        appState: 'character-required'  // ✅ Always go to registry regardless of hasCharacter
+        appState: 'character-required'
       }
 
     case 'GAME_DATA_LOADED':
@@ -206,10 +213,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     !isMainnet ? state.selectedLocation : undefined
   )
 
-  // Character location updates - ONLY ON DEVNET
+  // ✅ FIXED: Character updates - sync hook state to provider state
   useEffect(() => {
     if (character && !isMainnet) {
-      console.log('🔥 PLAYER LOCATION UPDATED:', character.current_location_id)
+      console.log('🔄 Character updated from hook, syncing to provider state')
+      console.log('📊 Character EARTH balance:', character.earth)
       dispatch({
         type: 'SET_PLAYER_DATA',
         character: character,
@@ -238,12 +246,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!isMainnet && character && character.id && !hasCharacter && !characterLoading) {
       dispatch({
         type: 'PLAYER_CHECK_COMPLETE',
-        hasCharacter: true  // ✅ This will show Registry Dashboard instead of auto-entering game
+        hasCharacter: true
       })
     }
   }, [character, hasCharacter, characterLoading, isMainnet])
-
-  // let Registry Dashboard handle the "enter game" choice
 
   const actions = {
     navigate: useCallback((view: GameView) => {
@@ -287,11 +293,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'USER_WANTS_TO_ENTER_GAME' })
     }, [isMainnet]),
 
+    // ✅ FIXED: refetchCharacter now properly updates provider state
     refetchCharacter: useCallback(async () => {
       if (isMainnet) return
       try {
-        await refetchCharacter()
+        console.log('🔄 GameProvider: Refetching character...')
+        await refetchCharacter() // This updates the hook's character state
+
+        // The useEffect above will automatically sync the new character to provider state
+        console.log('✅ GameProvider: Character refetch completed')
       } catch (error) {
+        console.error('❌ GameProvider: Character refetch failed:', error)
         dispatch({ type: 'SET_ERROR', error: 'Failed to refresh character data' })
       }
     }, [refetchCharacter, isMainnet]),
@@ -389,7 +401,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
         if (result.success) {
           toast.success('PURCHASE_SUCCESSFUL', {
-            description: `ITEM: ${itemName.toUpperCase()}\nCOST: ${cost} SHARD\nBALANCE: ${result.newBalance || 0} SHARD`,
+            description: `ITEM: ${itemName.toUpperCase()}\nCOST: ${cost} EARTH\nBALANCE: ${result.newBalance || 0} EARTH`,
             duration: 4000,
           })
           await refetchCharacter()
@@ -415,10 +427,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       try {
         dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: true })
-        const result = await characterActions.equipItem(inventoryId, shouldEquip)  // Remove the !
+        const result = await characterActions.equipItem(inventoryId, shouldEquip)
 
         if (result.success) {
-          const action = shouldEquip ? 'EQUIPPED' : 'UNEQUIPPED'  // Fix the logic here too
+          const action = shouldEquip ? 'EQUIPPED' : 'UNEQUIPPED'
           toast.success('EQUIPMENT_UPDATE', {
             description: `ITEM: ${result.item.name.toUpperCase()}\nSTATUS: ${action}\nCATEGORY: ${result.item.category}\nRARITY: ${result.item.rarity}`,
             duration: 4000,
@@ -477,10 +489,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (!character || !message.trim() || isMainnet) return
 
       try {
-        // ✅ FIX: Always use character's current location, ignore selectedLocation for chat
         const location_id = character.current_location_id
 
-        // 🔍 DEBUG: Log what we're sending
         console.log('💬 Sending message debug info:', {
           character_name: character.name,
           character_current_location_id: character.current_location_id,
@@ -489,7 +499,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           message_preview: message.trim().substring(0, 20) + '...'
         })
 
-        // ✅ FIX: Use current_location_id and add the missing third parameter 'CHAT'
         const result = await characterActions.sendMessage(location_id, message.trim(), 'CHAT')
 
         if (result.success) {

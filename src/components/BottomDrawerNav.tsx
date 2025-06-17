@@ -47,7 +47,7 @@ interface BottomDrawerNavProps {
   onCharactersClick?: () => void
   onEconomyClick?: () => void
   onLeaderboardsClick?: () => void
-  onRustMarketClick?: () => void
+  onearthMarketClick?: () => void
 }
 
 export function BottomDrawerNav({
@@ -60,7 +60,7 @@ export function BottomDrawerNav({
   onCharactersClick,
   onEconomyClick,
   onLeaderboardsClick,
-  onRustMarketClick,
+  onearthMarketClick,
   onAdminClick,
   isAdmin = false
 }: BottomDrawerNavProps) {
@@ -127,11 +127,11 @@ export function BottomDrawerNav({
       current: currentView === 'leaderboards',
     },
     {
-      id: 'rust-market',
+      id: 'earth-market',
       icon: BarChart3,
       label: 'EXCHANGE',
-      action: onRustMarketClick,
-      current: currentView === 'rust-market',
+      action: onearthMarketClick,
+      current: currentView === 'earth-market',
     },
     {
       id: 'profile',
@@ -221,7 +221,7 @@ export function BottomDrawerNav({
                   <div className="flex items-center gap-2 text-xs">
                     <div className="flex items-center gap-0.5">
                       <Coins className="w-2.5 h-2.5 text-yellow-500" />
-                      <span className="text-primary font-mono">{character.coins || 0}</span>
+                      <span className="text-primary font-mono">{character.earth || 0}</span>
                     </div>
                     <div className="flex items-center gap-0.5">
                       <Zap className="w-2.5 h-2.5 text-yellow-500" />
@@ -311,7 +311,7 @@ export function BottomDrawerNav({
               <div className="flex items-center gap-2 text-xs">
                 <div className="flex items-center gap-0.5">
                   <Coins className="w-2.5 h-2.5 text-yellow-500" />
-                  <span className="text-primary font-mono">{character.coins || 0}</span>
+                  <span className="text-primary font-mono">{character.earth || 0}</span>
                 </div>
                 <div className="flex items-center gap-0.5">
                   <Zap className="w-2.5 h-2.5 text-yellow-500" />

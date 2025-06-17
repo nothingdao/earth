@@ -54,7 +54,7 @@ export function MarketView({
 
   const renderMarketItem = (marketItem: MarketItem) => {
     const isLoading = loadingItems.has(marketItem.id)
-    const canAfford = character.coins >= marketItem.price
+    const canAfford = character.earth >= marketItem.price
     const canBuy = marketItem.quantity > 0 && canAfford && !isLoading
 
     return (
@@ -107,7 +107,7 @@ export function MarketView({
             {/* Error Message */}
             {!canAfford && marketItem.quantity > 0 && (
               <div className="text-xs text-error font-mono text-center leading-tight">
-                NEED_{marketItem.price - character.coins}
+                NEED_{marketItem.price - character.earth}
               </div>
             )}
 
@@ -124,7 +124,7 @@ export function MarketView({
               className="text-xs w-full h-6 font-mono"
               title={
                 marketItem.quantity === 0 ? 'Out of stock' :
-                  !canAfford ? `Need ${marketItem.price - character.coins} more coins` :
+                  !canAfford ? `Need ${marketItem.price - character.earth} more earth` :
                     'Purchase this item'
               }
             >
@@ -177,7 +177,7 @@ export function MarketView({
             <div className="text-muted-foreground mb-1">CREDIT_BALANCE</div>
             <div className="text-primary font-bold flex items-center gap-1">
               <Coins className="w-3 h-3" />
-              {character.coins.toLocaleString()}_SHARD
+              {character.earth.toLocaleString()}_EARTH
             </div>
           </div>
           <div>
@@ -306,7 +306,7 @@ export function MarketView({
           <div>
             <div className="text-muted-foreground mb-1">AFFORDABLE</div>
             <div className="text-primary font-bold font-mono">
-              {marketItems.filter(item => character.coins >= item.price && item.quantity > 0).length}
+              {marketItems.filter(item => character.earth >= item.price && item.quantity > 0).length}
             </div>
           </div>
         </div>

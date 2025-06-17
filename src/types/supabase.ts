@@ -111,11 +111,11 @@ export type Database = {
           base_layer_file: string | null
           birth_image_url: string | null
           character_type: Database["public"]["Enums"]["CharacterType"]
-          coins: number
           created_at: string
           current_image_url: string | null
           current_location_id: string
           current_version: number
+          earth: number
           energy: number
           experience: number | null
           gender: Database["public"]["Enums"]["Gender"]
@@ -135,11 +135,11 @@ export type Database = {
           base_layer_file?: string | null
           birth_image_url?: string | null
           character_type?: Database["public"]["Enums"]["CharacterType"]
-          coins?: number
           created_at?: string
           current_image_url?: string | null
           current_location_id: string
           current_version?: number
+          earth?: number
           energy?: number
           experience?: number | null
           gender: Database["public"]["Enums"]["Gender"]
@@ -159,11 +159,11 @@ export type Database = {
           base_layer_file?: string | null
           birth_image_url?: string | null
           character_type?: Database["public"]["Enums"]["CharacterType"]
-          coins?: number
           created_at?: string
           current_image_url?: string | null
           current_location_id?: string
           current_version?: number
+          earth?: number
           energy?: number
           experience?: number | null
           gender?: Database["public"]["Enums"]["Gender"]
@@ -741,13 +741,14 @@ export type Database = {
           from_vault: string | null
           id: string
           item_id: string | null
+          on_chain_signature: string | null
           quantity: number | null
-          receiver_shard: string | null
-          sender_shard: string | null
+          receiver_earth: string | null
+          sender_earth: string | null
           sequence_id: number | null
           to_units: number | null
           to_vault: string | null
-          txn_shard: string | null
+          txn_earth: string | null
           type: Database["public"]["Enums"]["TransactionType"]
           wasteland_block: number | null
         }
@@ -761,13 +762,14 @@ export type Database = {
           from_vault?: string | null
           id: string
           item_id?: string | null
+          on_chain_signature?: string | null
           quantity?: number | null
-          receiver_shard?: string | null
-          sender_shard?: string | null
+          receiver_earth?: string | null
+          sender_earth?: string | null
           sequence_id?: number | null
           to_units?: number | null
           to_vault?: string | null
-          txn_shard?: string | null
+          txn_earth?: string | null
           type: Database["public"]["Enums"]["TransactionType"]
           wasteland_block?: number | null
         }
@@ -781,13 +783,14 @@ export type Database = {
           from_vault?: string | null
           id?: string
           item_id?: string | null
+          on_chain_signature?: string | null
           quantity?: number | null
-          receiver_shard?: string | null
-          sender_shard?: string | null
+          receiver_earth?: string | null
+          sender_earth?: string | null
           sequence_id?: number | null
           to_units?: number | null
           to_vault?: string | null
-          txn_shard?: string | null
+          txn_earth?: string | null
           type?: Database["public"]["Enums"]["TransactionType"]
           wasteland_block?: number | null
         }

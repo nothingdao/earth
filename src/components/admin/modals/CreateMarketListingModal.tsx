@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/admin/modals/CreateMarketListingModal.tsx
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -155,7 +156,7 @@ export const CreateMarketListingModal: React.FC<CreateMarketListingModalProps> =
                 onChange={(e) => handleInputChange('price', parseInt(e.target.value) || 1)}
                 className="font-mono text-xs"
                 min="1"
-                placeholder="SHARDS"
+                placeholder="EARTH"
               />
             </div>
             <div>
@@ -177,10 +178,10 @@ export const CreateMarketListingModal: React.FC<CreateMarketListingModalProps> =
                 <div className="text-primary font-bold">{selectedItem.name.toUpperCase()}</div>
                 <div>SELLER: {selectedSeller?.name.toUpperCase()}</div>
                 <div>LOCATION: {selectedLocation?.name.toUpperCase()}</div>
-                <div>PRICE: <span className="text-yellow-500">{formData.price}</span> SHARDS EACH</div>
+                <div>PRICE: <span className="text-yellow-500">{formData.price}</span> EARTH EACH</div>
                 <div>QTY: {formData.quantity}</div>
                 <div className="border-t border-primary/20 mt-1 pt-1">
-                  TOTAL VALUE: <span className="text-yellow-500 font-bold">{formData.price * formData.quantity}</span> SHARDS
+                  TOTAL VALUE: <span className="text-yellow-500 font-bold">{formData.price * formData.quantity}</span> EARTH
                 </div>
               </div>
             </div>

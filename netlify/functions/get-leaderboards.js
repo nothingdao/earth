@@ -46,12 +46,12 @@ export const handler = async (event, context) => {
         id,
         name,
         level,
-        coins,
+        earth,
         character_type,
         location:locations!current_location_id(*)
       `)
       .eq('status', 'ACTIVE')
-      .order('coins', { ascending: false })
+      .order('earth', { ascending: false })
       .limit(10)
 
     if (wealthError) throw wealthError
@@ -79,7 +79,7 @@ export const handler = async (event, context) => {
       level: leader.level,
       character_type: leader.character_type,
       location: leader.location?.name || 'Unknown',
-      value: leader.experience || leader.coins || 0
+      value: leader.experience || leader.earth || 0
     })
 
     return {

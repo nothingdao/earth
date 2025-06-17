@@ -52,7 +52,7 @@ export const handler = async (event, context) => {
         level,
         energy,
         health,
-        coins,
+        earth,
         experience,
         current_location_id,
         current_image_url,
@@ -157,8 +157,8 @@ export const handler = async (event, context) => {
           display_type: "number"
         },
         {
-          trait_type: "Shards",
-          value: character.coins,
+          trait_type: "Earths",
+          value: character.earth,
           display_type: "number"
         },
 
@@ -239,7 +239,7 @@ export const handler = async (event, context) => {
         level: character.level,
         health: character.health,
         energy: character.energy,
-        coins: character.coins,
+        earth: character.earth,
         location_id: character.current_location_id,
         last_updated: character.updated_at
       }
