@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import { X } from 'lucide-react'
 import type { MarketListing, Item, Character, Location } from '@/types'
 
 interface EditMarketListingModalProps {
@@ -32,6 +35,7 @@ export const EditMarketListingModal: React.FC<EditMarketListingModalProps> = ({
     item_id: '',
     seller_id: '',
     location_id: '',
+    location_ids: [] as string[],
     price: 1,
     quantity: 1,
     is_system_item: false
@@ -44,6 +48,7 @@ export const EditMarketListingModal: React.FC<EditMarketListingModalProps> = ({
         item_id: listing.item_id || '',
         seller_id: listing.seller_id || '',
         location_id: listing.location_id || '',
+        location_ids: listing.location_id ? [listing.location_id] : [],
         price: listing.price || 1,
         quantity: listing.quantity || 1,
         is_system_item: listing.is_system_item ?? false
@@ -56,8 +61,22 @@ export const EditMarketListingModal: React.FC<EditMarketListingModalProps> = ({
     await onSave(listing.id, formData)
   }
 
-  const handleInputChange = (field: keyof typeof formData, value: string | number | boolean) => {
+  const handleInputChange = (field: keyof typeof formData, value: string | number | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleLocationToggle = (locationId: string) => {
+    setFormData(prev => {
+      const newLocationIds = prev.location_ids.includes(locationId)
+        ? prev.location_ids.filter(id => id !== locationId)
+        : [...prev.location_ids, locationId]
+      
+      return {
+        ...prev,
+        location_ids: newLocationIds,
+        location_id: newLocationIds[0] || '' // Keep single location for backward compatibility
+      }
+    })
   }
 
   if (!listing) return null
@@ -125,27 +144,48 @@ export const EditMarketListingModal: React.FC<EditMarketListingModalProps> = ({
           </div>
 
           <div>
-            <Label className="text-xs font-mono">LOCATION *</Label>
-            <Select
-              value={formData.location_id}
-              onValueChange={(value) => handleInputChange('location_id', value)}
-            >
-              <SelectTrigger className="font-mono text-xs">
-                <SelectValue placeholder="SELECT_LOCATION" />
-              </SelectTrigger>
-              <SelectContent>
-                {locations.filter(loc => loc.has_market).map((location) => (
-                  <SelectItem key={location.id} value={location.id} className="font-mono text-xs">
-                    {location.name.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedLocation && (
-              <div className="text-xs text-muted-foreground mt-1">
-                {selectedLocation.description}
+            <Label className="text-xs font-mono">LOCATIONS *</Label>
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">
+                SELECT_MULTIPLE_LOCATIONS_FOR_LISTING
               </div>
-            )}
+              <div className="max-h-32 overflow-y-auto border border-primary/20 rounded p-2 bg-muted/10">
+                {locations.filter(loc => loc.has_market).map((location) => (
+                  <div key={location.id} className="flex items-center space-x-2 p-1">
+                    <Checkbox
+                      id={`location-${location.id}`}
+                      checked={formData.location_ids.includes(location.id)}
+                      onCheckedChange={() => handleLocationToggle(location.id)}
+                      className="text-xs"
+                    />
+                    <label
+                      htmlFor={`location-${location.id}`}
+                      className="text-xs font-mono cursor-pointer flex-1"
+                    >
+                      {location.name.toUpperCase()}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {formData.location_ids.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {formData.location_ids.map(locationId => {
+                    const location = locations.find(l => l.id === locationId)
+                    return location ? (
+                      <Badge key={locationId} variant="secondary" className="text-xs font-mono">
+                        {location.name.toUpperCase()}
+                        <button
+                          onClick={() => handleLocationToggle(locationId)}
+                          className="ml-1 hover:bg-destructive/20 rounded"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ) : null
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -196,8 +236,11 @@ export const EditMarketListingModal: React.FC<EditMarketListingModalProps> = ({
                 {selectedSeller && (
                   <div>SELLER: {selectedSeller.name.toUpperCase()}</div>
                 )}
-                {selectedLocation && (
-                  <div>LOCATION: {selectedLocation.name.toUpperCase()}</div>
+                {formData.location_ids.length > 0 && (
+                  <div>LOCATIONS: {formData.location_ids.map(id => {
+                    const loc = locations.find(l => l.id === id)
+                    return loc?.name.toUpperCase()
+                  }).filter(Boolean).join(', ')}</div>
                 )}
                 <div>TYPE: {formData.is_system_item ? 'SYSTEM' : 'PLAYER'}</div>
                 <div>PRICE: <span className="text-yellow-500">{formData.price}</span> EARTH EACH</div>

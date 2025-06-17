@@ -58,8 +58,27 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({
     return 'text-red-400'
   }
 
+  const marketCount = locations.filter(l => l.has_market).length
+  const miningCount = locations.filter(l => l.has_mining).length
+  const privateCount = locations.filter(l => l.is_private).length
+  const avgDifficulty = locations.length ? Math.round(locations.reduce((sum, l) => sum + l.difficulty, 0) / locations.length) : 0
+
   return (
     <div className="space-y-3">
+      {/* Compact Stats */}
+      <div className="bg-muted/30 border border-primary/20 rounded p-2">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex gap-4 flex-wrap">
+            <span><span className="text-muted-foreground">TOTAL:</span> <span className="text-primary">{locations.length}</span></span>
+            <span><span className="text-muted-foreground">MARKETS:</span> <span className="text-green-500">{marketCount}</span></span>
+            <span><span className="text-muted-foreground">MINING:</span> <span className="text-blue-500">{miningCount}</span></span>
+            <span><span className="text-muted-foreground">PRIVATE:</span> <span className="text-red-500">{privateCount}</span></span>
+            <span><span className="text-muted-foreground">AVG_DIFF:</span> <span className="text-primary">{avgDifficulty}/10</span></span>
+            <span><span className="text-muted-foreground">SHOWING:</span> <span className="text-primary">{filteredLocations.length}</span></span>
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center">
         <span className="text-primary font-bold font-mono">
           LOCATIONS ({locations.length})

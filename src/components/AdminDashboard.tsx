@@ -30,6 +30,7 @@ import { EditLocationModal } from './admin/modals/EditLocationModal'
 import { EditItemModal } from './admin/modals/EditItemModal'
 import { EditMarketListingModal } from './admin/modals/EditMarketListingModal'
 import { CreateMarketListingModal } from './admin/modals/CreateMarketListingModal'
+import { ItemDetailsModal } from './admin/modals/ItemDetailsModal'
 
 // Import hooks
 import {
@@ -79,6 +80,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
   const [showEditItemModal, setShowEditItemModal] = useState<boolean>(false)
   const [showEditMarketListingModal, setShowEditMarketListingModal] = useState<boolean>(false)
   const [showCreateMarketListingModal, setShowCreateMarketListingModal] = useState<boolean>(false)
+  const [showItemDetailsModal, setShowItemDetailsModal] = useState<boolean>(false)
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null)
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
@@ -87,8 +89,8 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
   // Data hooks
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useAdminStats()
   const { characters, loading: charactersLoading, error: charactersError, refetch: refetchCharacters } = useAdminCharacters()
-  const { locations, loading: locationsLoading } = useAdminLocations()
-  const { items, loading: itemsLoading } = useAdminItems()
+  const { locations, loading: locationsLoading, error: locationsError, refetch: refetchLocations } = useAdminLocations()
+  const { items, loading: itemsLoading, error: itemsError, refetch: refetchItems } = useAdminItems()
   const { marketListings, loading: marketLoading, error: marketError, getMarketStats } = useAdminMarket()
   const { activity, loading: activityLoading } = useAdminActivity()
 
@@ -247,6 +249,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
         message: `${itemName} deleted`,
         variant: 'success'
       })
+      await refetchItems()
     } catch (err) {
       console.error('Failed to delete item:', err)
       const message = err instanceof Error ? err.message : 'Failed to delete item'
@@ -257,6 +260,19 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
     } finally {
       setIsProcessing(false)
     }
+  }, [refetchItems])
+
+  const handleViewItemMarkets = useCallback((item: Item) => {
+    setSelectedItem(item)
+    setShowItemDetailsModal(true)
+  }, [])
+
+  const handleCreateListingFromItem = useCallback((item: Item, location: Location) => {
+    // Pre-populate the create listing modal with the item and location
+    setSelectedItem(item)
+    setSelectedLocation(location)
+    setShowCreateMarketListingModal(true)
+    setShowItemDetailsModal(false)
   }, [])
 
   const handleCreateMarketListing = useCallback(() => {
@@ -319,6 +335,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
         message: 'Location created successfully!',
         variant: 'success'
       })
+      await refetchLocations()
       setShowCreateLocationModal(false)
     } catch (err) {
       console.error('Failed to create location:', err)
@@ -329,7 +346,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
     } finally {
       setIsProcessing(false)
     }
-  }, [])
+  }, [refetchLocations])
 
   const handleCreateItemSubmit = useCallback(async (itemData: any) => {
     setIsProcessing(true)
@@ -339,6 +356,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
         message: 'Item created successfully!',
         variant: 'success'
       })
+      await refetchItems()
       setShowCreateItemModal(false)
     } catch (err) {
       console.error('Failed to create item:', err)
@@ -349,7 +367,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
     } finally {
       setIsProcessing(false)
     }
-  }, [])
+  }, [refetchItems])
 
   const handleSaveLocation = useCallback(async (locationId: string, updates: any) => {
     setIsProcessing(true)
@@ -359,6 +377,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
         message: 'Location updated successfully!',
         variant: 'success'
       })
+      await refetchLocations()
       setShowEditLocationModal(false)
       setSelectedLocation(null)
     } catch (err) {
@@ -370,7 +389,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
     } finally {
       setIsProcessing(false)
     }
-  }, [])
+  }, [refetchLocations])
 
   const handleSaveItem = useCallback(async (itemId: string, updates: any) => {
     setIsProcessing(true)
@@ -380,6 +399,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
         message: 'Item updated successfully!',
         variant: 'success'
       })
+      await refetchItems()
       setShowEditItemModal(false)
       setSelectedItem(null)
     } catch (err) {
@@ -391,7 +411,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
     } finally {
       setIsProcessing(false)
     }
-  }, [])
+  }, [refetchItems])
 
   const handleSaveMarketListing = useCallback(async (listingId: string, updates: Partial<MarketListing>) => {
     setIsProcessing(true)
@@ -475,7 +495,7 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             loading={locationsLoading}
-            error={null}
+            error={locationsError}
             isProcessing={isProcessing}
             onCreateLocation={handleCreateLocation}
             onEditLocation={handleEditLocation}
@@ -495,6 +515,9 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
             onCreateItem={handleCreateItem}
             onEditItem={handleEditItem}
             onDeleteItem={handleDeleteItem}
+            onViewItemMarkets={handleViewItemMarkets}
+            marketListings={marketListings}
+            locations={locations}
           />
         )
 
@@ -641,6 +664,21 @@ export default function AdminDashboard({ className }: AdminDashboardProps) {
         isProcessing={isProcessing}
         items={items}
         characters={characters}
+        locations={locations}
+      />
+
+      {/* Item Details Modal */}
+      <ItemDetailsModal
+        open={showItemDetailsModal}
+        onOpenChange={setShowItemDetailsModal}
+        item={selectedItem}
+        marketListings={marketListings}
+        locations={locations}
+        characters={characters}
+        onEditListing={handleEditMarketListing}
+        onDeleteListing={handleDeleteMarketListing}
+        onCreateListing={handleCreateListingFromItem}
+        isProcessing={isProcessing}
       />
     </div>
   )

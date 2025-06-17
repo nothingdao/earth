@@ -177,14 +177,14 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
             <div>
               <Label className="text-xs font-mono">LAYER_TYPE</Label>
               <Select
-                value={formData.layer_type || ''}
-                onValueChange={(value: LayerType) => handleInputChange('layer_type', value || null)}
+                value={formData.layer_type || 'NONE'}
+                onValueChange={(value: LayerType) => handleInputChange('layer_type', value === 'NONE' ? null : value)}
               >
                 <SelectTrigger className="font-mono text-xs">
                   <SelectValue placeholder="SELECT_LAYER_TYPE" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="" className="font-mono text-xs">NONE</SelectItem>
+                  <SelectItem value="NONE" className="font-mono text-xs">NONE</SelectItem>
                   {layerTypes.map((type) => (
                     <SelectItem key={type} value={type} className="font-mono text-xs">
                       {type}
@@ -245,14 +245,14 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
               <div>
                 <Label className="text-xs font-mono">LAYER_GENDER</Label>
                 <Select
-                  value={formData.layer_gender || ''}
-                  onValueChange={(value) => handleInputChange('layer_gender', value || null)}
+                  value={formData.layer_gender || 'NONE'}
+                  onValueChange={(value) => handleInputChange('layer_gender', value === 'NONE' ? null : value)}
                 >
                   <SelectTrigger className="font-mono text-xs">
                     <SelectValue placeholder="SELECT_GENDER" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="" className="font-mono text-xs">NONE</SelectItem>
+                    <SelectItem value="NONE" className="font-mono text-xs">NONE</SelectItem>
                     <SelectItem value="MALE" className="font-mono text-xs">MALE</SelectItem>
                     <SelectItem value="FEMALE" className="font-mono text-xs">FEMALE</SelectItem>
                   </SelectContent>

@@ -41,8 +41,25 @@ export const CharactersTab: React.FC<CharactersTabProps> = ({
     return 'destructive'
   }
 
+  const activeCount = characters.filter(c => c.status === 'ACTIVE').length
+  const totalEarth = characters.reduce((sum, c) => sum + (c.earth || 0), 0)
+  const avgLevel = characters.length ? Math.round(characters.reduce((sum, c) => sum + c.level, 0) / characters.length) : 0
+
   return (
     <div className="space-y-3">
+      {/* Compact Stats */}
+      <div className="bg-muted/30 border border-primary/20 rounded p-2">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex gap-4 flex-wrap">
+            <span><span className="text-muted-foreground">TOTAL:</span> <span className="text-primary">{characters.length}</span></span>
+            <span><span className="text-muted-foreground">ACTIVE:</span> <span className="text-green-500">{activeCount}</span></span>
+            <span><span className="text-muted-foreground">AVG_LVL:</span> <span className="text-primary">{avgLevel}</span></span>
+            <span><span className="text-muted-foreground">TOTAL_EARTH:</span> <span className="text-yellow-500">{totalEarth}</span></span>
+            <span><span className="text-muted-foreground">SHOWING:</span> <span className="text-primary">{filteredCharacters.length}</span></span>
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center">
         <span className="text-primary font-bold font-mono">
           PLAYERS ({characters.length})

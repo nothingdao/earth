@@ -40,36 +40,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         <ErrorAlert title="ERROR_LOADING_STATS" error={statsError} />
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-2">
-        <StatCard
-          title="PLAYERS"
-          value={stats?.totalCharacters || 0}
-          subtitle={`${stats?.activeCharacters || 0} ACTIVE`}
-          icon={Users}
-          loading={statsLoading}
-        />
-        <StatCard
-          title="LOCATIONS"
-          value={stats?.totalLocations || 0}
-          subtitle="ALL_BIOMES"
-          icon={MapPin}
-          loading={statsLoading}
-        />
-        <StatCard
-          title="ITEMS"
-          value={stats?.totalItems || 0}
-          subtitle="ALL_CATEGORIES"
-          icon={Package}
-          loading={statsLoading}
-        />
-        <StatCard
-          title="ONLINE"
-          value={stats?.onlineNow || 0}
-          subtitle="ACTIVE_NOW"
-          icon={Activity}
-          loading={statsLoading}
-        />
+      {/* Compact Stats */}
+      <div className="bg-muted/30 border border-primary/20 rounded p-2">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex gap-4 flex-wrap">
+            <span><span className="text-muted-foreground">PLAYERS:</span> <span className="text-primary">{stats?.totalCharacters || 0}</span></span>
+            <span><span className="text-muted-foreground">ACTIVE:</span> <span className="text-green-500">{stats?.activeCharacters || 0}</span></span>
+            <span><span className="text-muted-foreground">LOCATIONS:</span> <span className="text-primary">{stats?.totalLocations || 0}</span></span>
+            <span><span className="text-muted-foreground">ITEMS:</span> <span className="text-primary">{stats?.totalItems || 0}</span></span>
+            <span><span className="text-muted-foreground">ONLINE:</span> <span className="text-green-500">{stats?.onlineNow || 0}</span></span>
+          </div>
+        </div>
       </div>
 
       {/* Recent Activity */}

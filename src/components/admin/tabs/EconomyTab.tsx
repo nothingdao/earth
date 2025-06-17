@@ -1,10 +1,10 @@
 // src/components/admin/tabs/EconomyTab.tsx
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Package, TrendingUp, Database, MapPin, Plus, Edit, Trash2 } from 'lucide-react'
-import { StatCard } from '../StatCard'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Package, Plus, Edit, Trash2, Filter } from 'lucide-react'
 import { SearchBar } from '../SearchBar'
 import { LoadingSpinner } from '../LoadingSpinner'
 import { ErrorAlert } from '../ErrorAlert'
@@ -49,6 +49,8 @@ export const EconomyTab: React.FC<EconomyTabProps> = ({
   characters = [],
   locations = []
 }) => {
+  const [selectedLocation, setSelectedLocation] = useState<string>('all')
+  const [itemTypeFilter, setItemTypeFilter] = useState<string>('all')
   // Helper functions to get related data
   const getItemName = (itemId: string) => {
     const item = items.find(i => i.id === itemId)
@@ -67,6 +69,18 @@ export const EconomyTab: React.FC<EconomyTabProps> = ({
   }
 
   const filteredListings = marketListings.filter(listing => {
+    // Location filter
+    if (selectedLocation !== 'all' && listing.location_id !== selectedLocation) {
+      return false
+    }
+
+    // Item type filter
+    if (itemTypeFilter !== 'all') {
+      if (itemTypeFilter === 'system' && !listing.is_system_item) return false
+      if (itemTypeFilter === 'player' && listing.is_system_item) return false
+    }
+
+    // Search filter
     if (!searchTerm) return true
     const itemName = getItemName(listing.item_id).toLowerCase()
     const locationName = getLocationName(listing.location_id).toLowerCase()
@@ -80,51 +94,62 @@ export const EconomyTab: React.FC<EconomyTabProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Market Stats */}
-      <div className="grid grid-cols-2 gap-2">
-        <StatCard
-          title="ACTIVE_LISTINGS"
-          value={marketStats.totalListings}
-          subtitle={`${marketStats.systemListings} SYSTEM`}
-          icon={Package}
-          loading={loading}
-        />
-        <StatCard
-          title="TOTAL_VALUE"
-          value={marketStats.totalValue}
-          subtitle="EARTH"
-          icon={TrendingUp}
-          loading={loading}
-        />
-        <StatCard
-          title="AVG_PRICE"
-          value={marketStats.avgPrice}
-          subtitle="PER_ITEM"
-          icon={Database}
-          loading={loading}
-        />
-        <StatCard
-          title="LOCATIONS"
-          value={Object.keys(marketStats.locationBreakdown).length}
-          subtitle="WITH_MARKETS"
-          icon={MapPin}
-          loading={loading}
-        />
+      {/* Compact Stats */}
+      <div className="bg-muted/30 border border-primary/20 rounded p-2">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex gap-4">
+            <span><span className="text-muted-foreground">LISTINGS:</span> <span className="text-primary">{marketStats.totalListings}</span></span>
+            <span><span className="text-muted-foreground">VALUE:</span> <span className="text-yellow-500">{marketStats.totalValue}</span> EARTH</span>
+            <span><span className="text-muted-foreground">SHOWING:</span> <span className="text-primary">{filteredListings.length}</span></span>
+          </div>
+        </div>
       </div>
 
-      {/* Search and Actions */}
-      <div className="flex gap-2 items-center">
-        <div className="flex-1">
-          <SearchBar
-            value={searchTerm}
-            onChange={onSearchChange}
-            placeholder="SEARCH_LISTINGS..."
-          />
+      {/* Filters and Actions */}
+      <div className="space-y-2">
+        <div className="flex gap-2 items-center">
+          <div className="flex-1">
+            <SearchBar
+              value={searchTerm}
+              onChange={onSearchChange}
+              placeholder="SEARCH_LISTINGS..."
+            />
+          </div>
+          <Button size="sm" onClick={onCreateListing} className="text-xs font-mono h-7">
+            <Plus className="h-3 w-3 mr-1" />
+            ADD
+          </Button>
         </div>
-        <Button size="sm" onClick={onCreateListing} className="text-xs font-mono h-7">
-          <Plus className="h-3 w-3 mr-1" />
-          ADD
-        </Button>
+
+        <div className="flex gap-2">
+          <div className="flex items-center gap-1">
+            <Filter className="h-3 w-3 text-muted-foreground" />
+            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <SelectTrigger className="w-32 h-7 text-xs font-mono">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs font-mono">ALL_LOCATIONS</SelectItem>
+                {locations.filter(loc => loc.has_market).map((location) => (
+                  <SelectItem key={location.id} value={location.id} className="text-xs font-mono">
+                    {location.name.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Select value={itemTypeFilter} onValueChange={setItemTypeFilter}>
+            <SelectTrigger className="w-24 h-7 text-xs font-mono">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs font-mono">ALL_TYPES</SelectItem>
+              <SelectItem value="system" className="text-xs font-mono">SYSTEM</SelectItem>
+              <SelectItem value="player" className="text-xs font-mono">PLAYER</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error && (

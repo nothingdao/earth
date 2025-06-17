@@ -270,6 +270,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     balancesLoading: false
   })
 
+  // Track if mining is in progress to suppress equipment toasts
+  const isMiningInProgress = state.loadingItems.has('mining')
+
   const gameData = useGameData(
     !isMainnet ? character : null,
     !isMainnet ? state.currentView : 'main',
@@ -472,26 +475,45 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       try {
         dispatch({ type: 'SET_LOADING_ITEM', item_id: 'mining', loading: true });
+        
+        // Suppress inventory toasts during mining
+        (window as any).__suppressInventoryToasts = true;
+        
+        // Start progressive mining toast
+        const estimatedEnergyCost = Math.max(10 - Math.floor(character.level / 5), 5);
+        const miningToast = gameToast.miningFlow(estimatedEnergyCost);
+        
         const result = await characterActions.mine();
 
         if (result.success) {
-          if (result.foundItem) {
-            // Use auto-merging toast for mining successes
-            gameToast.mining(result.foundItem.name, 1);
+          if (result.found) {
+            // Check if item is equipment type for auto-equip detection
+            const isEquipment = ['EQUIPMENT', 'WEAPON', 'ARMOR', 'TOOL'].includes(result.found.item.category);
+            const itemName = result.found.item.name || 'Unknown Item';
+            
+            miningToast.success(itemName, isEquipment);
           } else {
-            toast.warning(`Nothing found this time... (-${result.energyCost} energy)`);
+            miningToast.empty();
           }
+          
+          // Show health loss separately if needed
           if (result.healthLoss > 0) {
-            toast.warning(`Lost ${result.healthLoss} health!`);
+            setTimeout(() => {
+              toast.warning(`Mining hazard: -${result.healthLoss} health!`);
+            }, 1500);
           }
+          
           await refetchCharacter();
         } else {
-          toast.error(result.message || 'Mining failed');
+          miningToast.error(result.message || 'Mining operation failed');
         }
       } catch (error) {
+        console.error('Mining error:', error);
         toast.error('Mining failed. Please try again.');
       } finally {
         dispatch({ type: 'SET_LOADING_ITEM', item_id: 'mining', loading: false });
+        // Re-enable inventory toasts after mining
+        (window as any).__suppressInventoryToasts = false;
       }
     }, [character, characterActions, refetchCharacter, isMainnet]),
 
@@ -562,20 +584,36 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       try {
         dispatch({ type: 'SET_LOADING_ITEM', item_id, loading: true });
+        
+        // Suppress inventory toasts during purchase
+        (window as any).__suppressInventoryToasts = true;
+        
+        // Start progressive purchase toast
+        const purchaseToast = gameToast.purchaseFlow(itemName, cost);
+        
         const result = await characterActions.buyItem(item_id);
 
+        console.log('🔥 Purchase API result:', result);
+
         if (result.success) {
-          toast.success('PURCHASE_SUCCESSFUL', {
-            description: `ITEM: ${itemName.toUpperCase()}\nCOST: ${cost} EARTH\nBALANCE: ${result.newBalance || 0} EARTH`,
-            duration: 4000,
-          });
+          console.log('🔥 Purchase item data:', result.item);
+          console.log('🔥 Purchase inventory data:', result.inventory);
+          console.log('🔥 Full purchase result structure:', Object.keys(result));
+          
+          // The purchase API returns the purchased item in the inventory field
+          const purchasedItem = result.inventory?.item || result.item || {};
+          const actualItemName = purchasedItem.name || 'UNKNOWN ITEM';
+          console.log('🔥 Purchase item name:', actualItemName);
+          
+          // Check if item was auto-equipped (only equipment items should be)
+          const isEquipment = purchasedItem?.category && ['EQUIPMENT', 'WEAPON', 'ARMOR', 'TOOL'].includes(purchasedItem.category);
+          const newBalance = result.character?.earth || result.newBalance || 0;
+          purchaseToast.success(newBalance, isEquipment, actualItemName);
+          
           await refetchCharacter();
           await gameData.actions.loadGameData();
         } else {
-          toast.error('PURCHASE_FAILED', {
-            description: result.message || 'INSUFFICIENT_FUNDS',
-            duration: 4000,
-          });
+          purchaseToast.error(result.message || 'INSUFFICIENT_FUNDS');
         }
       } catch (error) {
         toast.error('PURCHASE_FAILED', {
@@ -584,6 +622,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       } finally {
         dispatch({ type: 'SET_LOADING_ITEM', item_id, loading: false });
+        // Re-enable inventory toasts after purchase
+        setTimeout(() => {
+          (window as any).__suppressInventoryToasts = false;
+        }, 500);
       }
     }, [character, characterActions, refetchCharacter, gameData.actions, isMainnet]),
 
@@ -592,20 +634,41 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       try {
         dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: true });
+        
+        // Find the item being equipped for toast info
+        const inventoryItem = character.inventory?.find(inv => inv.id === inventoryId);
+        const itemName = inventoryItem?.item?.name || 'Unknown Item';
+        const itemCategory = inventoryItem?.item?.category || 'UNKNOWN';
+        
+        // Suppress inventory toasts during equipment operations
+        (window as any).__suppressInventoryToasts = true;
+        
+        // Start progressive equipment toast (unless during mining)
+        let equipmentToast = null;
+        if (!isMiningInProgress) {
+          const action = shouldEquip ? 'equip' : 'unequip';
+          equipmentToast = gameToast.equipmentFlow(action, itemName, itemCategory);
+        }
+        
         const result = await characterActions.equipItem(inventoryId, shouldEquip);
 
         if (result.success) {
-          const action = shouldEquip ? 'EQUIPPED' : 'UNEQUIPPED';
-          toast.success('EQUIPMENT_UPDATE', {
-            description: `ITEM: ${result.item.name.toUpperCase()}\nSTATUS: ${action}\nCATEGORY: ${result.item.category}\nRARITY: ${result.item.rarity}`,
-            duration: 4000,
-          });
+          // Complete the progressive toast (unless during mining)
+          if (!isMiningInProgress && equipmentToast) {
+            const slotInfo = result.slotInfo ? `SLOT: ${result.slotInfo}` : '';
+            equipmentToast.success(result.item.rarity, slotInfo);
+          }
           await refetchCharacter();
         } else {
-          toast.error('EQUIPMENT_ERROR', {
-            description: result.message || 'INVALID_SLOT • RETRY_REQUIRED',
-            duration: 4000,
-          });
+          // Show errors even during mining
+          if (!isMiningInProgress && equipmentToast) {
+            equipmentToast.error(result.message || 'INVALID_SLOT • RETRY_REQUIRED');
+          } else {
+            toast.error('EQUIPMENT_ERROR', {
+              description: result.message || 'INVALID_SLOT • RETRY_REQUIRED',
+              duration: 4000,
+            });
+          }
         }
       } catch (error) {
         toast.error('EQUIPMENT_ERROR', {
@@ -614,6 +677,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       } finally {
         dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: false });
+        // Re-enable inventory toasts after equipment operation
+        setTimeout(() => {
+          (window as any).__suppressInventoryToasts = false;
+        }, 500); // Small delay to ensure all DB updates are processed
       }
     }, [character, characterActions, refetchCharacter, isMainnet]),
 
@@ -622,23 +689,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       try {
         dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: true });
+        
+        // Suppress inventory toasts during consumable use
+        (window as any).__suppressInventoryToasts = true;
+        
+        // Start progressive consumable toast
+        const effects = { energy: energy_effect, health: health_effect };
+        const consumableToast = gameToast.consumableFlow(itemName, effects);
+        
         const result = await characterActions.useItem(inventoryId);
 
         if (result.success) {
-          const effects = [];
-          if (energy_effect) effects.push(`ENERGY: +${energy_effect}`);
-          if (health_effect) effects.push(`HEALTH: +${health_effect}`);
-
-          toast.success('ITEM_USED', {
-            description: `ITEM: ${itemName.toUpperCase()}\n${effects.join('\n')}\nSTATUS: CONSUMED`,
-            duration: 4000,
-          });
+          consumableToast.success();
           await refetchCharacter();
         } else {
-          toast.error('ITEM_ERROR', {
-            description: result.message || 'INVALID_ITEM • RETRY_REQUIRED',
-            duration: 4000,
-          });
+          consumableToast.error(result.message || 'INVALID_ITEM • RETRY_REQUIRED');
         }
       } catch (error) {
         toast.error('ITEM_ERROR', {
@@ -647,6 +712,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       } finally {
         dispatch({ type: 'SET_LOADING_ITEM', item_id: inventoryId, loading: false });
+        // Re-enable inventory toasts after consumable use
+        setTimeout(() => {
+          (window as any).__suppressInventoryToasts = false;
+        }, 500);
       }
     }, [character, characterActions, refetchCharacter, isMainnet]),
 

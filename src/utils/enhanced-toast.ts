@@ -52,6 +52,80 @@ class EnhancedToastManager {
   }
 
   /**
+   * Progressive mining toast for complete mining flow
+   */
+  miningFlow(energyCost: number) {
+    const id = `mining_${Date.now()}`
+    
+    const steps = [
+      { 
+        message: '⛏️ MINING_IN_PROGRESS', 
+        description: `CONSUMING: ${energyCost} ENERGY` 
+      },
+      { 
+        message: '⛏️ PROCESSING_RESULTS', 
+        description: 'ANALYZING_EXTRACTED_MATERIALS...' 
+      }
+    ]
+
+    try {
+      const progressToast = this.progressive(id, steps)
+      
+      // Auto-advance to processing step
+      setTimeout(() => {
+        try {
+          progressToast.next()
+        } catch (error) {
+          console.warn('Error advancing mining toast:', error)
+        }
+      }, 800)
+
+      return {
+        success: (item: string, autoEquipped: boolean = false) => {
+          try {
+            const description = autoEquipped 
+              ? `FOUND: ${item.toUpperCase()}\nAUTO_EQUIPPED | ADDED_TO_INVENTORY`
+              : `FOUND: ${item.toUpperCase()}\nADDED_TO_INVENTORY`
+            
+            progressToast.complete('⛏️ MINING_SUCCESSFUL', description)
+          } catch (error) {
+            console.warn('Error completing mining toast:', error)
+          }
+        },
+        empty: () => {
+          try {
+            progressToast.complete('⛏️ MINING_COMPLETE', `NO_RESOURCES_FOUND\nENERGY_CONSUMED: ${energyCost}`)
+          } catch (error) {
+            console.warn('Error completing empty mining toast:', error)
+          }
+        },
+        error: (error: string) => {
+          try {
+            progressToast.error('⛏️ MINING_FAILED', error)
+          } catch (toastError) {
+            console.warn('Error showing mining error toast:', toastError)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error creating mining flow toast:', error)
+      // Return fallback methods that use regular toasts
+      return {
+        success: (item: string, autoEquipped: boolean = false) => {
+          const equipment = autoEquipped ? ' (AUTO-EQUIPPED)' : ''
+          toast.success(`⛏️ Found ${item}!${equipment}`)
+        },
+        empty: () => {
+          toast.warning(`⛏️ Nothing found (-${energyCost} energy)`)
+        },
+        error: (error: string) => {
+          toast.error(`⛏️ Mining failed: ${error}`)
+        }
+      }
+    }
+  }
+
+  /**
    * Auto-merging toast for rapid similar notifications
    */
   autoMerge(type: 'mining' | 'purchase' | 'combat', data: {
@@ -196,6 +270,208 @@ class EnhancedToastManager {
   }
 
   /**
+   * Progressive equipment toast for equip/unequip actions
+   */
+  equipmentFlow(action: 'equip' | 'unequip', itemName: string, category: string) {
+    const id = `equipment_${Date.now()}`
+    
+    const steps = [
+      { 
+        message: action === 'equip' ? '⚙️ INSTALLING_EQUIPMENT' : '⚙️ REMOVING_EQUIPMENT', 
+        description: `ITEM: ${itemName.toUpperCase()}\nCATEGORY: ${category.toUpperCase()}` 
+      },
+      { 
+        message: action === 'equip' ? '⚙️ CALIBRATING_SYSTEMS' : '⚙️ UPDATING_CONFIGURATION', 
+        description: 'ADJUSTING_CHARACTER_PARAMETERS...' 
+      }
+    ]
+
+    try {
+      const progressToast = this.progressive(id, steps)
+      
+      // Auto-advance to calibration step
+      setTimeout(() => {
+        try {
+          progressToast.next()
+        } catch (error) {
+          console.warn('Error advancing equipment toast:', error)
+        }
+      }, 600)
+
+      return {
+        success: (rarity?: string, slotInfo?: string) => {
+          try {
+            const actionText = action === 'equip' ? 'EQUIPPED' : 'UNEQUIPPED'
+            let description = `${actionText}: ${itemName.toUpperCase()}\nCATEGORY: ${category.toUpperCase()}`
+            if (rarity) description += `\nRARITY: ${rarity.toUpperCase()}`
+            if (slotInfo) description += `\n${slotInfo}`
+            
+            progressToast.complete(`⚙️ EQUIPMENT_${actionText}`, description)
+          } catch (error) {
+            console.warn('Error completing equipment toast:', error)
+          }
+        },
+        error: (error: string) => {
+          try {
+            progressToast.error('⚙️ EQUIPMENT_ERROR', error)
+          } catch (toastError) {
+            console.warn('Error showing equipment error toast:', toastError)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error creating equipment flow toast:', error)
+      // Return fallback methods that use regular toasts
+      return {
+        success: (rarity?: string, slotInfo?: string) => {
+          const actionText = action === 'equip' ? 'equipped' : 'unequipped'
+          toast.success(`⚙️ ${itemName} ${actionText}!`)
+        },
+        error: (error: string) => {
+          toast.error(`⚙️ Equipment error: ${error}`)
+        }
+      }
+    }
+  }
+
+  /**
+   * Progressive consumable toast for using items
+   */
+  consumableFlow(itemName: string, effects: { energy?: number; health?: number; [key: string]: any }) {
+    const id = `consumable_${Date.now()}`
+    
+    const steps = [
+      { 
+        message: '💊 CONSUMING_ITEM', 
+        description: `ITEM: ${itemName.toUpperCase()}\nPREPARING_ABSORPTION...` 
+      },
+      { 
+        message: '💊 PROCESSING_EFFECTS', 
+        description: 'INTEGRATING_BIOLOGICAL_COMPOUNDS...' 
+      }
+    ]
+
+    try {
+      const progressToast = this.progressive(id, steps)
+      
+      // Auto-advance to processing step
+      setTimeout(() => {
+        try {
+          progressToast.next()
+        } catch (error) {
+          console.warn('Error advancing consumable toast:', error)
+        }
+      }, 700)
+
+      return {
+        success: () => {
+          try {
+            const effectsList = [];
+            if (effects.energy) effectsList.push(`ENERGY: +${effects.energy}`);
+            if (effects.health) effectsList.push(`HEALTH: +${effects.health}`);
+            
+            const description = `CONSUMED: ${itemName.toUpperCase()}\n${effectsList.join('\n')}\nSTATUS: ABSORBED`
+            
+            progressToast.complete('💊 ITEM_CONSUMED', description)
+          } catch (error) {
+            console.warn('Error completing consumable toast:', error)
+          }
+        },
+        error: (error: string) => {
+          try {
+            progressToast.error('💊 CONSUMPTION_FAILED', error)
+          } catch (toastError) {
+            console.warn('Error showing consumable error toast:', toastError)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error creating consumable flow toast:', error)
+      // Return fallback methods that use regular toasts
+      return {
+        success: () => {
+          const effectsList = [];
+          if (effects.energy) effectsList.push(`+${effects.energy} energy`);
+          if (effects.health) effectsList.push(`+${effects.health} health`);
+          toast.success(`💊 Used ${itemName}! ${effectsList.join(', ')}`)
+        },
+        error: (error: string) => {
+          toast.error(`💊 Item error: ${error}`)
+        }
+      }
+    }
+  }
+
+  /**
+   * Progressive purchase toast for buying items
+   */
+  purchaseFlow(itemName: string, cost: number) {
+    const id = `purchase_${Date.now()}`
+    
+    const steps = [
+      { 
+        message: '🛒 PROCESSING_TRANSACTION', 
+        description: `ITEM: ${itemName.toUpperCase()}\nCOST: ${cost} EARTH` 
+      },
+      { 
+        message: '🛒 VALIDATING_PAYMENT', 
+        description: 'TRANSFERRING_CURRENCY...' 
+      }
+    ]
+
+    try {
+      const progressToast = this.progressive(id, steps)
+      
+      // Auto-advance to validation step
+      setTimeout(() => {
+        try {
+          progressToast.next()
+        } catch (error) {
+          console.warn('Error advancing purchase toast:', error)
+        }
+      }, 500)
+
+      return {
+        success: (newBalance: number, autoEquipped: boolean = false, actualItemName?: string) => {
+          try {
+            const displayName = actualItemName || itemName;
+            let description = `PURCHASED: ${displayName.toUpperCase()}\nCOST: ${cost} EARTH\nBALANCE: ${newBalance} EARTH`
+            if (autoEquipped) {
+              description += '\nAUTO_EQUIPPED | ADDED_TO_INVENTORY'
+            } else {
+              description += '\nADDED_TO_INVENTORY'
+            }
+            
+            progressToast.complete('🛒 PURCHASE_SUCCESSFUL', description)
+          } catch (error) {
+            console.warn('Error completing purchase toast:', error)
+          }
+        },
+        error: (error: string) => {
+          try {
+            progressToast.error('🛒 PURCHASE_FAILED', error)
+          } catch (toastError) {
+            console.warn('Error showing purchase error toast:', toastError)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error creating purchase flow toast:', error)
+      // Return fallback methods that use regular toasts
+      return {
+        success: (newBalance: number, autoEquipped: boolean = false, actualItemName?: string) => {
+          const displayName = actualItemName || itemName;
+          const equipped = autoEquipped ? ' (AUTO-EQUIPPED)' : ''
+          toast.success(`🛒 Purchased ${displayName}!${equipped} Balance: ${newBalance} EARTH`)
+        },
+        error: (error: string) => {
+          toast.error(`🛒 Purchase failed: ${error}`)
+        }
+      }
+    }
+  }
+
+  /**
    * Simple travel toast (can be progressive or instant)
    */
   travel(fromLocation: string, toLocation: string, services: string[] = []) {
@@ -237,8 +513,14 @@ export const enhancedToast = new EnhancedToastManager()
 // Convenience methods
 export const gameToast = {
   travel: enhancedToast.travel.bind(enhancedToast),
+  miningFlow: enhancedToast.miningFlow.bind(enhancedToast),
+  equipmentFlow: enhancedToast.equipmentFlow.bind(enhancedToast),
+  consumableFlow: enhancedToast.consumableFlow.bind(enhancedToast),
+  purchaseFlow: enhancedToast.purchaseFlow.bind(enhancedToast),
   mining: (item: string, quantity: number = 1) => 
     enhancedToast.autoMerge('mining', { action: 'found', item, quantity }),
+  miningEmpty: (energyCost: number) => 
+    enhancedToast.autoMerge('mining', { action: 'empty', item: 'NOTHING', quantity: energyCost }),
   purchase: (item: string, quantity: number = 1) => 
     enhancedToast.autoMerge('purchase', { action: 'bought', item, quantity }),
   combat: (action: string) => 

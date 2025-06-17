@@ -255,24 +255,28 @@ export function usePlayerCharacter(
             // For inventory changes, we need to refetch to get the full item details
             await fetchCharacter(true)
 
-            // Show appropriate toast messages
-            if (payload.eventType === 'INSERT') {
-              toast.success('New item added to inventory!', { duration: 2000 })
-            } else if (payload.eventType === 'UPDATE') {
-              const newData = payload.new as any
-              const oldData = payload.old as any
+            // Show appropriate toast messages (unless suppressed during mining)
+            const suppressToasts = (window as any).__suppressInventoryToasts;
+            
+            if (!suppressToasts) {
+              if (payload.eventType === 'INSERT') {
+                toast.success('New item added to inventory!', { duration: 2000 })
+              } else if (payload.eventType === 'UPDATE') {
+                const newData = payload.new as any
+                const oldData = payload.old as any
 
-              if (newData.is_equipped !== oldData?.is_equipped) {
-                if (newData.is_equipped) {
-                  toast.success('Item equipped!', { duration: 2000 })
-                } else {
-                  toast.success('Item unequipped!', { duration: 2000 })
+                if (newData.is_equipped !== oldData?.is_equipped) {
+                  if (newData.is_equipped) {
+                    toast.success('Item equipped!', { duration: 2000 })
+                  } else {
+                    toast.success('Item unequipped!', { duration: 2000 })
+                  }
+                } else if (
+                  newData.is_primary !== oldData?.is_primary &&
+                  newData.is_primary
+                ) {
+                  toast.success('Primary item updated!', { duration: 2000 })
                 }
-              } else if (
-                newData.is_primary !== oldData?.is_primary &&
-                newData.is_primary
-              ) {
-                toast.success('Primary item updated!', { duration: 2000 })
               }
             }
           }

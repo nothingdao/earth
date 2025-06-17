@@ -165,12 +165,8 @@ export function ViewRenderer({
     actions.handleEquipItem(inventoryId, shouldEquip, targetSlot)
   }
 
-  const handleUseItemAdapter = (inventoryId: string) => {
-    const inventoryItem = character?.inventory?.find((item: any) => item.id === inventoryId)
-    const itemName = inventoryItem?.name || 'Unknown Item'
-    const energy_effect = inventoryItem?.effects?.energy
-    const health_effect = inventoryItem?.effects?.health
-    // Use existing use item action from GameProvider
+  const handleUseItemAdapter = (inventoryId: string, itemName: string, energy_effect?: number, health_effect?: number) => {
+    // Use existing use item action from GameProvider (already progressive)
     actions.handleUseItem(inventoryId, itemName, energy_effect, health_effect)
   }
 
