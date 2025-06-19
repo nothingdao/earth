@@ -8,6 +8,7 @@ export const ADMIN_WALLETS = [
   '4yP4qkG3aBRZHSsdmb1fjrrTt7n9CQSTkaynbkzPF75D', // Earth Admin
   // Add more admin wallet addresses as needed
   '7dJDToTRDi7kcvo5VNkziwG9f1BUvmaMxbgXM4twfdmw', // Earth Admin Solfare Chrome
+  'F3JPQ3TzzkSDSZBSueY9FpVdNjK3vq5pTLvxnVxHhazw', // Earth Admin Phantom Mobile
 ]
 
 export function isAdmin(wallet_address: string): boolean {

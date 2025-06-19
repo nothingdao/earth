@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // hooks/useAdminData.ts - Cleaned up custom hook for admin actions
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import supabase from '../utils/supabase'
 import type { Character, Location, Item, MarketListing } from '@/types'
 
@@ -46,7 +46,7 @@ export function useAdminStats() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -92,11 +92,11 @@ export function useAdminStats() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchStats()
-  }, [])
+  }, [fetchStats])
 
   return { stats, loading, error, refetch: fetchStats }
 }
@@ -126,7 +126,7 @@ export function useAdminCharacters() {
       const formattedCharacters: EnhancedCharacterForAdmin[] = (data || []).map(
         (char) => ({
           ...char, // Spread all Character properties
-          locationName: (char.location as any)?.name || 'Unknown',
+          locationName: (char.location as { name: string } | null)?.name || 'Unknown',
           created_at: new Date(char.created_at).toLocaleDateString(),
         })
       )
@@ -382,11 +382,11 @@ export function useAdminActivity() {
           type: 'character' as const,
           action: 'Character created',
           target: `${char.name} in ${
-            (char.location as any)?.name || 'Unknown'
+            (char.location as { name: string } | null)?.name || 'Unknown'
           }`,
           timestamp: new Date(char.created_at).toLocaleString(),
           characterName: char.name,
-          locationName: (char.location as any)?.name,
+          locationName: (char.location as { name: string } | null)?.name,
         })
       )
 
@@ -436,9 +436,9 @@ export function useAdminMarket() {
         data || []
       ).map((listing) => ({
         ...listing, // Spread all MarketListing properties
-        locationName: (listing.location as any)?.name || 'Unknown Location',
-        itemName: (listing.item as any)?.name || 'Unknown Item',
-        sellerName: (listing.seller as any)?.name || null,
+        locationName: (listing.location as { name: string } | null)?.name || 'Unknown Location',
+        itemName: (listing.item as { name: string } | null)?.name || 'Unknown Item',
+        sellerName: (listing.seller as { name: string } | null)?.name || null,
         created_at: new Date(listing.created_at).toLocaleDateString(),
         updated_at: new Date(listing.updated_at).toLocaleDateString(),
         isAvailable: listing.quantity > 0,

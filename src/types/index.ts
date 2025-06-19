@@ -17,6 +17,7 @@ import type { Tables } from './supabase'
 
 // Export commonly used table types as convenient aliases
 export type Character = Tables<'characters'>
+export type CharacterImage = Tables<'character_images'>
 export type Location = Tables<'locations'>
 export type Item = Tables<'items'>
 export type ChatMessage = Tables<'chat_messages'>
@@ -70,8 +71,7 @@ export type EquipmentSlot = 'head' | 'body' | 'accessory' | 'tool'
 export interface EquipmentSlotInfo {
   name: string
   slot: EquipmentSlot
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any // Lucide icon component
+  icon: React.ComponentType<{ className?: string }> // Lucide icon component
   equipped?: {
     id: string
     name: string

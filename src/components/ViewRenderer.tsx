@@ -42,8 +42,6 @@ export function ViewRenderer({
 
   // Simple travel handler that delegates to GameProvider with animation delay
   const handleTravel = async (location_id: string) => {
-    console.log('🗺️ ViewRenderer handleTravel called with:', location_id)
-
     if (!character) {
       console.error('❌ No character found for travel')
       toast.error('No character found')
@@ -72,13 +70,9 @@ export function ViewRenderer({
       // Delay the actual travel to allow animation, then use GameProvider's travel action
       setTimeout(async () => {
         try {
-          console.log('🚀 Animation complete, now calling GameProvider travel...')
-
           // Use the GameProvider's travel action which handles all the API logic
           if (actions.handleTravel) {
             await actions.handleTravel(location_id)
-
-            console.log('✅ Travel complete - staying on map view')
             // DON'T switch views - stay on the map after successful travel
             // actions.navigate('main') // REMOVED
           } else {
@@ -274,6 +268,7 @@ export function ViewRenderer({
           onEquipItem={handleEquipItemAdapter}
           onSetPrimary={handleSetPrimary}
           onReplaceSlot={handleReplaceSlot}
+          onCharacterUpdated={actions.refetchCharacter}
         />
       )
 

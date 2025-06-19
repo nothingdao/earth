@@ -78,7 +78,6 @@ export default function Earth({
       // Don't update visual location during travel
     } else {
       // When not traveling, ALWAYS update to show current location
-      console.log('🎯 Travel ended, updating visual location to:', character.current_location_id)
       setVisualLocationId(character.current_location_id)
     }
   }, [character?.current_location_id, isTravelingOnMap])

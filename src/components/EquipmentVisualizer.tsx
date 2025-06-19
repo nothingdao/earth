@@ -14,6 +14,7 @@ interface EquipmentVisualizerProps {
   size?: 'small' | 'medium' | 'large'
   showControls?: boolean
   className?: string
+  onImageExport?: (exportFunction: () => Promise<Blob | null>) => void
 }
 
 interface Manifest {
@@ -55,7 +56,8 @@ export function EquipmentVisualizer({
   character,
   size = 'medium',
   showControls = true,
-  className = ''
+  className = '',
+  onImageExport
 }: EquipmentVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [manifest, setManifest] = useState<Manifest | null>(null)
@@ -204,8 +206,6 @@ export function EquipmentVisualizer({
 
           if (layerFile) {
             const imagePath = `/layers/${layerType}/${layerFile}`
-            console.log(`Loading layer: ${layerType}/${layerFile}`)
-
             const img = await loadImage(imagePath)
             ctx.drawImage(img, 0, 0, canvasSize, canvasSize)
           }
@@ -224,10 +224,32 @@ export function EquipmentVisualizer({
     }
   }, [character, currentSize.canvas, loadManifest, getBaseLayerFile, getEquippedItemsByLayer, visibleLayers])
 
+  // Export character image as blob
+  const exportCharacterImage = useCallback((): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      const canvas = canvasRef.current
+      if (!canvas) {
+        resolve(null)
+        return
+      }
+
+      canvas.toBlob((blob) => {
+        resolve(blob)
+      }, 'image/png', 0.95)
+    })
+  }, [])
+
   // Re-render when character changes
   useEffect(() => {
     renderCharacter()
   }, [renderCharacter])
+
+  // Provide export function to parent
+  useEffect(() => {
+    if (onImageExport) {
+      onImageExport(exportCharacterImage)
+    }
+  }, [onImageExport, exportCharacterImage])
 
   // Toggle layer visibility
   const toggleLayer = (layerType: string) => {

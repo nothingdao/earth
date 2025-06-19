@@ -30,6 +30,7 @@ export const handler = async (event, context) => {
         level,
         experience,
         wallet_address,
+        nft_address,
         current_image_url,
         location:locations(*),
         equipped_items:character_inventory!character_id(
@@ -51,6 +52,7 @@ export const handler = async (event, context) => {
       level: character.level,
       experience: character.experience,
       wallet_address: character.wallet_address,
+      nft_address: character.nft_address,
       current_image_url: character.current_image_url,
       location: character.location,
       equipped_items: character.equipped_items

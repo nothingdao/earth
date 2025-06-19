@@ -2,7 +2,8 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Button } from '@/components/ui/button'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTrigger } from '@/components/ui/drawer'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from '@/components/ui/drawer'
+import { VisuallyHidden } from '@/components/ui/visually-hidden'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -333,11 +334,15 @@ export function BottomDrawerNav({
           <div className="flex items-center gap-2">
             <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
               <DrawerTrigger asChild>
-                <Button size="sm" variant="outline" className="h-12 w-12 px-3 font-mono border-primary/30">
+                <Button size="sm" variant="outline" className="h-12 w-12 px-3 font-mono border-primary/30 dark:border-primary">
                   <Terminal className="w-4 h-4" />
                 </Button>
               </DrawerTrigger>
               <DrawerContent className="h-[80vh] bg-background border-t border-primary/30 font-mono">
+                <VisuallyHidden>
+                  <DrawerTitle>Mobile Navigation Interface</DrawerTitle>
+                  <DrawerDescription>Main navigation panel for mobile devices with character stats, wallet info, and navigation options</DrawerDescription>
+                </VisuallyHidden>
                 {/* Terminal Drawer Header */}
                 <DrawerHeader className="pb-3 border-b border-primary/20">
                   <div className="flex items-center justify-between">

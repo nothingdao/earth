@@ -280,13 +280,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
               <div className="text-muted-foreground text-xs mb-1">METADATA_URI</div>
               <div className="flex items-center gap-2">
                 <div className="text-xs font-mono bg-muted/50 border border-primary/10 px-2 py-1 rounded flex-1 break-all text-primary">
-                  https://earth.ndao.computer/api/metadata/{character.id}
+                  https://earth.ndao.computer/player/{character.id}
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => copyToClipboard(
-                    `https://earth.ndao.computer/api/metadata/${character.id}`,
+                    `https://earth.ndao.computer/player/${character.id}`,
                     'Metadata URI'
                   )}
                   className="h-6 w-6 p-0"
@@ -297,7 +297,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
                   variant="ghost"
                   size="sm"
                   onClick={() => window.open(
-                    `https://earth.ndao.computer/api/metadata/${character.id}`,
+                    `https://earth.ndao.computer/player/${character.id}`,
                     '_blank'
                   )}
                   className="h-6 w-6 p-0"

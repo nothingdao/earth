@@ -101,15 +101,9 @@ export function MiningView({ character, loadingItems, onMine }: MiningViewProps)
     e.stopPropagation()
 
     if (!canMine) {
-      console.log('🚫 Mining blocked:', {
-        energy: currentEnergy,
-        minRequired: miningCost,
-        isMining
-      })
       return
     }
 
-    console.log('⛏️ Mining initiated from MiningView')
     onMine()
   }
 

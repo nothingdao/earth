@@ -332,7 +332,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_BALANCES_LOADING', loading: true });
 
     try {
-      console.log('🔄 Fetching all balances...');
       const [solBalance, walletEarthBalance] = await Promise.all([
         fetchSolBalance(),
         fetchWalletEarthBalance()
@@ -343,8 +342,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         solBalance,
         walletEarthBalance
       });
-
-      console.log('✅ All balances updated:', { solBalance, walletEarthBalance });
     } catch (error) {
       console.error('❌ Failed to fetch balances:', error);
       dispatch({ type: 'SET_BALANCES_LOADING', loading: false });
@@ -375,7 +372,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // ✅ FETCH BALANCES WHEN WALLET CONNECTS
   useEffect(() => {
     if (publicKey && !isMainnet) {
-      console.log('💰 Wallet connected, fetching balances...');
       refetchBalances();
     } else {
       dispatch({ type: 'RESET_BALANCES' });
@@ -452,10 +448,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     refetchCharacter: useCallback(async () => {
       if (isMainnet) return;
       try {
-        console.log('🔄 GameProvider: Refetching character and balances...');
         await refetchCharacter(); // This updates the hook's character state
         await refetchBalances(); // Also refresh wallet balances
-        console.log('✅ GameProvider: Character and balances refetch completed');
       } catch (error) {
         console.error('❌ GameProvider: Character refetch failed:', error);
         dispatch({ type: 'SET_ERROR', error: 'Failed to refresh character data' });
@@ -593,17 +587,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         
         const result = await characterActions.buyItem(item_id);
 
-        console.log('🔥 Purchase API result:', result);
-
         if (result.success) {
-          console.log('🔥 Purchase item data:', result.item);
-          console.log('🔥 Purchase inventory data:', result.inventory);
-          console.log('🔥 Full purchase result structure:', Object.keys(result));
-          
           // The purchase API returns the purchased item in the inventory field
           const purchasedItem = result.inventory?.item || result.item || {};
           const actualItemName = purchasedItem.name || 'UNKNOWN ITEM';
-          console.log('🔥 Purchase item name:', actualItemName);
           
           // Check if item was auto-equipped (only equipment items should be)
           const isEquipment = purchasedItem?.category && ['EQUIPMENT', 'WEAPON', 'ARMOR', 'TOOL'].includes(purchasedItem.category);

@@ -39,7 +39,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
 
   const getExplorerUrl = useCallback((address: string) => {
     const cluster = isDevnet ? '?cluster=devnet' : ''
-    return `https://explorer.solana.com/address/${address}${cluster}`
+    return `https://orb.helius.dev/address/${address}${cluster}`
   }, [isDevnet])
 
   const getRpcUrl = useCallback(() => {

@@ -218,11 +218,7 @@ export function usePlayerCharacter(
           }
         )
         .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('📡 Real-time character updates connected')
-          } else if (status === 'CLOSED') {
-            console.log('📡 Real-time character updates disconnected')
-          }
+          // Real-time subscription status tracking (silent)
         })
     },
     [shouldLoad]
@@ -295,13 +291,11 @@ export function usePlayerCharacter(
   // Clean up subscriptions
   const cleanupSubscriptions = useCallback(() => {
     if (characterSubscriptionRef.current) {
-      console.log('🧹 Cleaning up character subscription')
       characterSubscriptionRef.current.unsubscribe()
       characterSubscriptionRef.current = null
     }
 
     if (inventorySubscriptionRef.current) {
-      console.log('🧹 Cleaning up inventory subscription')
       inventorySubscriptionRef.current.unsubscribe()
       inventorySubscriptionRef.current = null
     }
@@ -310,7 +304,6 @@ export function usePlayerCharacter(
   // Handle wallet disconnection
   useEffect(() => {
     if (!wallet.connected || !wallet.publicKey) {
-      console.log('🔌 Wallet disconnected - clearing character state')
       setCharacter(null)
       setHasCharacter(false)
       setError(null)
@@ -322,7 +315,6 @@ export function usePlayerCharacter(
   // Set up real-time subscriptions when character is loaded
   useEffect(() => {
     if (character?.id && hasCharacter && shouldLoad) {
-      console.log('🚀 Setting up real-time subscriptions for:', character.name)
       subscribeToCharacterUpdates(character.id)
       subscribeToInventoryUpdates(character.id)
     } else {

@@ -1,5 +1,5 @@
 // src/components/views/EconomyView.tsx - Fully corrected with EARTH currency and real data
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { XAxis, YAxis, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import {
   TrendingUp,
@@ -20,13 +20,7 @@ const EconomyView: React.FC = () => {
   // ✅ NPC Toggle
   const [includeNPCs, setIncludeNPCs] = useState(true);
 
-  useEffect(() => {
-    fetchEconomyData();
-    const interval = setInterval(fetchEconomyData, 60000);
-    return () => clearInterval(interval);
-  }, [includeNPCs]);
-
-  const fetchEconomyData = async () => {
+  const fetchEconomyData = useCallback(async () => {
     try {
       const [economyResponse, earthMarketResponse, gameEconomyResponse] = await Promise.all([
         fetch('/api/get-economy-overview'),
@@ -64,7 +58,6 @@ const EconomyView: React.FC = () => {
       // ✅ Process economy overview data (fallback market data)
       if (economyResponse.ok) {
         const economyResult = await economyResponse.json();
-        console.log('📊 Economy Overview Data:', economyResult);
 
         if (economyResult.marketOverview) {
           newEconomyData.marketData = {
@@ -155,7 +148,13 @@ const EconomyView: React.FC = () => {
       generateMockData();
       setIsLoading(false);
     }
-  };
+  }, [includeNPCs]);
+
+  useEffect(() => {
+    fetchEconomyData();
+    const interval = setInterval(fetchEconomyData, 60000);
+    return () => clearInterval(interval);
+  }, [fetchEconomyData]);
 
   const generateMockData = () => {
     console.log('⚠️ Using mock data due to API failure');

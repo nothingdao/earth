@@ -56,7 +56,6 @@ const useCharacters = () => {
       setCharacters(data.characters || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch characters')
-      console.error('Error fetching characters:', err)
     } finally {
       setLoading(false)
     }
@@ -112,8 +111,7 @@ const getStatusColor = (status: string) => {
 
 const copyToClipboard = (text: string, label: string) => {
   navigator.clipboard.writeText(text)
-  // You might want to add a toast notification here
-  console.log(`${label} copied to clipboard`)
+  // Toast notification could be added here if needed
 }
 
 export default function CharactersView() {
@@ -665,7 +663,7 @@ export default function CharactersView() {
           <DialogHeader className="border-b border-primary/20 pb-2">
             <DialogTitle className="flex items-center gap-2 text-primary font-mono">
               <Eye className="w-4 h-4" />
-              PEOPLE_ANALYSIS
+              PLAYER_ANALYSIS
             </DialogTitle>
           </DialogHeader>
 
@@ -827,7 +825,7 @@ export default function CharactersView() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(`https://explorer.solana.com/address/${selectedCharacter.nft_address}`, '_blank')}
+                          onClick={() => window.open(`https://orb.helius.dev/address/${selectedCharacter.nft_address}/history?cluster=devnet&page=1`, '_blank')}
                           className="h-6 w-6 p-0"
                         >
                           <ExternalLink className="w-3 h-3" />
@@ -836,23 +834,6 @@ export default function CharactersView() {
                     </div>
                   )}
 
-                  <div>
-                    <div className="text-muted-foreground text-xs mb-1">PEOPLE_ID</div>
-                    <div className="flex items-center gap-2">
-                      <Hash className="w-3 h-3 text-muted-foreground" />
-                      <div className="font-mono text-xs bg-muted/50 border border-primary/10 px-2 py-1 rounded flex-1 break-all text-primary">
-                        {selectedCharacter.id}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(selectedCharacter.id, 'Character ID')}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

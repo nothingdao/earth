@@ -83,10 +83,10 @@ interface LocationsResponse {
 
 // ===== CONFIGURATION =====
 const config = createNPCEngineConfig({
-  // SUPER AGGRESSIVE EXCHANGE TESTING MODE
+  // CHAT SWARM MODE - FAST CONVERGENCE
   DEFAULT_NPC_COUNT: 18, // Default NPC count
-  BASE_ACTIVITY_INTERVAL: 45000, // 45 seconds base interval
-  ACTIVITY_VARIANCE: 0.4, // 40% variance
+  BASE_ACTIVITY_INTERVAL: 5000, // 5 seconds for quick swarm testing
+  ACTIVITY_VARIANCE: 0.1, // Low variance for predictable timing
   FUNDING_AMOUNT: 0.02, // SOL per NPC
   LOG_LEVEL: 'info',
   ENABLE_LOGS: true,
@@ -119,9 +119,10 @@ async function selectActivityMode(): Promise<string | null> {
     console.log('6. Chat only')
     console.log('7. Equipment only (EQUIP)')
     console.log('8. Survival only (USE_ITEM)')
+    console.log('9. 🗣️ CHAT SWARM - All NPCs converge to one location and chat!')
     console.log('')
 
-    rl.question('Choose mode (1-8): ', (answer) => {
+    rl.question('Choose mode (1-9): ', (answer) => {
       const modes: Record<string, { type: string | null; name: string }> = {
         '1': { type: null, name: 'Normal (mixed activities)' },
         '2': { type: 'EXCHANGE', name: 'Exchange only' },
@@ -131,6 +132,7 @@ async function selectActivityMode(): Promise<string | null> {
         '6': { type: 'CHAT', name: 'Chat only' },
         '7': { type: 'EQUIP', name: 'Equipment only' },
         '8': { type: 'USE_ITEM', name: 'Survival only' },
+        '9': { type: 'CHAT_SWARM', name: '🗣️ Chat Swarm (NPCs converge and chat!)' },
       }
 
       const selected = modes[answer] || modes['1']
@@ -160,6 +162,7 @@ export class NPCEngine {
     lastReportTime: number
   }
   private currentActivityMode: string | null
+  private swarmTargetLocation: string | null = null
 
   constructor() {
     this.npcs = new Map()
@@ -625,24 +628,38 @@ export class NPCEngine {
 
   private async performRandomActivity(npc: NPC): Promise<void> {
     try {
+      // Check for special activity modes
+      if (this.currentActivityMode === 'CHAT_SWARM') {
+        await this.performChatSwarm(npc)
+        return
+      }
+
       // Get random location
       const randomLocation =
         this.locations[Math.floor(Math.random() * this.locations.length)]
 
-      // Update NPC location
-      npc.location = randomLocation.id
+      // Select random activity based on personality and mode
+      let activities = []
+      
+      if (this.currentActivityMode === 'EXCHANGE') {
+        activities = ['exchange']
+      } else if (this.currentActivityMode === 'MINE') {
+        activities = ['mine']
+      } else if (this.currentActivityMode === 'TRAVEL') {
+        activities = ['travel']
+      } else if (this.currentActivityMode === 'TRADE') {
+        activities = ['buy', 'sell']
+      } else if (this.currentActivityMode === 'CHAT') {
+        activities = ['chat']
+      } else if (this.currentActivityMode === 'EQUIP') {
+        activities = ['equip']
+      } else if (this.currentActivityMode === 'USE_ITEM') {
+        activities = ['use_item']
+      } else {
+        // Normal mode - all activities based on personality
+        activities = this.getActivitiesForPersonality(npc.personality)
+      }
 
-      // Select random activity based on personality
-      const activities = [
-        'mine',
-        'travel',
-        'buy',
-        'sell',
-        'chat',
-        'equip',
-        'use_item',
-        'exchange',
-      ]
       const activity = activities[Math.floor(Math.random() * activities.length)]
 
       // Perform activity
@@ -680,19 +697,79 @@ export class NPCEngine {
     }
   }
 
+  private getActivitiesForPersonality(personality: string): string[] {
+    switch (personality) {
+      case 'aggressive':
+        return ['mine', 'exchange', 'travel', 'chat', 'equip']
+      case 'friendly':
+        return ['chat', 'buy', 'sell', 'travel', 'use_item']
+      case 'greedy':
+        return ['exchange', 'buy', 'sell', 'mine']
+      case 'cautious':
+        return ['use_item', 'equip', 'chat', 'travel']
+      default: // neutral
+        return ['mine', 'travel', 'buy', 'sell', 'chat', 'equip', 'use_item', 'exchange']
+    }
+  }
+
   private async performMining(npc: NPC): Promise<void> {
-    console.log(`NPC ${npc.id} is mining...`)
-    await this.createTransaction(npc, 'MINE', 'Mining for resources')
+    try {
+      console.log(`⛏️ [MINE] ${npc.name} is mining...`)
+      
+      const response = await this.callAPI('mine-action', {
+        wallet_address: npc.wallet.publicKey.toString(),
+        location_id: npc.location
+      })
+
+      // Update local NPC state
+      if (response.character) {
+        npc.health = response.character.health
+        npc.energy = response.character.energy
+        npc.earth = response.character.earth
+      }
+
+      const itemsFound = response.items_found || []
+      if (itemsFound.length > 0) {
+        console.log(`✅ [MINE] ${npc.name} found ${itemsFound.length} items!`)
+      } else {
+        console.log(`✅ [MINE] ${npc.name} completed mining (no items found)`)
+      }
+    } catch (error) {
+      console.error(`❌ [MINE] Failed for ${npc.name}:`, error)
+      // Fallback to transaction record
+      await this.createTransaction(npc, 'MINE', 'Mining for resources')
+    }
   }
 
   private async performTravel(npc: NPC, location: Location): Promise<void> {
-    console.log(`NPC ${npc.id} is traveling...`)
-    await this.createTransaction(
-      npc,
-      'TRAVEL',
-      'Traveling to a new location',
-      location.id
-    )
+    // Skip if already at this location
+    if (npc.location === location.id) {
+      console.log(`🚶 [TRAVEL] ${npc.name} is already at ${location.name}`)
+      return
+    }
+
+    try {
+      console.log(`🚶 [TRAVEL] ${npc.name} traveling to ${location.name}...`)
+      
+      const response = await this.callAPI('travel-action', {
+        wallet_address: npc.wallet.publicKey.toString(),
+        destinationId: location.id
+      })
+
+      // Update local NPC state
+      npc.location = location.id
+      if (response.character) {
+        npc.health = response.character.health
+        npc.earth = response.character.earth
+      }
+
+      console.log(`✅ [TRAVEL] ${npc.name} arrived at ${location.name}`)
+    } catch (error) {
+      console.error(`❌ [TRAVEL] Failed for ${npc.name}:`, error)
+      // Fallback to transaction record and update location
+      await this.createTransaction(npc, 'TRAVEL', `Traveling to ${location.name}`, location.id)
+      npc.location = location.id
+    }
   }
 
   private async performBuy(npc: NPC): Promise<void> {
@@ -731,8 +808,23 @@ export class NPCEngine {
   }
 
   private async performChat(npc: NPC): Promise<void> {
-    console.log(`NPC ${npc.id} is chatting...`)
-    await this.createTransaction(npc, 'MINT', 'Chatting with other characters')
+    try {
+      const message = this.generateChatMessage(npc)
+      console.log(`💬 [CHAT] ${npc.name}: "${message}"`)
+      
+      await this.callAPI('send-message', {
+        wallet_address: npc.wallet.publicKey.toString(),
+        location_id: npc.location,
+        content: message,
+        message_type: 'CHAT'
+      })
+
+      console.log(`✅ [CHAT] ${npc.name} sent message`)
+    } catch (error) {
+      console.error(`❌ [CHAT] Failed for ${npc.name}:`, error)
+      // Fallback to transaction record
+      await this.createTransaction(npc, 'MINT', 'Chatting with other characters')
+    }
   }
 
   private async performEquip(npc: NPC): Promise<void> {
@@ -802,6 +894,164 @@ export class NPCEngine {
       console.error(`[ERROR] Exchange failed for NPC ${npc.id}:`, error)
       this.metrics.errors++
     }
+  }
+
+  // ===== CHAT SWARM MODE =====
+  private async performChatSwarm(npc: NPC): Promise<void> {
+    try {
+      // Select swarm target location if not set
+      if (!this.swarmTargetLocation) {
+        this.swarmTargetLocation = await this.selectSwarmTarget()
+        console.log(`🗣️ [SWARM] Target location set: ${this.swarmTargetLocation}`)
+      }
+
+      // If NPC is not at target location, travel there
+      if (npc.location !== this.swarmTargetLocation) {
+        console.log(`🚶 [SWARM] ${npc.name} traveling to swarm location...`)
+        await this.performTravelToLocation(npc, this.swarmTargetLocation)
+        return
+      }
+
+      // If at target location, chat
+      await this.performSwarmChat(npc)
+      this.metrics.totalActivities++
+    } catch (error) {
+      console.error(`[ERROR] Chat swarm failed for NPC ${npc.id}:`, error)
+      this.metrics.errors++
+    }
+  }
+
+  private async selectSwarmTarget(): Promise<string> {
+    // For now, let's use central-exchange as the target
+    const targetLocation = 'central-exchange'
+    console.log(`🗣️ [SWARM] NPCs will converge at: Central Exchange (${targetLocation})`)
+    console.log('🏛️ All NPCs heading to the financial district!')
+    return targetLocation
+  }
+
+  private async performTravelToLocation(npc: NPC, targetLocationId: string): Promise<void> {
+    try {
+      console.log(`🚶 [TRAVEL] ${npc.name} traveling to ${targetLocationId}`)
+      
+      // Update the character's location directly in the database
+      const { error } = await this.walletManager.supabase
+        .from('characters')
+        .update({ current_location_id: targetLocationId })
+        .eq('wallet_address', npc.wallet.publicKey.toString())
+
+      if (error) {
+        console.error(`❌ [TRAVEL] Database update failed for ${npc.name}:`, error)
+      } else {
+        console.log(`✅ [TRAVEL] ${npc.name} arrived at ${targetLocationId}`)
+      }
+
+      // Update local NPC state regardless
+      npc.location = targetLocationId
+    } catch (error) {
+      console.error(`❌ [TRAVEL] Failed for ${npc.name}:`, error)
+      // If travel fails, just update location locally
+      npc.location = targetLocationId
+    }
+  }
+
+  private async performSwarmChat(npc: NPC): Promise<void> {
+    try {
+      const message = this.generateChatMessage(npc)
+      
+      console.log(`💬 [CHAT] ${npc.name}: "${message}"`)
+      
+      // Insert message directly into the database
+      const { error } = await this.walletManager.supabase
+        .from('chat_messages')
+        .insert({
+          id: crypto.randomUUID(),
+          character_id: npc.id,
+          location_id: npc.location,
+          message: message,
+          message_type: 'CHAT',
+          is_system: false
+        })
+
+      if (error) {
+        console.error(`❌ [CHAT] Database insert failed for ${npc.name}:`, error)
+      } else {
+        console.log(`✅ [CHAT] ${npc.name} sent message to database`)
+      }
+    } catch (error) {
+      console.error(`❌ [CHAT] Failed for ${npc.name}:`, error)
+    }
+  }
+
+  // ===== CHAT LIBRARY =====
+  private generateChatMessage(npc: NPC): string {
+    const messagesByPersonality = {
+      aggressive: [
+        "Anyone want to trade? I've got rare items!",
+        "This place needs more action...",
+        "Who's up for some mining? I know the best spots!",
+        "I've been grinding all day, time to cash out!",
+        "Looking for teammates for the next expedition!",
+        "Market prices are terrible today... anyone selling cheap?",
+        "This location is getting crowded...",
+        "I heard there's good loot in the deeper zones!"
+      ],
+      friendly: [
+        "Hello everyone! How's everyone doing today?",
+        "Beautiful day to be exploring Earth-2089!",
+        "Anyone new here? I can show you around!",
+        "The community here is amazing, love meeting new people!",
+        "Hope everyone's having good luck with their adventures!",
+        "This is such a peaceful spot, great for chatting!",
+        "Anyone need help with anything? Happy to assist!",
+        "The sunset looks incredible from this location!"
+      ],
+      greedy: [
+        "What's the current market rate for rare crystals?",
+        "I'm buying quantum dust at premium prices!",
+        "Anyone selling tools? I pay well for good equipment!",
+        "Investment opportunities in the new zones look promising...",
+        "Supply chain for energy potions is really tight lately...",
+        "Made some good profits mining yesterday!",
+        "Looking to corner the market on temporal fragments...",
+        "The exchange rates today are absolutely terrible!"
+      ],
+      cautious: [
+        "Is this area safe? Haven't seen any threats lately...",
+        "Always check your equipment before heading into new zones.",
+        "Health potions are essential, never travel without them.",
+        "The radiation levels here seem acceptable...",
+        "Anyone know the difficulty rating of the eastern territories?",
+        "Better to travel in groups when exploring unknown areas.",
+        "I always keep my energy above 50% just in case...",
+        "Weather patterns look stable for the next few hours."
+      ],
+      neutral: [
+        "Just passing through, checking out the local scene.",
+        "Mining yields have been pretty consistent lately.",
+        "Standard trade routes seem to be running smoothly.",
+        "Regular maintenance on equipment is paying off.",
+        "Population density here is about what I expected.",
+        "Resource distribution seems fairly balanced in this zone.",
+        "Transport costs are reasonable for this distance.",
+        "Everything seems to be operating within normal parameters."
+      ]
+    }
+
+    const generalMessages = [
+      "Another day in the wasteland...",
+      "Technology here is fascinating!",
+      "The atmosphere has a unique quality to it.",
+      "Interesting geological formations around here.",
+      "Communication networks are working well today.",
+      "The local economy seems to be thriving.",
+      "Environmental conditions are quite stable.",
+      "Infrastructure development is impressive!"
+    ]
+
+    const personalityMessages = messagesByPersonality[npc.personality] || messagesByPersonality.neutral
+    const allMessages = [...personalityMessages, ...generalMessages]
+    
+    return allMessages[Math.floor(Math.random() * allMessages.length)]
   }
 }
 

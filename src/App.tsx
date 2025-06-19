@@ -18,14 +18,13 @@ function DynamicConnectionProvider({ children }: { children: React.ReactNode }) 
 
   const endpoint = useMemo(() => {
     const url = getRpcUrl()
-    console.log('🔗 ConnectionProvider using endpoint:', url, 'for network:', network)
     return url
   }, [network, getRpcUrl])
 
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
-    new SolflareWalletAdapter({ network }),
-  ], [network])
+    new SolflareWalletAdapter(),
+  ], [])
 
   return (
     <ConnectionProvider endpoint={endpoint}>

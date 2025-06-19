@@ -25,13 +25,12 @@ export function WalletSelectModal({ open, onOpenChange }: WalletSelectModalProps
 
   const handleWalletSelect = async (walletName: string) => {
     try {
-      // @ts-expect-error lmao
       select(walletName);
       await connect();
       onOpenChange(false);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      // toast.error('Failed to connect to wallet');
+      console.error('Failed to connect to wallet:', error);
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -16,7 +16,9 @@ import {
   Package,
   ChevronUp,
   ChevronDown,
-  X
+  X,
+  Save,
+  Camera
 } from 'lucide-react'
 import {
   GiBackpack,
@@ -37,6 +39,8 @@ import {
 } from 'react-icons/gi'
 import type { Character } from '@/types'
 import EquipmentVisualizer from '@/components/EquipmentVisualizer'
+import { useWalletInfo } from '@/hooks/useWalletInfo'
+import { toast } from '@/components/ui/use-toast'
 
 interface InventoryViewProps {
   character: Character
@@ -45,6 +49,7 @@ interface InventoryViewProps {
   onEquipItem: (inventoryId: string, is_equipped: boolean, targetSlot?: string, event?: React.MouseEvent) => void
   onSetPrimary?: (inventoryId: string, category: string) => void
   onReplaceSlot?: (inventoryId: string, category: string, slotIndex: number) => void
+  onCharacterUpdated?: () => Promise<void>
 }
 
 const EQUIPMENT_SLOTS = {
@@ -87,7 +92,8 @@ export function InventoryView({
   onUseItem,
   onEquipItem,
   onSetPrimary,
-  onReplaceSlot
+  onReplaceSlot,
+  onCharacterUpdated
 }: InventoryViewProps) {
   const [showInventoryPanel, setShowInventoryPanel] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -100,6 +106,9 @@ export function InventoryView({
     targetSlot: string
     slotIndex: number
   } | null>(null)
+  const [isSavingAppearance, setIsSavingAppearance] = useState(false)
+  const exportImageRef = useRef<(() => Promise<Blob | null>) | null>(null)
+  const walletInfo = useWalletInfo()
 
   // Get equipped items by category and slot
   const getEquippedByCategory = (category: string) => {
@@ -164,6 +173,90 @@ export function InventoryView({
       onSetPrimary(item.id, item.equipped_slot)
     }
   }
+
+  // Save character appearance
+  const saveCharacterAppearance = useCallback(async () => {
+    if (!exportImageRef.current || !walletInfo.publicKey) {
+      toast({
+        title: "Save Failed",
+        description: "Unable to export character image or wallet not connected",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsSavingAppearance(true)
+
+    try {
+      // Export character image as blob
+      const imageBlob = await exportImageRef.current()
+      if (!imageBlob) {
+        throw new Error("Failed to export character image")
+      }
+
+      // Convert blob to base64
+      const reader = new FileReader()
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            resolve(reader.result)
+          } else {
+            reject(new Error("Failed to convert image to base64"))
+          }
+        }
+        reader.onerror = () => reject(new Error("File reader error"))
+      })
+      
+      reader.readAsDataURL(imageBlob)
+      const base64Image = await base64Promise
+
+      // Call API to update character appearance
+      const response = await fetch('/.netlify/functions/update-character-appearance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          character_id: character.id,
+          image_blob: base64Image,
+          wallet_address: walletInfo.publicKey.toString(),
+          description: 'Equipment appearance update'
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update character appearance')
+      }
+
+      toast({
+        title: "Appearance Saved",
+        description: `Character appearance updated to version ${result.version}`,
+        variant: "default"
+      })
+
+      // Refetch character data to update all components with new image
+      if (onCharacterUpdated) {
+        await onCharacterUpdated()
+      }
+
+    } catch (error) {
+      console.error('Save appearance error:', error)
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSavingAppearance(false)
+    }
+  }, [character.id, walletInfo.publicKey])
+
+  // Handle receiving the export function from EquipmentVisualizer
+  const handleImageExport = useCallback((exportFunction: () => Promise<Blob | null>) => {
+    exportImageRef.current = exportFunction
+  }, [])
 
   // Get compatible items for a specific slot
   const getCompatibleItems = (slotKey: string) => {
@@ -602,12 +695,35 @@ export function InventoryView({
                 size="medium"
                 showControls={false}
                 className="w-full max-w-xs"
+                onImageExport={handleImageExport}
               />
             </div>
 
             {/* Controls Sidebar */}
             <div className="space-y-4">
 
+              {/* Save Appearance */}
+              <div className="bg-muted/20 border border-primary/20 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground mb-2">APPEARANCE</div>
+                <Button
+                  onClick={saveCharacterAppearance}
+                  disabled={isSavingAppearance || !walletInfo.publicKey}
+                  variant="outline"
+                  className="w-full h-8 text-xs font-mono"
+                >
+                  {isSavingAppearance ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      SAVING...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3 h-3 mr-2" />
+                      SAVE_APPEARANCE
+                    </>
+                  )}
+                </Button>
+              </div>
 
               {/* Quick Equipment */}
               <div className="bg-muted/20 border border-primary/20 rounded-lg p-3">
