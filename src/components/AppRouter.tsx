@@ -1,70 +1,77 @@
+
 // src/components/AppRouter.tsx - Refactored with Registry Dashboard
-import React from 'react'
-import { useGame } from '@/providers/GameProvider'
-import { useNetwork } from '@/contexts/NetworkContext'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { Button } from '@/components/ui/button'
-import { Loader2, Database, Zap, AlertTriangle, Activity, Terminal } from 'lucide-react'
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
+import React from 'react';
+import { useGame } from '@/providers/GameProvider';
+import { useNetwork } from '@/contexts/NetworkContext';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Database, Zap, AlertTriangle, Activity, Terminal, BookOpen } from 'lucide-react';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 // Import your existing game components
-import { GameScreen } from '@/components/screens/GameScreen'
-import { RegistryDashboard } from '@/components/screens/RegistryDashboard'
-import { TopControls } from './TopControls'
+import { GameScreen } from '@/components/screens/GameScreen';
+import { RegistryDashboard } from '@/components/screens/RegistryDashboard';
+import { TopControls } from './TopControls';
+import DocsViewer from '@/components/docs/DocsViewer';
 
-export function AppRouter() {
-  const { state, actions } = useGame()
-  const { connected } = useWallet()
-  const { isDevnet, setNetwork } = useNetwork()
+export function AppRouter({ showDocsScreen, setShowDocsScreen }) {
+  const { state, actions } = useGame();
+  const { connected } = useWallet();
+  const { isDevnet, setNetwork } = useNetwork();
 
-  // console.log('Wallet Connected:', connected)
-  // console.log('Wallet PublicKey:', publicKey?.toBase58())
+  // console.log('Wallet Connected:', connected);
+  // console.log('Wallet PublicKey:', publicKey?.toBase58());
 
   // Auto-switch to devnet by default (for game)
   React.useEffect(() => {
     if (connected && !isDevnet) {
-      console.log('🔄 Auto-switching to devnet for game access')
-      setNetwork(WalletAdapterNetwork.Devnet)
+      console.log('🔄 Auto-switching to devnet for game access');
+      setNetwork(WalletAdapterNetwork.Devnet);
     }
-  }, [connected, isDevnet, setNetwork])
+  }, [connected, isDevnet, setNetwork]);
+
+  // If showDocsScreen is true, render the DocsViewer as a primary screen
+  if (showDocsScreen) {
+    return <DocsViewer onClose={() => setShowDocsScreen(false)} />;
+  }
 
   // Normal game flow (always on devnet)
   switch (state.appState) {
     case 'wallet-required':
-      return <WalletConnectScreen />
+      return <WalletConnectScreen setShowDocsScreen={setShowDocsScreen} />;
 
     case 'checking-character':
-      return <CheckingCharacterScreen />
+      return <CheckingCharacterScreen />;
 
     case 'character-required':
       return (
         <RegistryDashboard
           onEnterGame={() => {
-            console.log('🎮 User wants to enter game from registry')
-            actions.createCharacterComplete() // ✅ This already exists and sets 'USER_WANTS_TO_ENTER_GAME'
+            console.log('🎮 User wants to enter game from registry');
+            actions.createCharacterComplete(); // ✅ This already exists and sets 'USER_WANTS_TO_ENTER_GAME'
           }}
         />
-      )
+      );
 
     case 'entering-game':
-      return <EnteringGameScreen />
+      return <EnteringGameScreen />;
 
     case 'ready':
-      return <GameScreen />
+      return <GameScreen />;
 
     case 'error':
-      return <ErrorScreen error={state.error} onRetry={actions.handleRetry} />
+      return <ErrorScreen error={state.error} onRetry={actions.handleRetry} />;
 
     default:
-      return <LoadingScreen message="Initializing..." />
+      return <LoadingScreen message="Initializing..." />;
   }
 }
 
 // Simplified WalletConnectScreen - no network selection
-function WalletConnectScreen() {
+function WalletConnectScreen({ setShowDocsScreen }) {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
-      <TopControls />
+      <TopControls setShowDocsScreen={setShowDocsScreen} />
 
       <div className="w-full max-w-md mx-auto bg-background border rounded-lg p-6 font-mono">
         {/* Terminal Header */}
@@ -72,8 +79,6 @@ function WalletConnectScreen() {
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-primary" />
             <span className="text-primary font-bold text-md">EARTH_2089 v2.089</span>
-
-
           </div>
           <div className="flex items-center gap-2">
             <Activity className="w-3 h-3 text-success animate-pulse" />
@@ -91,14 +96,21 @@ function WalletConnectScreen() {
           </div>
         </div>
 
+        {/* Docs Button */}
+        <Button variant="outline" className="w-full mb-4" onClick={() => setShowDocsScreen(true)}>
+          <BookOpen className="w-4 h-4 mr-2" />
+          View Docs
+        </Button>
+
         {/* Footer */}
         <div className="text-xs text-muted-foreground font-mono text-center border-t pt-3 mt-4 border-border">
           EARTH_v2089 | POST_APOCALYPTIC_AND_CHILL
         </div>
       </div>
     </div>
-  )
+  );
 }
+
 
 function CheckingCharacterScreen() {
   const { actions } = useGame()
