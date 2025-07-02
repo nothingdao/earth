@@ -147,6 +147,12 @@
   --map-selection-secondary: oklch(0.7 0.12 180);
   /* Cyan for secondary */
 
+  /* Fog of War */
+  --map-fog: oklch(0.2 0.02 var(--map-default-hue));
+  /* Dark, desaturated for inaccessible areas */
+  --map-fog-border: oklch(0.6 0.08 var(--map-default-hue));
+  /* Much brighter border for fogged areas */
+
   /* =========================
      INFRASTRUCTURE COLORS
      ========================= */
@@ -161,6 +167,14 @@
   --map-border-hover: oklch(0.65 0.08 var(--map-default-hue));
   --map-border-selected: oklch(0.55 0.12 220);
   --map-border-active: oklch(0.45 0.15 220);
+
+  /* Interactive States */
+  --map-hover: oklch(0.65 0.15 220);
+  /* Blue hover effect */
+  --map-selected: oklch(0.7 0.18 140);
+  /* Green selection effect */
+  --map-travel-destination-border: oklch(0.6 0.2 60);
+  --map-travel-origin-border: oklch(0.5 0.22 15);
 
   /* Text and Labels */
   --map-text-primary: oklch(0.2 0.02 var(--map-default-hue));
@@ -212,6 +226,12 @@
   --map-player-location-ring: oklch(0.75 0.18 140);
   --map-travel-origin: oklch(0.55 0.22 15);
   --map-travel-destination: oklch(0.65 0.2 60);
+
+  /* Dark mode fog of war */
+  --map-fog: oklch(0.15 0.01 var(--map-default-hue));
+  /* Darker for dark mode */
+  --map-fog-border: oklch(0.55 0.08 var(--map-default-hue));
+  /* Bright border visible through dark mode fog */
 }
 
 /* =========================
@@ -380,6 +400,15 @@
   }
 }
 
+@keyframes map-fog-drift {
+  0%, 100% {
+    filter: blur(2px) brightness(0.3) contrast(0.7) saturate(0.3);
+  }
+  50% {
+    filter: blur(3px) brightness(0.25) contrast(0.6) saturate(0.2);
+  }
+}
+
 /* Animation utility classes */
 .animate-map-travel-pulse {
   animation: map-travel-pulse 1.5s ease-in-out infinite;
@@ -387,6 +416,10 @@
 
 .animate-map-selection-glow {
   animation: map-selection-glow 2s ease-in-out infinite;
+}
+
+.animate-map-fog-drift {
+  animation: map-fog-drift 4s ease-in-out infinite;
 }
 
 /* =========================

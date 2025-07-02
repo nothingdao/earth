@@ -27,10 +27,11 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "echo '⚠️  WARNING: Use \"netlify dev\" instead for full-stack development with API functions' && echo '   This command only runs the frontend without backend functions' && echo '' && vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "start": "netlify dev",
     "functions:dev": "netlify dev",
     "functions:build": "netlify build",
     "npc:start": "npx tsx npc-engine.js",

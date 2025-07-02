@@ -441,6 +441,12 @@ export default function Earth({
     const isTravelingToHere = location && mapTravelDestination === location.id
     const isTravelingFromHere = location && visualLocationId === location.id && isTravelingOnMap
 
+    // FOG OF WAR: Check if location is accessible to current character
+    const isLevelLocked = location && location.min_level && character && character.level < location.min_level
+    const isPrivateLocked = location && location.is_private && character && visualLocationId !== location.id
+    const isUnexplored = location && location.status === 'unexplored'
+    const isFogged = isLevelLocked || isPrivateLocked || isUnexplored
+
     // Get CSS custom properties for consistent theming
     const style = getComputedStyle(document.documentElement)
 
@@ -459,6 +465,15 @@ export default function Earth({
       opacity = '1'
     }
 
+    // FOG OF WAR: Apply foggy styling for inaccessible areas
+    if (isFogged) {
+      fill = style.getPropertyValue('--map-fog').trim() || '#1a1a1a'
+      stroke = style.getPropertyValue('--map-fog-border').trim() || '#808080'
+      opacity = '0.3'
+      filter = 'blur(6px) brightness(0.3) contrast(0.6) saturate(0.2) drop-shadow(0 0 12px rgba(0,0,0,0.4))'
+      strokeWidth = '4'
+    }
+
     // Selected state
     if (isSelected) {
       stroke = style.getPropertyValue('--map-selected').trim()
@@ -466,8 +481,8 @@ export default function Earth({
       filter = 'drop-shadow(0 0 2px var(--map-selected))'
     }
 
-    // Hover state
-    if (isHovered) {
+    // Hover state (but not for fogged areas)
+    if (isHovered && !isFogged) {
       stroke = style.getPropertyValue('--map-hover').trim()
       strokeWidth = '2'
       filter = 'drop-shadow(0 0 2px var(--map-hover))'
@@ -498,7 +513,7 @@ export default function Earth({
       filter,
       cursor: 'pointer'
     }
-  }, [selectedPath, hoveredPath, visualLocationId, mapTravelDestination, isTravelingOnMap, getBiomeColor])
+  }, [selectedPath, hoveredPath, visualLocationId, mapTravelDestination, isTravelingOnMap, getBiomeColor, character, getLocation])
 
   // Handle path clicks
   const handlePathClick = useCallback((pathId: string) => {
@@ -672,6 +687,12 @@ export default function Earth({
             const location = getLocation(path.id)
             const isTravelingFromHere = location && visualLocationId === location.id && isTravelingOnMap
             const isTravelingToHere = location && mapTravelDestination === location.id
+            
+            // FOG OF WAR: Check if location is fogged
+            const isLevelLocked = location && location.min_level && character && character.level < location.min_level
+            const isPrivateLocked = location && location.is_private && character && visualLocationId !== location.id
+            const isUnexplored = location && location.status === 'unexplored'
+            const isFogged = isLevelLocked || isPrivateLocked || isUnexplored
 
             return (
               <g key={path.id}>
@@ -793,9 +814,31 @@ export default function Earth({
                 </div>
               )
             }
+            // Check if this location is fogged for the current character
+            const isLevelLocked = location.min_level && character && character.level < location.min_level
+            const isPrivateLocked = location.is_private && character && visualLocationId !== location.id
+            const isUnexplored = location.status === 'unexplored'
+            const isFogged = isLevelLocked || isPrivateLocked || isUnexplored
+
             return (
               <div className="text-xs">
                 <div className="font-bold text-primary mb-1">{location.name.toUpperCase()}</div>
+                
+                {/* FOG OF WAR STATUS */}
+                {isFogged && (
+                  <div className="mb-2 p-1 bg-destructive/20 border border-destructive/30 rounded">
+                    <div className="flex items-center gap-1 text-destructive text-xs">
+                      <AlertTriangle className="w-3 h-3" />
+                      <span className="font-bold">INACCESSIBLE</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {isLevelLocked && <div>• Requires Level {location.min_level}</div>}
+                      {isPrivateLocked && <div>• Private Area</div>}
+                      {isUnexplored && <div>• Unexplored Region</div>}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Badge
                     variant="outline"
@@ -822,6 +865,11 @@ export default function Earth({
                     </Badge>
                   )}
                   <span>THREAT_LVL_{location.difficulty}</span>
+                  {location.min_level && (
+                    <span className={character && character.level < location.min_level ? 'text-destructive' : 'text-chart-2'}>
+                      MIN_LVL_{location.min_level}
+                    </span>
+                  )}
                 </div>
               </div>
             )
