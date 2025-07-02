@@ -59,6 +59,20 @@ export default function Earth({
 
   const [visualLocationId, setVisualLocationId] = useState<string | null>(null)
 
+  const biomeMap: Record<string, string> = {
+    HOT_DESERT: 'desert',
+    COASTAL: 'water',
+    VOLCANIC: 'mountain',
+    PRISON: 'urban',
+    ECHO_CHAMBER: 'urban',
+    FOREST: 'forest',
+    PLAINS: 'plains',
+    SWAMP: 'swamp',
+    TUNDRA: 'tundra',
+    MOUNTAIN: 'mountain',
+    // Add more as needed
+  }
+
   useEffect(() => {
     // console.log('🎯 VISUAL LOCATION DEBUG:', {
     //   characterLocationId: character?.current_location_id,
@@ -390,15 +404,16 @@ export default function Earth({
     const style = getComputedStyle(document.documentElement)
 
     // Build the CSS custom property name
+    const mappedBiome = biomeMap[biome?.toUpperCase() || ''] || biome?.toLowerCase() || 'default'
     const suffix = state ? `-${state}` : ''
-    const propertyName = `--map-${biome || 'default'}${suffix}`
+    const propertyName = `--map-${mappedBiome}${suffix}`
 
     // Get the color value
     const colorValue = style.getPropertyValue(propertyName).trim()
 
     // Fallback to base color if state-specific color doesn't exist
     if (!colorValue && state) {
-      return style.getPropertyValue(`--map-${biome || 'default'}`).trim()
+      return style.getPropertyValue(`--map-${mappedBiome}`).trim()
     }
 
     return colorValue || style.getPropertyValue('--map-default').trim()
@@ -472,6 +487,8 @@ export default function Earth({
       strokeWidth = '2'
       filter = 'drop-shadow(0 0 2px var(--map-travel-origin))'
     }
+
+    console.log('Path:', pathId, 'Biome:', location?.biome, 'Fill:', style.fill)
 
     return {
       fill,
