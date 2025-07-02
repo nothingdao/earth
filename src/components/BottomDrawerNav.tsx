@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from '@/components/ui/drawer'
 import { VisuallyHidden } from '@/components/ui/visually-hidden'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { TransitionAvatar } from '@/components/TransitionAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ThemeModeToggle } from '@/components/ThemeModeToggle'
@@ -67,6 +68,7 @@ export function BottomDrawerNav({
 }: BottomDrawerNavProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [glitchFunction, setGlitchFunction] = useState<(() => void) | null>(null)
   const { publicKey, disconnect, wallet, connected } = useWallet()
 
   const handleImageError = () => setImageError(true)
@@ -198,17 +200,13 @@ export function BottomDrawerNav({
           <div className="flex items-center justify-between p-3 border-b border-primary/20">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
-                <Avatar className="w-16 h-16 rounded-sm border border-primary/20">
-                  <AvatarImage
-                    src={getCharacterimage_url()}
-                    alt={character.name}
-                    onError={handleImageError}
-                    onLoad={() => setImageError(false)}
-                  />
-                  <AvatarFallback className="bg-muted/50 font-mono text-xs">
-                    {character.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <TransitionAvatar
+                  src={getCharacterimage_url()}
+                  alt={character.name}
+                  fallback={character.name.charAt(0).toUpperCase()}
+                  className="w-16 h-16 rounded-sm border border-primary/20"
+                  onInstantGlitch={setGlitchFunction}
+                />
                 <div className="min-w-0 flex-1">
                   <div className="gap-1 text-xs bg-success/10 p-1 mr-2 rounded float-left">
                     <Activity className="w-3 h-3 animate-pulse text-success" />
@@ -288,17 +286,13 @@ export function BottomDrawerNav({
         {/* Mobile: Single Row Layout */}
         <div className="flex md:hidden items-center justify-between p-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Avatar className="w-14 h-14 flex-shrink-0 rounded-sm border border-primary/20">
-              <AvatarImage
-                src={getCharacterimage_url()}
-                alt={character.name}
-                onError={handleImageError}
-                onLoad={() => setImageError(false)}
-              />
-              <AvatarFallback className="bg-muted/50 font-mono text-xs">
-                {character.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <TransitionAvatar
+              src={getCharacterimage_url()}
+              alt={character.name}
+              fallback={character.name.charAt(0).toUpperCase()}
+              className="w-14 h-14 flex-shrink-0 rounded-sm border border-primary/20"
+              onInstantGlitch={setGlitchFunction}
+            />
             <div className="min-w-0 flex-1">
               <div className="gap-1 text-xs bg-success/10 p-1 mr-2 rounded float-left">
                 <Activity className="w-3 h-3 animate-pulse text-success" />
@@ -427,12 +421,13 @@ export function BottomDrawerNav({
                           </div>
 
                           <div className="flex items-center gap-3 mb-3">
-                            <Avatar className="w-10 h-10 border border-primary/20">
-                              <AvatarImage src={getCharacterimage_url()} alt={character.name} onError={handleImageError} />
-                              <AvatarFallback className="bg-muted/50 font-mono">
-                                {character.name.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
+                            <TransitionAvatar
+                              src={getCharacterimage_url()}
+                              alt={character.name}
+                              fallback={character.name.charAt(0).toUpperCase()}
+                              className="w-10 h-10 border border-primary/20"
+                              onInstantGlitch={setGlitchFunction}
+                            />
                             <div className="flex-1">
                               <div className="gap-1 text-xs bg-success/10 p-1 mr-2 rounded float-left">
                                 <Activity className="w-3 h-3 animate-pulse text-success" />
@@ -479,12 +474,13 @@ export function BottomDrawerNav({
                           </div>
 
                           <div className="flex items-center gap-3 mb-3">
-                            <Avatar className="w-10 h-10 border border-primary/20">
-                              <AvatarImage src={getCharacterimage_url()} alt={character.name} onError={handleImageError} />
-                              <AvatarFallback className="bg-muted/50 font-mono">
-                                {character.name.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
+                            <TransitionAvatar
+                              src={getCharacterimage_url()}
+                              alt={character.name}
+                              fallback={character.name.charAt(0).toUpperCase()}
+                              className="w-10 h-10 border border-primary/20"
+                              onInstantGlitch={setGlitchFunction}
+                            />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-primary font-mono">{character.name.toUpperCase()}</span>

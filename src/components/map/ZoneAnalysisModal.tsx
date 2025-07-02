@@ -36,6 +36,7 @@ interface ZoneAnalysisModalProps {
   locations: Location[]
   onClose: () => void
   onTravel?: (locationId: string) => void
+  onSetTravelDestination?: (locationId: string) => void
   onSave?: (locationId: string, updates: Partial<Location>) => Promise<void>
   getBiomeColor: (biome?: string) => string
   getTerritoryColor: (territory?: string) => string
@@ -48,6 +49,7 @@ export default function ZoneAnalysisModal({
   locations,
   onClose,
   onTravel,
+  onSetTravelDestination,
   onSave,
   getBiomeColor,
   getTerritoryColor
@@ -55,6 +57,7 @@ export default function ZoneAnalysisModal({
   const [isEditing, setIsEditing] = useState(false)
   const [editedLocation, setEditedLocation] = useState<Partial<Location>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [isTraveling, setIsTraveling] = useState(false)
 
   const isUserAdmin = walletAddress ? isAdmin(walletAddress) : false
 
@@ -78,14 +81,25 @@ export default function ZoneAnalysisModal({
     }
   }
 
-  const handleMapTravel = (locationId: string) => {
+  const handleMapTravel = async (locationId: string) => {
     if (onTravel) {
+      setIsTraveling(true)
+      
+      // Set travel destination immediately for line visualization
+      if (onSetTravelDestination) {
+        onSetTravelDestination(locationId)
+      }
+      
+      // Brief delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 1600))
+      
       onTravel(locationId)
+      onClose() // Close the modal after initiating travel
     }
   }
 
   return (
-    <div className="absolute top-40 left-4 bg-background border border-border rounded shadow-lg max-w-sm z-40 font-mono">
+    <div className="absolute top-40 left-4 bg-background/80 backdrop-blur-sm border border-border rounded shadow-lg max-w-sm z-40 font-mono">
       {/* Panel Header */}
       <div className="flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-2">
@@ -408,6 +422,7 @@ export default function ZoneAnalysisModal({
           <Button
             onClick={() => handleMapTravel(location.id)}
             disabled={
+              isTraveling ||
               character.current_location_id === location.id ||
               (!!location.min_level && character.level < location.min_level) ||
               (!!location.entry_cost && location.entry_cost > (character.earth || 0)) ||
@@ -421,14 +436,16 @@ export default function ZoneAnalysisModal({
                 : 'bg-action text-primary-foreground hover:bg-action/90'
               }`}
           >
-            <Navigation className="w-3 h-3 mr-2" />
-            {character.current_location_id === location.id
-              ? 'CURRENT_LOCATION'
-              : (!!location.min_level && character.level < location.min_level)
-                ? `REQ_LVL_${location.min_level}`
-                : (!!location.entry_cost && location.entry_cost > (character.earth || 0))
-                  ? `INSUFFICIENT_EARTH`
-                  : `TRAVEL_TO_${location.name.toUpperCase()}`}
+            <Navigation className={`w-3 h-3 mr-2 ${isTraveling ? 'animate-spin' : ''}`} />
+            {isTraveling
+              ? 'INITIATING_TRAVEL...'
+              : character.current_location_id === location.id
+                ? 'CURRENT_LOCATION'
+                : (!!location.min_level && character.level < location.min_level)
+                  ? `REQ_LVL_${location.min_level}`
+                  : (!!location.entry_cost && location.entry_cost > (character.earth || 0))
+                    ? `INSUFFICIENT_EARTH`
+                    : `TRAVEL_TO_${location.name.toUpperCase()}`}
           </Button>
         )}
       </div>

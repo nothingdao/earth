@@ -54,6 +54,7 @@ type GameAction =
   | { type: 'GAME_DATA_LOADED' }
   | { type: 'USER_WANTS_TO_ENTER_GAME' }
   | { type: 'SET_MAP_TRAVELING'; isTraveling: boolean; destination: string | null }
+  | { type: 'SET_TRAVEL_DESTINATION'; destination: string }
   | { type: 'CLEAR_MAP_TRAVELING' }
   | { type: 'RESET_ALL_STATE' }
   // ✅ ADD BALANCE ACTIONS
@@ -134,6 +135,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         isTravelingOnMap: action.isTraveling,
+        mapTravelDestination: action.destination
+      }
+
+    case 'SET_TRAVEL_DESTINATION':
+      return {
+        ...state,
         mapTravelDestination: action.destination
       }
 
@@ -225,6 +232,7 @@ interface GameContextType {
     handleSendMessage: (message: string) => Promise<void>
     handleRetry: () => void
     handleRefresh: () => void
+    setTravelDestination: (locationId: string) => void
     // ✅ ADD BALANCE ACTIONS
     refetchBalances: () => Promise<void>
     formatBalance: (amount: number) => string
@@ -732,6 +740,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         toast.error('Failed to send message. Please try again.');
       }
     }, [character, characterActions, gameData.actions, state.selectedLocation, isMainnet]),
+
+    setTravelDestination: useCallback((locationId: string) => {
+      if (isMainnet) {
+        console.log('🟢 MAINNET: Travel destination setting blocked');
+        return;
+      }
+      dispatch({ type: 'SET_TRAVEL_DESTINATION', destination: locationId });
+    }, [isMainnet]),
 
     handleRetry: useCallback(() => {
       dispatch({ type: 'CLEAR_ERROR' });

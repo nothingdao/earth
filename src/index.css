@@ -186,6 +186,15 @@ body {
   }
 }
 
+@keyframes travel-line-flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -24;
+  }
+}
+
 /* Core animations */
 @keyframes ping {
   0% {
@@ -344,6 +353,11 @@ body {
   animation: instant-glitch 0.25s ease-in-out;
 }
 
+/* Travel line animation */
+.travel-line-flow {
+  animation: travel-line-flow 1.5s linear infinite;
+}
+
 .equipment-glitch-out {
   animation: digital-glitch 0.6s ease-in-out forwards;
 }
@@ -368,6 +382,131 @@ body {
 .equipment-canvas-front {
   position: relative;
   z-index: 2;
+}
+
+/* Custom tooltip styling to match app theme */
+[data-radix-tooltip-content] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace !important;
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: calc(var(--radius) - 2px) !important;
+}
+
+/* =========================
+   STORY TOAST STYLING
+   ========================= */
+
+/* Story toast entrance animation */
+@keyframes story-entrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Story toast content typing effect */
+@keyframes story-typing {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+/* Story toast pulsing indicator */
+@keyframes story-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* Story toast specific styling */
+.story-toast-container {
+  animation: story-entrance 0.4s ease-out;
+}
+
+.story-toast-content {
+  line-height: 1.6;
+  letter-spacing: 0.3px;
+}
+
+.story-toast-header {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary)/80 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: story-pulse 2s infinite;
+}
+
+.story-choice-button {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.story-choice-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.story-choice-button:hover::before {
+  left: 100%;
+}
+
+.story-choice-button:hover {
+  transform: translateX(4px);
+  border-color: var(--primary);
+}
+
+/* Oregon Trail / retro computer terminal styling */
+.story-retro-mode {
+  background: #0a0a0a;
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 5px currentColor;
+}
+
+.story-retro-mode .story-choice-button {
+  background: transparent;
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  text-shadow: 0 0 5px currentColor;
+}
+
+.story-retro-mode .story-choice-button:hover {
+  background: rgba(0, 255, 0, 0.1);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+/* Screen flicker effect for story moments */
+@keyframes screen-flicker {
+  0%, 100% { opacity: 1; }
+  98% { opacity: 1; }
+  99% { opacity: 0.98; }
+  99.5% { opacity: 1; }
+}
+
+.story-screen-flicker {
+  animation: screen-flicker 3s infinite;
 }
 
 @custom-variant dark (&:is(.dark *));

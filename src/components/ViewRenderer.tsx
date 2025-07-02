@@ -240,6 +240,7 @@ export function ViewRenderer({
           locations={gameData.locations || []}
           character={character}
           onTravel={handleTravel}
+          onSetTravelDestination={actions.setTravelDestination}
           isTravelingOnMap={state.isTravelingOnMap}
           mapTravelDestination={state.mapTravelDestination}
           onLocationUpdate={async (locationId, updates) => {

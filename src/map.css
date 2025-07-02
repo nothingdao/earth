@@ -134,12 +134,12 @@
   --map-player-location-pulse: oklch(0.6 0.2 140);
 
   /* Travel States */
-  --map-travel-origin: oklch(0.6 0.2 15);
-  /* Red - where you're leaving */
-  --map-travel-destination: oklch(0.7 0.18 60);
-  /* Amber - where you're going */
-  --map-travel-path: oklch(0.65 0.15 300);
-  /* Purple - travel line */
+  --map-travel-origin: oklch(0.65 0.15 240);
+  /* Blue - where you're leaving */
+  --map-travel-destination: oklch(0.7 0.15 240);
+  /* Light blue - where you're going */
+  --map-travel-path: oklch(0.65 0.15 240);
+  /* Blue - travel line */
 
   /* Selection and Interaction */
   --map-selection-primary: oklch(0.65 0.15 220);
@@ -173,8 +173,8 @@
   /* Blue hover effect */
   --map-selected: oklch(0.7 0.18 140);
   /* Green selection effect */
-  --map-travel-destination-border: oklch(0.6 0.2 60);
-  --map-travel-origin-border: oklch(0.5 0.22 15);
+  --map-travel-destination-border: oklch(0.6 0.15 240);
+  --map-travel-origin-border: oklch(0.55 0.15 240);
 
   /* Text and Labels */
   --map-text-primary: oklch(0.2 0.02 var(--map-default-hue));
@@ -224,8 +224,8 @@
   /* Enhanced special states for dark mode */
   --map-player-location: oklch(0.6 0.2 140);
   --map-player-location-ring: oklch(0.75 0.18 140);
-  --map-travel-origin: oklch(0.55 0.22 15);
-  --map-travel-destination: oklch(0.65 0.2 60);
+  --map-travel-origin: oklch(0.6 0.15 240);
+  --map-travel-destination: oklch(0.7 0.15 240);
 
   /* Dark mode fog of war */
   --map-fog: oklch(0.15 0.01 var(--map-default-hue));

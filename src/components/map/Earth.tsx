@@ -24,6 +24,7 @@ interface EarthProps {
   character?: Character
   onTravel?: (location_id: string) => void
   onLocationUpdate?: (locationId: string, updates: Partial<Location>) => void
+  onSetTravelDestination?: (locationId: string) => void
   isTravelingOnMap?: boolean
   mapTravelDestination?: string | null
 }
@@ -33,6 +34,7 @@ export default function Earth({
   character,
   onTravel,
   onLocationUpdate,
+  onSetTravelDestination,
   isTravelingOnMap = false,
   mapTravelDestination = null
 }: EarthProps) {
@@ -687,7 +689,7 @@ export default function Earth({
             const location = getLocation(path.id)
             const isTravelingFromHere = location && visualLocationId === location.id && isTravelingOnMap
             const isTravelingToHere = location && mapTravelDestination === location.id
-            
+
             // FOG OF WAR: Check if location is fogged
             const isLevelLocked = location && location.min_level && character && character.level < location.min_level
             const isPrivateLocked = location && location.is_private && character && visualLocationId !== location.id
@@ -729,16 +731,14 @@ export default function Earth({
                 <circle
                   cx={coords.x} cy={coords.y}
                   r="8"
-                  fill="#22c55e"
-                  stroke="#ffffff"
-                  strokeWidth="2"
+                  fill="#60a5fa"
                   opacity="1"
                 />
                 <circle
                   cx={coords.x} cy={coords.y}
                   r="15"
                   fill="none"
-                  stroke="#22c55e"
+                  stroke="#60a5fa"
                   strokeWidth="2"
                   className="animate-ping"
                 />
@@ -746,7 +746,7 @@ export default function Earth({
                   cx={coords.x} cy={coords.y}
                   r="25"
                   fill="none"
-                  stroke="#22c55e"
+                  stroke="#60a5fa"
                   strokeWidth="1"
                   className="animate-ping"
                   style={{ animationDelay: '0.5s' }}
@@ -768,9 +768,9 @@ export default function Earth({
                 <circle
                   cx={coords.x} cy={coords.y}
                   r="10"
-                  fill="#f59e0b"
-                  stroke="#ffffff"
-                  strokeWidth="2"
+                  fill="transparent"
+                  stroke="#60a5fa"
+                  strokeWidth={1 / transform.scale}
                   opacity="1"
                 />
                 {[1, 2, 3, 4].map(i => (
@@ -779,8 +779,8 @@ export default function Earth({
                     cx={coords.x} cy={coords.y}
                     r={15 + (i * 5)}
                     fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="1"
+                    stroke="#60a5fa"
+                    strokeWidth={1 / transform.scale}
                     className="animate-ping"
                     style={{ animationDelay: `${i * 0.3}s` }}
                   />
@@ -788,11 +788,40 @@ export default function Earth({
                 <circle
                   cx={coords.x} cy={coords.y}
                   r="5"
-                  fill="#fbbf24"
+                  fill="transparent"
+                  stroke="#60a5fa"
+                  strokeWidth={1 / transform.scale}
                   className="animate-ping"
                   style={{ animationDuration: '0.8s' }}
                 />
               </g>
+            )
+          })()}
+
+          {/* TRAVEL LINE */}
+          {mapTravelDestination && visualLocationId && (() => {
+            const originLocation = locations.find(loc => loc.id === visualLocationId)
+            const destLocation = locations.find(loc => loc.id === mapTravelDestination)
+
+            if (!originLocation?.svg_path_id || !destLocation?.svg_path_id) return null
+
+            const originCoords = getLocationCoords(originLocation.svg_path_id)
+            const destCoords = getLocationCoords(destLocation.svg_path_id)
+
+            if (!originCoords || !destCoords) return null
+
+            return (
+              <line
+                x1={originCoords.x}
+                y1={originCoords.y}
+                x2={destCoords.x}
+                y2={destCoords.y}
+                stroke="#60a5fa"
+                strokeWidth={2 / transform.scale}
+                strokeDasharray={`${8 / transform.scale},${4 / transform.scale}`}
+                className="travel-line-flow"
+                opacity="0.8"
+              />
             )
           })()}
         </svg>
@@ -823,7 +852,7 @@ export default function Earth({
             return (
               <div className="text-xs">
                 <div className="font-bold text-primary mb-1">{location.name.toUpperCase()}</div>
-                
+
                 {/* FOG OF WAR STATUS */}
                 {isFogged && (
                   <div className="mb-2 p-1 bg-destructive/20 border border-destructive/30 rounded">
@@ -886,6 +915,7 @@ export default function Earth({
           locations={locations}
           onClose={() => setSelectedPath(null)}
           onTravel={onTravel}
+          onSetTravelDestination={onSetTravelDestination}
           onSave={handleLocationSave}
           getBiomeColor={getBiomeColor}
           getTerritoryColor={getTerritoryColor}
