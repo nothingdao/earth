@@ -1,11 +1,11 @@
-const { createClient } = require('@supabase/supabase-js')
+import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -26,7 +26,7 @@ exports.handler = async (event, context) => {
 
   try {
     console.log('🎯 Function called with method:', event.httpMethod)
-    
+
     const body = JSON.parse(event.body)
     const { character_id, image_blob, wallet_address, description = 'Equipment update' } = body
 
@@ -43,8 +43,8 @@ exports.handler = async (event, context) => {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ 
-          error: 'Missing required fields: character_id, image_blob, wallet_address' 
+        body: JSON.stringify({
+          error: 'Missing required fields: character_id, image_blob, wallet_address'
         })
       }
     }
@@ -133,7 +133,7 @@ exports.handler = async (event, context) => {
 
     // Execute all updates
     const results = await Promise.all(updates)
-    
+
     // Check for errors
     for (const result of results) {
       if (result.error) {
@@ -181,9 +181,9 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error.message 
+      body: JSON.stringify({
+        error: 'Internal server error',
+        details: error.message
       })
     }
   }
