@@ -22,12 +22,15 @@ import {
   Database,
   Activity,
   Signal,
-  MapPin
+  MapPin,
+  MessageSquare
 } from 'lucide-react'
 import { useWalletInfo } from '@/hooks/useWalletInfo'
 import { toast } from '@/components/ui/use-toast'
 import type { Character } from '@/types'
 import { BurnCharacter } from '../BurnCharacter'
+import { StoryDemo } from '../StoryDemo'
+import { StoryManagerDemo } from '../StoryManagerDemo'
 import { useNetwork } from '@/contexts/NetworkContext'
 
 interface ProfileViewProps {
@@ -532,6 +535,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
               <Wallet className="w-3 h-3 mr-2" />
               WALLET_INTERFACE
             </TabsTrigger>
+            <TabsTrigger value="story" className="text-xs font-mono flex-shrink-0 px-4">
+              <MessageSquare className="w-3 h-3 mr-2" />
+              STORY_DEMO
+            </TabsTrigger>
+            <TabsTrigger value="manager" className="text-xs font-mono flex-shrink-0 px-4">
+              <Database className="w-3 h-3 mr-2" />
+              STORY_MANAGER
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -541,6 +552,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ character, onCharacter
 
         <TabsContent value="wallet" className="mt-4">
           {renderWalletInfo()}
+        </TabsContent>
+
+        <TabsContent value="story" className="mt-4">
+          <StoryDemo />
+        </TabsContent>
+
+        <TabsContent value="manager" className="mt-4">
+          <StoryManagerDemo />
         </TabsContent>
       </Tabs>
 

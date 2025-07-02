@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Loader2,
   Zap,
@@ -284,23 +285,30 @@ export function InventoryView({
     const IconComponent = slot.icon
 
     return (
-      <button
-        onClick={() => {
-          setShowSlotMenu(showSlotMenu === slotKey ? null : slotKey)
-          setShowConsumableMenu(false)
-        }}
-        className={`
-          w-10 h-10 border-2 rounded-lg flex flex-col items-center justify-center text-xs font-mono transition-all relative
-          ${equipped
-            ? 'border-primary bg-primary/10 text-primary'
-            : 'border-dashed border-muted-foreground/30 text-muted-foreground/50 hover:border-primary/50'
-          }
-          ${showSlotMenu === slotKey ? 'ring-2 ring-primary/50' : ''}
-        `}
-      >
-        <IconComponent className="w-3 h-3" />
-        {equipped?.is_primary && <Crown className="w-2 h-2 text-yellow-500 absolute -top-1 -right-1" />}
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => {
+              setShowSlotMenu(showSlotMenu === slotKey ? null : slotKey)
+              setShowConsumableMenu(false)
+            }}
+            className={`
+              w-10 h-10 border-2 rounded-lg flex flex-col items-center justify-center text-xs font-mono transition-all relative
+              ${equipped
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-dashed border-muted-foreground/30 text-muted-foreground/50 hover:border-primary/50'
+              }
+              ${showSlotMenu === slotKey ? 'ring-2 ring-primary/50' : ''}
+            `}
+          >
+            <IconComponent className="w-3 h-3" />
+            {equipped?.is_primary && <Crown className="w-2 h-2 text-yellow-500 absolute -top-1 -right-1" />}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{`${equipped ? 'Change' : 'Equip'} ${slot.name}`}</p>
+        </TooltipContent>
+      </Tooltip>
     )
   }
 
@@ -314,35 +322,45 @@ export function InventoryView({
     const isLoading = loadingItems.has(item.id)
 
     return (
-      <button
-        onClick={(e) => {
-          if (!wouldBeWasted && !isLoading) {
-            onUseItem(item.id, item.item.name, item.item.energy_effect, item.item.health_effect, e)
-          }
-        }}
-        disabled={wouldBeWasted || isLoading}
-        className={`
-          w-10 h-10 border-2 rounded-lg flex flex-col items-center justify-center text-xs font-mono transition-all relative
-          ${wouldBeWasted
-            ? 'border-muted bg-muted/10 text-muted-foreground/50'
-            : 'border-success/50 bg-success/10 text-success hover:border-success'
-          }
-        `}
-      >
-        {isLoading ? (
-          <Loader2 className="w-3 h-3 animate-spin" />
-        ) : (
-          <>
-            {energy_effect > 0 && <Zap className="w-3 h-3" />}
-            {health_effect > 0 && <Heart className="w-3 h-3" />}
-            {item.quantity > 1 && (
-              <span className="absolute -top-1 -right-1 bg-background border border-success/50 rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                {item.quantity}
-              </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={(e) => {
+              if (!wouldBeWasted && !isLoading) {
+                onUseItem(item.id, item.item.name, item.item.energy_effect, item.item.health_effect, e)
+              }
+            }}
+            disabled={wouldBeWasted || isLoading}
+            className={`
+              w-10 h-10 border-2 rounded-lg flex flex-col items-center justify-center text-xs font-mono transition-all relative
+              ${wouldBeWasted
+                ? 'border-muted bg-muted/10 text-muted-foreground/50'
+                : 'border-success/50 bg-success/10 text-success hover:border-success'
+              }
+            `}
+          >
+            {isLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <>
+                {energy_effect > 0 && <Zap className="w-3 h-3" />}
+                {health_effect > 0 && <Heart className="w-3 h-3" />}
+                {item.quantity > 1 && (
+                  <span className="absolute -top-1 -right-1 bg-background border border-success/50 rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                    {item.quantity}
+                  </span>
+                )}
+              </>
             )}
-          </>
-        )}
-      </button>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{wouldBeWasted 
+            ? `Already at full ${wouldWasteEnergy ? 'energy' : 'health'}`
+            : `Use ${item.item.name}`
+          }</p>
+        </TooltipContent>
+      </Tooltip>
     )
   }
 
@@ -728,19 +746,21 @@ export function InventoryView({
               {/* Quick Equipment */}
               <div className="bg-muted/20 border border-primary/20 rounded-lg p-3">
                 <div className="text-xs text-muted-foreground mb-2">EQUIPMENT</div>
-                <div className="grid grid-cols-4 gap-2 relative">
-                  {Object.keys(EQUIPMENT_SLOTS).map((slotKey) => (
-                    <div key={slotKey} className="relative">
-                      <QuickEquipmentSlot slotKey={slotKey} />
-                      {/* Desktop popover menu - only show on desktop */}
-                      {showSlotMenu === slotKey && (
-                        <div className="hidden md:block">
-                          <SlotMenu slotKey={slotKey} />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <TooltipProvider>
+                  <div className="grid grid-cols-4 gap-2 relative">
+                    {Object.keys(EQUIPMENT_SLOTS).map((slotKey) => (
+                      <div key={slotKey} className="relative">
+                        <QuickEquipmentSlot slotKey={slotKey} />
+                        {/* Desktop popover menu - only show on desktop */}
+                        {showSlotMenu === slotKey && (
+                          <div className="hidden md:block">
+                            <SlotMenu slotKey={slotKey} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </TooltipProvider>
               </div>
 
               {/* Quick Consumables */}
@@ -759,20 +779,22 @@ export function InventoryView({
                     ALL
                   </Button>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {getConsumableItems().slice(0, 3).map(item => (
-                    <QuickConsumable key={item.id} item={item} />
-                  ))}
-                  {getConsumableItems().length === 0 && (
-                    <div className="col-span-3 text-center py-2 text-muted-foreground text-xs">
-                      NO_CONSUMABLES
-                    </div>
-                  )}
-                  {/* Show placeholder slots if less than 3 items */}
-                  {Array.from({ length: Math.max(0, 3 - getConsumableItems().length) }, (_, i) => (
-                    <div key={`empty-${i}`} className="w-10 h-10 border-2 border-dashed border-muted-foreground/20 rounded-lg" />
-                  ))}
-                </div>
+                <TooltipProvider>
+                  <div className="grid grid-cols-3 gap-2">
+                    {getConsumableItems().slice(0, 3).map(item => (
+                      <QuickConsumable key={item.id} item={item} />
+                    ))}
+                    {getConsumableItems().length === 0 && (
+                      <div className="col-span-3 text-center py-2 text-muted-foreground text-xs">
+                        NO_CONSUMABLES
+                      </div>
+                    )}
+                    {/* Show placeholder slots if less than 3 items */}
+                    {Array.from({ length: Math.max(0, 3 - getConsumableItems().length) }, (_, i) => (
+                      <div key={`empty-${i}`} className="w-10 h-10 border-2 border-dashed border-muted-foreground/20 rounded-lg" />
+                    ))}
+                  </div>
+                </TooltipProvider>
               </div>
             </div>
           </div>
