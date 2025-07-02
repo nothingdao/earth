@@ -2,15 +2,16 @@
 
 ## Platform Support Matrix
 
-| Platform | Distribution | MWA Support | Wallet Integration | Target Devices | Status |
-|----------|-------------|-------------|-------------------|----------------|---------|
-| **Web dApp** | Netlify | ✅ Via Chrome Android | @solana/wallet-adapter-react | All browsers | ✅ Current |
-| **Android - Solana Mobile** | Solana dApp Store | ✅ Native hardware + webview | Existing wallet adapter | Solana Mobile devices | 🔄 Testing needed |
-| **Android - Play Store** | Google Play Store | ✅ Via Chrome webview | Existing wallet adapter | All Android devices | 🔄 Testing needed |
+| Platform                    | Distribution      | MWA Support                  | Wallet Integration           | Target Devices        | Status            |
+| --------------------------- | ----------------- | ---------------------------- | ---------------------------- | --------------------- | ----------------- |
+| **Web dApp**                | Netlify           | ✅ Via Chrome Android        | @solana/wallet-adapter-react | All browsers          | ✅ Current        |
+| **Android - Solana Mobile** | Solana dApp Store | ✅ Native hardware + webview | Existing wallet adapter      | Solana Mobile devices | 🔄 Testing needed |
+| **Android - Play Store**    | Google Play Store | ✅ Via Chrome webview        | Existing wallet adapter      | All Android devices   | 🔄 Testing needed |
 
 ## Development Checklist
 
 ### Prerequisites ✅
+
 - [x] Node.js 22+ installed and set as default
 - [x] Capacitor core and Android platform added
 - [x] Android Studio installed
@@ -19,6 +20,7 @@
 - [x] Android emulator created (Medium_Phone_API_36.0)
 
 ### Capacitor Configuration
+
 - [x] `capacitor.config.ts` created
 - [x] Android platform added (`npx cap add android`)
 - [x] Java version compatibility configured (Java 21)
@@ -27,6 +29,7 @@
 - [ ] Performance optimization for mobile canvas rendering
 
 ### Build Process
+
 ```bash
 # Development workflow
 npm run build              # Build web assets
@@ -38,18 +41,21 @@ npx cap run android       # Run on emulator/device
 ### Testing Requirements
 
 #### Web App Compatibility (Capacitor Webview)
+
 - [ ] Verify @solana/wallet-adapter-react works in Android webview
 - [ ] Test wallet connections (Phantom, Solflare) on Android
 - [ ] Validate transaction signing flow
 - [ ] Check canvas character generation performance
 
 #### Solana Mobile Specific
+
 - [ ] Test on Solana Mobile device/emulator
 - [ ] Verify Seed Vault integration works through existing wallet adapter
 - [ ] Test deep linking with `solana-wallet://` schemes
 - [ ] Validate MWA protocol compatibility
 
 #### General Android
+
 - [ ] Test on various Android versions (API 24+)
 - [ ] Performance testing on lower-end devices
 - [ ] Battery usage optimization
@@ -58,11 +64,13 @@ npx cap run android       # Run on emulator/device
 ### Distribution Preparation
 
 #### Solana dApp Store
+
 - [ ] Review Solana dApp Store publishing requirements
 - [ ] Prepare app metadata and descriptions
 - [ ] Test installation from Solana dApp Store
 
 #### Google Play Store
+
 - [ ] Target SDK: Android 14 (API level 34)
 - [ ] Minimum SDK: Android 7.0 (API level 24)
 - [ ] 64-bit support enabled
@@ -72,6 +80,7 @@ npx cap run android       # Run on emulator/device
 ### Technical Requirements
 
 #### Android Permissions
+
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml -->
 <uses-permission android:name="android.permission.INTERNET" />
@@ -79,6 +88,7 @@ npx cap run android       # Run on emulator/device
 ```
 
 #### Deep Linking Configuration
+
 ```xml
 <!-- For wallet deep linking support -->
 <intent-filter>
@@ -90,6 +100,7 @@ npx cap run android       # Run on emulator/device
 ```
 
 #### Performance Optimizations
+
 - [ ] Canvas rendering optimized for mobile GPUs
 - [ ] Asset caching implemented
 - [ ] Network request batching
@@ -98,13 +109,15 @@ npx cap run android       # Run on emulator/device
 ### Known Compatibility
 
 #### MWA Support Matrix
-| Platform | MWA Support | Notes |
-|----------|-------------|-------|
-| Android Chrome Webview | ✅ | Automatic via @solana/wallet-adapter-react |
-| iOS Safari | ❌ | Not supported by Solana Mobile Stack |
-| Other Android browsers | ❌ | Limited MWA support |
+
+| Platform               | MWA Support | Notes                                      |
+| ---------------------- | ----------- | ------------------------------------------ |
+| Android Chrome Webview | ✅          | Automatic via @solana/wallet-adapter-react |
+| iOS Safari             | ❌          | Not supported by Solana Mobile Stack       |
+| Other Android browsers | ❌          | Limited MWA support                        |
 
 #### Wallet Compatibility
+
 - **Phantom Mobile**: Primary testing target
 - **Solflare Mobile**: Secondary testing target
 - **Ultimate**: Additional testing recommended
