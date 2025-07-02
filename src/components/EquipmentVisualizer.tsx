@@ -15,6 +15,7 @@ interface EquipmentVisualizerProps {
   showControls?: boolean
   className?: string
   onImageExport?: (exportFunction: () => Promise<Blob | null>) => void
+  onInstantGlitch?: (glitchFunction: () => void) => void
 }
 
 interface Manifest {
@@ -57,14 +58,18 @@ export function EquipmentVisualizer({
   size = 'medium',
   showControls = true,
   className = '',
-  onImageExport
+  onImageExport,
+  onInstantGlitch
 }: EquipmentVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const backCanvasRef = useRef<HTMLCanvasElement>(null)
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showFullscreen, setShowFullscreen] = useState(false)
   const [visibleLayers, setVisibleLayers] = useState<Set<string>>(new Set(LAYER_ORDER))
   const [error, setError] = useState<string | null>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [previousCharacterState, setPreviousCharacterState] = useState<string | null>(null)
 
   // Size configurations
   const sizeConfig = {
@@ -142,9 +147,20 @@ export function EquipmentVisualizer({
     return equippedByLayer
   }, [character.inventory])
 
-  // Render character on canvas
-  const renderCharacter = useCallback(async () => {
-    const canvas = canvasRef.current
+  // Generate a state key for the character to detect equipment changes
+  const getCharacterState = useCallback(() => {
+    if (!character.inventory) return ''
+    const equippedItems = character.inventory
+      .filter(inv => inv.is_equipped)
+      .map(inv => `${inv.item.id}:${inv.equipped_slot}:${inv.is_primary}`)
+      .sort()
+      .join('|')
+    return `${character.gender}:${equippedItems}`
+  }, [character])
+
+  // Render character on canvas with double buffering support
+  const renderCharacter = useCallback(async (targetCanvas?: HTMLCanvasElement) => {
+    const canvas = targetCanvas || canvasRef.current
     if (!canvas) return
 
     setIsLoading(true)
@@ -224,6 +240,19 @@ export function EquipmentVisualizer({
     }
   }, [character, currentSize.canvas, loadManifest, getBaseLayerFile, getEquippedItemsByLayer, visibleLayers])
 
+  // Trigger instant glitch effect for button feedback
+  const triggerInstantGlitch = useCallback(() => {
+    const frontCanvas = canvasRef.current
+    if (frontCanvas && !isTransitioning) {
+      frontCanvas.classList.add('equipment-instant-glitch')
+      
+      // Remove class after animation completes
+      setTimeout(() => {
+        frontCanvas.classList.remove('equipment-instant-glitch')
+      }, 250)
+    }
+  }, [isTransitioning])
+
   // Export character image as blob
   const exportCharacterImage = useCallback((): Promise<Blob | null> => {
     return new Promise((resolve) => {
@@ -239,10 +268,68 @@ export function EquipmentVisualizer({
     })
   }, [])
 
-  // Re-render when character changes
+  // Pre-render the NEW state to back canvas when character changes
   useEffect(() => {
-    renderCharacter()
-  }, [renderCharacter])
+    const currentState = getCharacterState()
+    
+    // When character state changes, immediately render the NEW state to back canvas
+    if (backCanvasRef.current && !isTransitioning) {
+      const backCanvas = backCanvasRef.current
+      const canvasSize = currentSize.canvas
+      backCanvas.width = canvasSize
+      backCanvas.height = canvasSize
+      
+      console.log('🎨 Pre-rendering NEW state to back canvas')
+      renderCharacter(backCanvas)
+    }
+    
+    // If this is an equipment change (not initial load), start transition
+    if (previousCharacterState && previousCharacterState !== currentState) {
+      setIsTransitioning(true)
+      
+      // Give a moment for the pre-render to complete, then start transition
+      setTimeout(() => {
+        const frontCanvas = canvasRef.current
+        const backCanvas = backCanvasRef.current
+        
+        if (frontCanvas && backCanvas) {
+          console.log('🎨 Starting transition - back canvas has NEW state, front has OLD state')
+          
+          // Start glitch on front canvas (old image)
+          frontCanvas.classList.add('equipment-glitch-out')
+          
+          // Simultaneously start fade-in on back canvas (new image) 
+          backCanvas.style.opacity = '1'
+          backCanvas.style.zIndex = '3'
+          backCanvas.classList.add('equipment-fade-in')
+          
+          // After both animations complete, clean up
+          setTimeout(() => {
+            // Copy back canvas to front canvas
+            const frontCtx = frontCanvas.getContext('2d')
+            if (frontCtx) {
+              frontCtx.clearRect(0, 0, frontCanvas.width, frontCanvas.height)
+              frontCtx.drawImage(backCanvas, 0, 0)
+            }
+            
+            // Reset both canvases
+            frontCanvas.classList.remove('equipment-glitch-out')
+            backCanvas.classList.remove('equipment-fade-in')
+            backCanvas.style.opacity = '0'
+            backCanvas.style.zIndex = '1'
+            
+            setIsTransitioning(false)
+            console.log('🎨 Transition complete')
+          }, 600)
+        }
+      }, 50) // Small delay to ensure back canvas render completes
+    } else if (!previousCharacterState) {
+      // Initial render - render to front canvas
+      renderCharacter()
+    }
+    
+    setPreviousCharacterState(currentState)
+  }, [getCharacterState, previousCharacterState, renderCharacter, currentSize.canvas, isTransitioning])
 
   // Provide export function to parent
   useEffect(() => {
@@ -250,6 +337,13 @@ export function EquipmentVisualizer({
       onImageExport(exportCharacterImage)
     }
   }, [onImageExport, exportCharacterImage])
+
+  // Provide instant glitch function to parent
+  useEffect(() => {
+    if (onInstantGlitch) {
+      onInstantGlitch(triggerInstantGlitch)
+    }
+  }, [onInstantGlitch, triggerInstantGlitch])
 
   // Toggle layer visibility
   const toggleLayer = (layerType: string) => {
@@ -333,29 +427,40 @@ export function EquipmentVisualizer({
 
         {/* Character Canvas */}
         <div className="flex justify-center mb-3">
-          <div className={`${currentSize.container} border border-primary/30 rounded bg-muted/10 flex items-center justify-center relative overflow-hidden`}>
+          <div className={`${currentSize.container} border border-primary/30 rounded bg-muted/10 flex items-center justify-center relative overflow-hidden equipment-canvas-container`}>
             {error ? (
               <div className="text-center p-2">
                 <div className="text-error text-xs font-mono mb-1">RENDER_ERROR</div>
                 <div className="text-xs text-muted-foreground">{error}</div>
               </div>
             ) : (
-              <canvas
-                ref={canvasRef}
-                className="max-w-full max-h-full object-contain"
-                style={{
-                  width: currentSize.canvas,
-                  height: currentSize.canvas,
-                  imageRendering: 'pixelated'
-                }}
-              />
+              <>
+                {/* Back canvas for double buffering */}
+                <canvas
+                  ref={backCanvasRef}
+                  className="equipment-canvas-back max-w-full max-h-full object-contain"
+                  style={{
+                    width: currentSize.canvas,
+                    height: currentSize.canvas,
+                    imageRendering: 'pixelated',
+                    opacity: 0,
+                    pointerEvents: 'none'
+                  }}
+                />
+                
+                {/* Front canvas - visible to user */}
+                <canvas
+                  ref={canvasRef}
+                  className="equipment-canvas-front max-w-full max-h-full object-contain"
+                  style={{
+                    width: currentSize.canvas,
+                    height: currentSize.canvas,
+                    imageRendering: 'pixelated'
+                  }}
+                />
+              </>
             )}
 
-            {isLoading && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-white" />
-              </div>
-            )}
           </div>
         </div>
 
