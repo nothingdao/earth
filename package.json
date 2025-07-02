@@ -38,6 +38,9 @@
     "types": "supabase gen types typescript --project-id sudufmmkfuawomvlrkha > ./src/types/supabase.ts"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.0",
+    "@capacitor/cli": "^7.4.0",
+    "@capacitor/core": "^7.4.0",
     "@fontsource/jetbrains-mono": "^5.2.6",
     "@metaplex-foundation/js": "^0.20.1",
     "@radix-ui/react-alert-dialog": "^1.1.14",
