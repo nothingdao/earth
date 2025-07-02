@@ -258,7 +258,22 @@ npm run types          # Generate Supabase types
 
 ## 📜 License
 
-MIT License - see LICENSE file for details
+This project uses **dual licensing**:
+
+### Code License
+The source code is licensed under **MIT License** - see [LICENSE](LICENSE) file for details.
+- ✅ Free to use, modify, and distribute
+- ✅ Commercial use allowed
+- ✅ Build your own projects with this code
+
+### Assets License
+All visual assets, artwork, and creative content are **proprietary** - see [ASSETS_LICENSE](ASSETS_LICENSE) file for details.
+- ❌ Assets cannot be used commercially
+- ❌ Cannot create competing games with our assets
+- ❌ Character designs, logos, and branding are protected
+- ✅ Code study and local development allowed
+
+**Summary:** Use our code to build amazing games, but create your own visual identity and assets!
 
 ## 🔗 Links
 
