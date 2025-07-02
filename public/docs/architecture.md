@@ -10,7 +10,7 @@ Earth 2089 is a comprehensive Web3 MMORPG built on a modern, scalable architectu
 graph TB
     subgraph "Frontend Layer"
         A[React Web App]
-        B[Mobile App - Future]
+        B[Android App - Capacitor]
         C[Desktop App - Future]
     end
 
@@ -71,9 +71,9 @@ graph TB
 
 ### Frontend Layer
 
-#### **React Web Application**
+#### **React Web Application & Android App**
 
-- **Technology**: React 18 with TypeScript
+- **Technology**: React 19 with TypeScript
 - **State Management**: React Context + Custom Hooks
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **Wallet Integration**: Solana Wallet Adapter
@@ -83,9 +83,11 @@ graph TB
 
 - Responsive design for desktop and mobile
 - Real-time game state synchronization
-- Interactive 3D world map (SVG-based)
+- Interactive world map (SVG-based)
 - Comprehensive admin dashboard
 - Multi-wallet support (Phantom, Solflare, etc.)
+- Native Android app via Capacitor
+- Solana Mobile Stack compatibility
 
 #### **Component Architecture**
 

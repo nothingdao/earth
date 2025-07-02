@@ -14,12 +14,15 @@
 - [x] Node.js 22+ installed and set as default
 - [x] Capacitor core and Android platform added
 - [x] Android Studio installed
-- [ ] Android SDK configured
-- [ ] Android emulator created
+- [x] Android SDK configured
+- [x] Java 21 installed and configured
+- [x] Android emulator created (Medium_Phone_API_36.0)
 
 ### Capacitor Configuration
 - [x] `capacitor.config.ts` created
 - [x] Android platform added (`npx cap add android`)
+- [x] Java version compatibility configured (Java 21)
+- [x] Gradle build configuration updated
 - [ ] Deep linking configuration for wallet intents
 - [ ] Performance optimization for mobile canvas rendering
 
@@ -131,6 +134,8 @@ cd android
 npx cap doctor android             # Verify Android setup
 emulator -list-avds                # List available emulators
 ```
+
+**Note:** Initial APK deployment to emulator can take 5-10 minutes. Subsequent deployments are much faster.
 
 ### Questions to Resolve
 

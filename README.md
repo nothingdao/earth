@@ -61,9 +61,10 @@ Earth 2089 is a blockchain-based survival RPG set in a post-apocalyptic world wh
 ## 🎯 Getting Started
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 22+
 - Solana wallet (Phantom recommended)
 - 2+ SOL for character minting
+- Android Studio (for mobile development)
 
 ### Development Setup
 
@@ -75,6 +76,10 @@ Earth 2089 is a blockchain-based survival RPG set in a post-apocalyptic world wh
    ```
 
 2. **Environment setup:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your actual values
+   ```
    - Configure Supabase credentials
    - Set up Solana RPC endpoints
    - Add wallet keypairs for development
@@ -97,6 +102,14 @@ Earth 2089 is a blockchain-based survival RPG set in a post-apocalyptic world wh
 4. **Access the game:**
    - Frontend: `http://localhost:5173`
    - Backend: `http://localhost:8888`
+
+5. **Android development:**
+   ```bash
+   # Build and run Android app
+   npm run build
+   npx cap sync android
+   npx cap run android
+   ```
 
 ## 💰 Economy & Tokenomics
 
@@ -177,6 +190,11 @@ npm run build           # Build for production
 npm run functions:build # Build Netlify functions
 npm run npc:start      # Start NPC engine in production
 
+# Android Development
+npx cap sync android    # Sync web assets to Android
+npx cap run android     # Build and run Android app
+npx cap open android    # Open Android Studio
+
 # Utilities
 npm run lint           # ESLint checking
 npm run types          # Generate Supabase types
@@ -198,7 +216,8 @@ npm run types          # Generate Supabase types
 
 ## 🛠️ Technical Stack
 
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS 4
+- **Mobile:** Capacitor for Android app, Solana Mobile Stack compatible
 - **UI Components:** Radix UI, shadcn/ui
 - **Blockchain:** Solana Web3.js, SPL Token, Metaplex
 - **Database:** Supabase (PostgreSQL) with real-time subscriptions
@@ -209,6 +228,7 @@ npm run types          # Generate Supabase types
 ## 📄 Documentation
 
 - **[API Documentation](API.md)** - Complete API reference
+- **[Android Development](ANDROID.md)** - Mobile development and Solana Mobile integration
 - **[Tokenomics](TOKENOMICS.md)** - Economic mechanics and token design
 - **[Map System](MAP.md)** - World geography and location details
 - **[Development Guide](CLAUDE.md)** - Architecture and coding standards

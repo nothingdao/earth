@@ -18,6 +18,11 @@ npm run npc:dev         # Run NPC engine in development mode
 npm run build           # Build for production
 npm run functions:build # Build Netlify functions
 
+# Android Development
+npx cap sync android    # Sync web assets to Android
+npx cap run android     # Build and run Android app
+npx cap open android    # Open Android Studio
+
 # Utilities
 npm run lint           # ESLint checking
 npm run types          # Generate Supabase types from database schema
@@ -119,6 +124,6 @@ npc-engine/            # Autonomous character system
 
 - **Bundle organization** uses cntx-ui with defined bundles (ui, api, config, docs)
 - **Path aliases** configured (`@/` points to `src/`)
-- **Environment variables** required for Supabase and Solana integration
-- **Node.js 18+** required for development
+- **Environment variables** required for Supabase and Solana integration (see `.env.example`)
+- **Node.js 22+** required for development
 - **ESLint** configured with TypeScript rules
