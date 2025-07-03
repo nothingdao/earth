@@ -16,7 +16,7 @@ export function ThemeModeToggle() {
 
   return (
     <Button
-      variant="outline"
+      variant="ghost_outline"
       onClick={toggleTheme}
       className="h-8 w-8" // Custom size
     >

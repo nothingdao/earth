@@ -263,7 +263,9 @@ export function ReservationScreen({
                 onClick={() => {
                   onBackToNetworkSelect?.()
                 }}
-                className="w-full font-mono text-sm h-8 mt-2 bg-action hover:bg-action/50 text-action-foreground"
+                variant="outline"
+                className="w-full font-mono text-sm h-8 mt-2"
+                size="sm"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 RETURN_TO_REGISTRY

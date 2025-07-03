@@ -49,12 +49,12 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
         <Button
           onClick={handleConnect}
           disabled={connecting}
-          className={`h-8 px-3 text-xs font-mono border-primary/30 ${className}`}
+          className={className}
           size="sm"
           variant="outline"
         >
-          <Wallet className="w-3 h-3 mr-2 text-primary" />
-          <span className="hidden sm:inline text-primary">{wallet ? 'CONNECT' : 'SELECT_WALLET'}</span>
+          <Wallet className="w-3 h-3 mr-2" />
+          <span className="hidden sm:inline">{wallet ? 'CONNECT' : 'SELECT_WALLET'}</span>
           <span className="sm:hidden">{wallet ? 'LINK' : 'WALLET'}</span>
         </Button>
         <WalletSelectModal
@@ -69,9 +69,9 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
     return (
       <Button
         disabled
-        className={`h-8 px-3 text-xs font-mono border-primary/30 ${className}`}
+        className={className}
         size="sm"
-        variant="outline"
+        variant="disabled"
       >
         <Activity className="w-3 h-3 mr-2 animate-spin" />
         <span className="hidden sm:inline">CONNECTING...</span>
@@ -89,8 +89,8 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
-            className={`${className} flex items-center gap-2 h-8 px-2 text-xs font-mono border-primary/30 bg-success/50 text-success hover:bg-success/20`}
+            variant="ghost_outline"
+            className={className}
             size="sm"
           >
             <Avatar className="w-4 h-4 border border-primary/20">

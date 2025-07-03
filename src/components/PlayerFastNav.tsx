@@ -63,7 +63,7 @@ export function PlayerFastNav({
     {
       id: 'home',
       icon: Home,
-      label: 'HOME_BASE',
+      label: 'CURRENT_LOCATION',
       action: onHomeClick,
       isActive: currentView === 'main',
       showAvatar: false,

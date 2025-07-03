@@ -13,7 +13,7 @@ export function TopControls({ className = '', setShowDocsScreen }: TopControlsPr
   return (
     <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 pointer-events-auto ${className}`}>
       <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
-        <Button variant="ghost" size="icon" onClick={() => setShowDocsScreen(true)}>
+        <Button variant="ghost_outline" size="icon" onClick={() => setShowDocsScreen(true)}>
           <DocsIcon />
         </Button>
         <ThemeModeToggle />

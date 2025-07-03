@@ -96,7 +96,7 @@ export function BottomDrawerNav({
     {
       id: 'home',
       icon: MapPin,
-      label: 'HOME_BASE',
+      label: 'CURRENT_LOCATION',
       action: onHomeClick,
       current: currentView === 'main',
     },
@@ -283,17 +283,21 @@ export function BottomDrawerNav({
           </div>
         </div>
 
-        {/* Mobile: Single Row Layout */}
-        <div className="flex md:hidden items-center justify-between p-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+        {/* Mobile: Grid Layout */}
+        <div className="md:hidden p-3">
+          {/* 3 Column Grid */}
+          <div className="grid grid-cols-[auto_1fr_auto] gap-3 items-center">
+            {/* Column 1: Avatar */}
             <TransitionAvatar
               src={getCharacterimage_url()}
               alt={character.name}
               fallback={character.name.charAt(0).toUpperCase()}
-              className="w-14 h-14 flex-shrink-0 rounded-sm border border-primary/20"
+              className="w-14 h-14 rounded-sm border border-primary/20"
               onInstantGlitch={setGlitchFunction}
             />
-            <div className="min-w-0 flex-1">
+            
+            {/* Column 2: Character Info */}
+            <div className="min-w-0">
               <div className="gap-1 text-xs bg-success/10 p-1 mr-2 rounded float-left">
                 <Activity className="w-3 h-3 animate-pulse text-success" />
               </div>
@@ -322,10 +326,8 @@ export function BottomDrawerNav({
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Mobile: Terminal Menu */}
-          <div className="flex items-center gap-2">
+            {/* Column 3: Terminal Menu */}
             <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
               <DrawerTrigger asChild>
                 <Button size="sm" variant="outline" className="h-12 w-12 px-3 font-mono border-primary/30 dark:border-primary">
@@ -342,7 +344,10 @@ export function BottomDrawerNav({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Database className="w-4 h-4 text-primary" />
-                      <span className="text-primary font-bold font-mono">MOBILE_INTERFACE v2.089</span>
+                      <span className="text-primary font-bold font-mono">
+                        <span className="sm:hidden">MOBILE_INTERFACE v2.089</span>
+                        <span className="hidden sm:inline">TABLET_INTERFACE v2.089</span>
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Activity className="w-3 h-3 animate-pulse text-success" />
@@ -374,7 +379,8 @@ export function BottomDrawerNav({
                           <span className="text-primary font-bold text-sm font-mono">NAVIGATION_MENU</span>
                         </div>
 
-                        <div className="space-y-1">
+                        {/* 2/3 Column Grid for Navigation */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {navItems.map((item) => {
                             const IconComponent = item.icon
                             const isAdmin = item.id === 'admin'
@@ -384,25 +390,24 @@ export function BottomDrawerNav({
                             return (
                               <Button
                                 key={item.id}
-                                className={`w-full justify-start h-12 font-mono text-xs ${isAdmin
+                                className={`flex-col h-16 p-2 font-mono text-xs ${isAdmin
                                   ? item.current
-                                    ? 'border-destructive text-destructive hover:bg-destructive/10'  // Remove bg-destructive
+                                    ? 'border-destructive text-destructive hover:bg-destructive/10'
                                     : 'text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20'
                                   : item.current
-                                    ? 'border-primary text-primary'  // Add styling for selected state  
+                                    ? 'border-primary text-primary'
                                     : ''
                                   }`}
-                                variant={item.current ? "outline" : "outline"}  // Change "default" to "outline"
+                                variant={item.current ? "outline" : "outline"}
                                 onClick={() => handleNavigation(item.action)}
                               >
-                                <IconComponent className="w-4 h-4 mr-3" />
-                                <span className="font-mono">{item.label}</span>
+                                <IconComponent className="w-4 h-4 mb-1" />
+                                <span className="font-mono text-xs leading-tight text-center">{item.label.split('_').join('\n')}</span>
                                 {item.badge && (
-                                  <Badge variant="secondary" className="ml-auto mr-2 font-mono text-xs">
+                                  <Badge variant="secondary" className="absolute -top-1 -right-1 h-4 px-1 text-xs font-mono">
                                     {item.badge}
                                   </Badge>
                                 )}
-                                <ChevronRight className="w-3 h-3 ml-auto" />
                               </Button>
                             )
                           })}

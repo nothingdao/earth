@@ -5,7 +5,7 @@
 
 :root {
   background-color: var(--background);
-  --radius: 0.225rem;
+  --radius: 0.025rem;
   /* Light mode with subtle yellow hue */
   --background: oklch(0.99 0.01 85);
   --foreground: oklch(0.15 0.006 60);
@@ -43,10 +43,6 @@
   --success: oklch(0.6 0.15 140);
   --warning: oklch(0.65 0.2 65);
   --error: oklch(0.6 0.2 15);
-  
-  /* buttons */
-  --action: oklch(0.22 0.008 65);
-  --action-foreground: oklch(0.98 0.008 85);
 }
 
 
@@ -67,7 +63,7 @@
   --muted-foreground: oklch(0.65 0.015 258);
   --accent: oklch(0.18 0.022 258);
   --accent-foreground: oklch(0.85 0.01 258);
-  --destructive: oklch(0.6 0.2 15);
+  --destructive: oklch(0.55 0.2 15);
   --border: oklch(0.22 0.015 258);
   --input: oklch(0.15 0.018 258);
   --ring: oklch(0.65 0.15 200);
@@ -99,10 +95,6 @@
   --map-default: #9ca3af;
   --map-border: #6b7280;
   --map-grid: #10b981;
-
-  /* buttons */
-  --action: oklch(0.65 0.07 170);
-  --action-foreground: oklch(0.05 0.02 258);
 }
 
 @layer base {

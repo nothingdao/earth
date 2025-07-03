@@ -1,5 +1,5 @@
 // src/components/screens/RegistryDashboard.tsx
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   User,
@@ -9,8 +9,8 @@ import {
   AlertCircle,
   Loader2,
   Zap,
-  Users,
-  Coins
+  Coins,
+  ExternalLink
 } from 'lucide-react'
 import { useNetwork } from '@/contexts/NetworkContext'
 import { usePlayerCharacter } from '@/hooks/usePlayerCharacter'
@@ -79,7 +79,7 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
         <div className="flex items-center justify-between mb-4 border-b border-primary/20 pb-3">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-primary" />
-            <span className="text-primary font-bold text-sm">REGISTRY v2.089</span>
+            <span className="text-primary font-bold text-sm">EARTH_REGISTRY v2.089</span>
           </div>
           <div className="flex items-center gap-2">
             <Activity className="w-3 h-3 text-success animate-pulse" />
@@ -88,14 +88,14 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
         </div>
 
         {/* Welcome Message */}
-        <div className="bg-background border rounded p-4 mb-4">
+        {/* <div className="bg-background border rounded p-4 mb-4">
           <div className="text-center">
             <div className="text-primary font-bold text-lg mb-2">EARTH_REGISTRY</div>
             <div className="text-muted-foreground text-xs">
               Your gateway to EARTH 2089
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Loading State */}
         {isLoading && (
@@ -114,7 +114,6 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
             <div className="bg-muted/20 border border-primary/10 rounded p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-primary" />
                   <span className="text-primary font-bold text-sm">GAME_PLAYER</span>
                 </div>
                 <span className="text-xs text-muted-foreground">DEVNET</span>
@@ -126,16 +125,37 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
                     <CheckCircle className="w-4 h-4" />
                     <span className="text-sm font-medium">Player Found</span>
                   </div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>NAME: {character.name}</div>
-                    <div>LEVEL: {character.level}</div>
-                    <div>ENERGY: {character.energy}/100</div>
-                    <div>EARTH: {character.earth}</div>
+
+                  {/* Character Display */}
+                  <div className="flex items-center gap-3 p-2 bg-background/50 rounded border border-primary/10">
+                    {/* Character Image */}
+                    <div className="relative w-24 h-24 rounded border border-primary/20 overflow-hidden bg-muted/20">
+                      {character.current_image_url ? (
+                        <img
+                          src={character.current_image_url}
+                          alt={character.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Character Stats */}
+                    <div className="flex-1 text-xs text-muted-foreground space-y-1">
+                      <div>NAME: {character.name}</div>
+                      <div>LEVEL: {character.level}</div>
+                      <div>ENERGY: {character.energy}/100</div>
+                      <div>EARTH: {character.earth}</div>
+                    </div>
                   </div>
 
                   <Button
                     onClick={onEnterGame}
-                    className="w-full font-mono text-sm h-8 mt-2 bg-action hover:bg-action/50 text-action-foreground"
+                    variant="outline"
+                    className="w-full font-mono text-sm h-8 mt-2"
                     size="sm"
                   >
                     <Zap className="w-3 h-3 mr-2" />
@@ -178,11 +198,15 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
                   <div className="text-xs text-muted-foreground space-y-1">
                     <div>AMOUNT: {reservation.amount_sol} SOL</div>
                     <div>STATUS: {reservation.status?.toUpperCase()}</div>
-                    <div>TX: {reservation.transaction_signature?.slice(0, 12)}...{reservation.transaction_signature?.slice(-12)}</div>
+                    <div>TX: <a target="_blank" href={`https://orb.helius.dev/tx/${reservation.transaction_signature}?cluster=devnet&tab=summary`} className="inline-flex items-center gap-1 hover:underline transition-colors">
+                      {reservation.transaction_signature?.slice(0, 12)}...{reservation.transaction_signature?.slice(-12)}
+                      <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                    </a></div>
                   </div>
                   <Button
                     onClick={() => setShowReservation(true)}
-                    className="w-full font-mono text-sm h-8 mt-2 bg-action hover:bg-action/50 text-action-foreground"
+                    variant="outline"
+                    className="w-full font-mono text-sm h-8 mt-2"
                     size="sm"
                   >
                     <Database className="w-3 h-3 mr-2" />
@@ -211,7 +235,7 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
             {/* Quick Actions */}
             <div className="bg-muted/20 border border-primary/10 rounded p-3">
               <div className="text-xs text-muted-foreground font-mono">
-                <div className="text-primary text-xs font-bold mb-2">[QUICK_ACTIONS]</div>
+                <div className="text-primary text-xs font-bold mb-2">[QUICK_HELP]</div>
                 <div className="space-y-1">
                   <div>• Game testing requires Devnet character</div>
                   <div>• NFT reservations require Mainnet payment</div>
@@ -224,9 +248,9 @@ export function RegistryDashboard({ onEnterGame }: RegistryDashboardProps) {
 
         {/* Footer */}
         <div className="text-xs text-muted-foreground/60 font-mono text-center border-t border-primary/20 pt-3 mt-4">
-          REGISTRY_v2089 | EARTH_PROFILE_PROTOCOL
+          REGISTRY_v2089 | EARTH_PROTOCOL
         </div>
       </div>
-    </div>
+    </div >
   )
 }

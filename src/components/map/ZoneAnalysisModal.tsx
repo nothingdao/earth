@@ -6,7 +6,6 @@ import type { Location } from '@/types'
 
 import {
   X,
-  Eye,
   Shield,
   Users,
   Database,
@@ -84,15 +83,15 @@ export default function ZoneAnalysisModal({
   const handleMapTravel = async (locationId: string) => {
     if (onTravel) {
       setIsTraveling(true)
-      
+
       // Set travel destination immediately for line visualization
       if (onSetTravelDestination) {
         onSetTravelDestination(locationId)
       }
-      
+
       // Brief delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 1600))
-      
+
       onTravel(locationId)
       onClose() // Close the modal after initiating travel
     }
@@ -103,7 +102,6 @@ export default function ZoneAnalysisModal({
       {/* Panel Header */}
       <div className="flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-primary" />
           <span className="text-primary font-bold text-sm">ZONE_ANALYSIS</span>
           {isUserAdmin && (
             <Button
@@ -432,7 +430,7 @@ export default function ZoneAnalysisModal({
               ? 'bg-muted text-muted-foreground cursor-not-allowed'
               : (!!location.min_level && character.level < location.min_level) ||
                 (!!location.entry_cost && location.entry_cost > (character.earth || 0))
-                ? 'bg-destructive/20 text-destructive cursor-not-allowed border-destructive/30'
+                ? 'bg-destructive/10 text-destructive cursor-not-allowed border-destructive/30'
                 : 'bg-action text-primary-foreground hover:bg-action/90'
               }`}
           >
